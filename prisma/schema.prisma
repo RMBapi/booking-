@@ -57,11 +57,12 @@ model Business {
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  userBusinesses    UserBusiness[]
-  businessServices  BusinessService[]
-  serviceProviders  ServiceProvider[]
-  contacts          Contact[]
-  bookings          Booking[]
+  userBusinesses   UserBusiness[]
+  businessServices BusinessService[]
+  serviceProviders ServiceProvider[]
+  contacts         Contact[]
+  bookings         Booking[]
+  businessSites    BusinessSite[]
 
   @@map("businesses")
 }
@@ -79,11 +80,12 @@ model User {
   updatedAt    DateTime   @updatedAt @map("updated_at")
   deletedAt    DateTime?  @map("deleted_at")
 
-  userBusinesses   UserBusiness[]
-  userOAuths       UserOAuth[]
-  serviceProviders ServiceProvider[]
-  contactUsers     ContactUser[]
-  bookings         Booking[]
+  userBusinesses        UserBusiness[]
+  userOAuths            UserOAuth[]
+  serviceProviders      ServiceProvider[]
+  contactUsers          ContactUser[]
+  bookings              Booking[]
+  customerBusinessSites CustomerBusinessSite[]
 
   @@map("users")
 }
@@ -219,7 +221,7 @@ model Booking {
   businessId         String            @map("business_id")
   userId             String            @map("user_id")
   serviceId          String            @map("service_id")
-  serviceProviderId  String            @map("service_provider_id")
+  serviceProviderId  String?           @map("service_provider_id")
   bookingTime        Json?
   status             BookingStatus
   confirmationMethod ConfirmationMethod @map("confirmation_method")
@@ -231,10 +233,39 @@ model Booking {
   cancellationReason String?           @db.Text @map("cancellation_reason")
 
   // Relations
-  business        Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   service         Service         @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  serviceProvider ServiceProvider @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
+  serviceProvider ServiceProvider? @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
 
   @@map("bookings")
+}
+
+model BusinessSite {
+  id          String    @id @default(uuid())
+  businessId  String    @map("business_id")
+  name        String
+  slug        String
+  domain      String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  business              Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customerBusinessSites CustomerBusinessSite[]
+
+  @@unique([businessId, slug])
+  @@map("business_sites")
+}
+
+model CustomerBusinessSite {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  businessSiteId String       @map("business_site_id")
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessSite BusinessSite @relation(fields: [businessSiteId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, businessSiteId])
+  @@map("customer_business_sites")
 }

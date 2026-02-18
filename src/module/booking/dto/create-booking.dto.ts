@@ -25,13 +25,13 @@ export class CreateBookingDto {
   @IsNotEmpty({ message: 'Service ID is required' })
   serviceId: string;
 
-  @ApiProperty({
-    description: 'The service provider ID',
+  @ApiPropertyOptional({
+    description: 'The service provider ID (auto-selected if not provided)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsString({ message: 'Service provider ID must be a string' })
-  @IsNotEmpty({ message: 'Service provider ID is required' })
-  serviceProviderId: string;
+  @IsOptional()
+  serviceProviderId?: string;
 
   @ApiPropertyOptional({
     description: 'The booking time in JSON format',

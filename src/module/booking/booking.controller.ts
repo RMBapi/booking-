@@ -67,28 +67,19 @@ export class BookingController {
   @Post()
   @ApiOperation({
     summary: 'Create a new booking (userId auto-filled from token)',
-    description: `Create a new booking for a logged-in user. The userId is automatically filled from the JWT token, so you don't need to include it in the request body.
-
-**Use Cases:**
-- Logged-in customers booking services
-- Business owners creating bookings on behalf of customers
-- Integration with booking forms
-
-**Important Notes:**
-- Requires authentication (JWT token)
-- userId is automatically extracted from the token
-- You can provide businessId via \`x-business-id\` header OR \`businessSlug\` query parameter
-- bookingTime must be in ISO 8601 format
-- Status defaults to "Pending" if not provided
-
-**Request Body:**
-- \`serviceId\` (required) - The service being booked
-- \`serviceProviderId\` (optional) - Specific service provider
-- \`bookingTime\` (required) - Object with start and end times in ISO format
-- \`status\` (optional) - Booking status (defaults to "Pending")
-- \`confirmationMethod\` (optional) - How to confirm (Email, SMS, Phone, None)
-- \`bookingSource\` (optional) - Where booking came from (Website, Phone, WalkIn, Mobile)
-- \`customerNotes\` (optional) - Additional notes from customer`,
+    description: 
+      'Create a new booking for a logged-in user. The userId is automatically filled from the JWT token.\n\n' +
+      '**Authentication:** Requires JWT token. userId is automatically extracted.\n\n' +
+      '**Business Context:** Provide businessId via `x-business-id` header OR `businessSlug` query parameter.\n\n' +
+      '**Required Fields:**\n' +
+      '- `serviceId` - The service being booked\n' +
+      '- `bookingTime` - Object with start/end times (ISO 8601 format)\n\n' +
+      '**Optional Fields:**\n' +
+      '- `serviceProviderId` - Specific service provider\n' +
+      '- `status` - Booking status (defaults to "Pending")\n' +
+      '- `confirmationMethod` - Email, SMS, Phone, or None\n' +
+      '- `bookingSource` - Website, Phone, WalkIn, or Mobile\n' +
+      '- `customerNotes` - Additional notes',
   })
   @ApiResponse({
     status: 201,

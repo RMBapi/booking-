@@ -6,6 +6,7 @@ import {
   IsString,
   MinLength,
   IsPhoneNumber,
+  IsOptional,
 } from 'class-validator';
 import { UserRole } from '@prisma/client';
 
@@ -60,4 +61,14 @@ export class RegisterDto {
   @IsEnum(UserRole)
   @IsNotEmpty()
   role: UserRole;
+
+  @ApiProperty({
+    description:
+      'Business site slug where the customer is registering. Required when role is Customer.',
+    example: 'my-awesome-salon',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  businessSiteSlug?: string;
 }

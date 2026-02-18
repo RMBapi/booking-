@@ -68,28 +68,20 @@ export class ContactController {
   @Post()
   @ApiOperation({
     summary: 'Create a new contact (Public - for non-logged-in users)',
-    description: `Create a contact/booking request for non-logged-in users. This endpoint is public and does not require authentication.
-
-**Use Cases:**
-- Non-logged-in visitors want to book a service
-- Contact forms on public business pages
-- Lead generation from website visitors
-
-**Important Notes:**
-- No authentication required (public endpoint)
-- You can provide businessId via \`x-business-id\` header OR \`businessSlug\` query parameter
-- bookingTime must be in ISO 8601 format
-- Data is stored in the Contact table (not Booking table)
-- Business owners can view these contacts in their dashboard
-
-**Request Body:**
-- \`serviceId\` (required) - The service being requested
-- \`firstName\` (required) - Customer's first name
-- \`lastName\` (required) - Customer's last name
-- \`email\` (required) - Customer's email
-- \`phone\` (required) - Customer's phone number
-- \`bookingTime\` (optional) - Preferred booking time
-- \`notes\` (optional) - Additional notes or requirements`,
+    description:
+      'Create a contact/booking request for non-logged-in users. This endpoint is public and does not require authentication.\n\n' +
+      '**Authentication:** No authentication required (public endpoint).\n\n' +
+      '**Business Context:** Provide businessId via `x-business-id` header OR `businessSlug` query parameter.\n\n' +
+      '**Required Fields:**\n' +
+      '- `serviceId` - The service being requested\n' +
+      '- `firstName` - Customer\'s first name\n' +
+      '- `lastName` - Customer\'s last name\n' +
+      '- `email` - Customer\'s email\n' +
+      '- `phone` - Customer\'s phone number\n\n' +
+      '**Optional Fields:**\n' +
+      '- `bookingTime` - Preferred booking time (ISO 8601 format)\n' +
+      '- `notes` - Additional notes or requirements\n\n' +
+      '**Note:** Data is stored in the Contact table for business owners to review.',
   })
   @ApiResponse({
     status: 201,

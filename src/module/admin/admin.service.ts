@@ -105,33 +105,52 @@ export class AdminService {
     }
   }
 
-  async toggleBusinessOwnerStatus(id: string) {
-    this.logger.log(`Toggling business owner status for ID: ${id}`);
+  async updateUser(id: string, updateData: Partial<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    isActive: boolean;
+    roles: UserRole[];
+  }>) {
+    this.logger.log(`Updating user with ID: ${id}`);
 
     try {
       const user = await this.prisma.user.findFirst({
         where: {
           id,
-          roles: { has: UserRole.Business_owner },
           deletedAt: null,
         },
       });
 
       if (!user) {
-        this.logger.warn(`Business owner not found with ID: ${id}`);
-        throw new ConflictException('Business owner not found');
+        this.logger.warn(`User not found with ID: ${id}`);
+        throw new ConflictException('User not found');
       }
 
-      const newStatus = !user.isActive;
-      this.logger.log(
-        `Changing business owner ${id} status from ${user.isActive} to ${newStatus}`,
-      );
+      // If email is being updated, check if it's already in use
+      if (updateData.email && updateData.email !== user.email) {
+        const existingUser = await this.prisma.user.findFirst({
+          where: {
+            email: updateData.email,
+            id: { not: id },
+            deletedAt: null,
+          },
+        });
+
+        if (existingUser) {
+          this.logger.warn(
+            `Email ${updateData.email} is already in use by another user`,
+          );
+          throw new ConflictException('Email is already in use');
+        }
+      }
+
+      this.logger.log(`Updating user ${id} with data: ${JSON.stringify(updateData)}`);
 
       const updated = await this.prisma.user.update({
         where: { id },
-        data: {
-          isActive: newStatus,
-        },
+        data: updateData,
         select: {
           id: true,
           firstName: true,
@@ -140,19 +159,19 @@ export class AdminService {
           phone: true,
           roles: true,
           isActive: true,
+          createdAt: true,
+          updatedAt: true,
         },
       });
 
-      this.logger.log(
-        `Business owner ${id} status updated successfully to ${newStatus}`,
-      );
+      this.logger.log(`User ${id} updated successfully`);
       return updated;
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
       const errorStack = error instanceof Error ? error.stack : undefined;
       this.logger.error(
-        `Failed to toggle business owner status ${id}: ${errorMessage}`,
+        `Failed to update user ${id}: ${errorMessage}`,
         errorStack,
       );
       throw error;

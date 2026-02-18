@@ -64,27 +64,111 @@ export class AuthService {
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(registerDto.password, saltRounds);
 
-      // Create a NEW user row for this registration.
-      // Even if the same email exists with other roles, we treat each
-      // (email, role) combination as a separate account so credentials
-      // and profile data can differ.
+      // Determine isActive based on role
+      // Customers are active by default
+      // Business_owners and Service_Providers require activation
+      const isActive = registerDto.role === 'Customer';
+      this.logger.debug(
+        `Setting isActive to ${isActive} for role: ${registerDto.role}`,
+      );
+
+      // Create / connect user depending on role
       this.logger.debug('Creating user in database');
-      const user = await this.prisma.user.create({
-        data: {
-          firstName: registerDto.firstName,
-          lastName: registerDto.lastName,
-          email: registerDto.email,
-          phone: registerDto.phone,
-          passwordHash,
-          roles: [registerDto.role],
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          roles: true,
-        },
+      const user = await this.prisma.$transaction(async (tx) => {
+        const baseUser = await tx.user.create({
+          data: {
+            firstName: registerDto.firstName,
+            lastName: registerDto.lastName,
+            email: registerDto.email,
+            phone: registerDto.phone,
+            passwordHash,
+            roles: [registerDto.role],
+            isActive,
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            roles: true,
+          },
+        });
+
+        // For customers, also create mapping to a business site so their
+        // account is scoped to that site.
+        if (registerDto.role === 'Customer') {
+          if (!registerDto.businessSiteSlug) {
+            this.logger.warn(
+              `Registration failed: businessSiteSlug is required for Customer role (${registerDto.email})`,
+            );
+            throw new ConflictException(
+              'businessSiteSlug is required when registering a Customer',
+            );
+          }
+
+          // First, check if the business exists with this slug
+          this.logger.debug(`Looking up business with slug: ${registerDto.businessSiteSlug}`);
+          const business = await tx.business.findFirst({
+            where: {
+              slug: registerDto.businessSiteSlug,
+              deletedAt: null,
+            },
+            select: { id: true, name: true, slug: true },
+          });
+
+          if (!business) {
+            this.logger.warn(
+              `Registration failed: Business not found for slug ${registerDto.businessSiteSlug}`,
+            );
+            throw new ConflictException(
+              'Business not found for provided slug',
+            );
+          }
+
+          this.logger.debug(`Found business: ${business.id} (${business.name})`);
+
+          // Check if BusinessSite already exists for this business
+          let businessSite = await tx.businessSite.findFirst({
+            where: {
+              businessId: business.id,
+              slug: registerDto.businessSiteSlug,
+              deletedAt: null,
+            },
+            select: { id: true },
+          });
+
+          // If BusinessSite doesn't exist, create it automatically
+          if (!businessSite) {
+            this.logger.debug(
+              `BusinessSite not found for slug ${registerDto.businessSiteSlug}, creating automatically...`,
+            );
+            businessSite = await tx.businessSite.create({
+              data: {
+                businessId: business.id,
+                name: `${business.name} Site`,
+                slug: business.slug,
+              },
+              select: { id: true },
+            });
+            this.logger.debug(`Created BusinessSite: ${businessSite.id}`);
+          } else {
+            this.logger.debug(`Using existing BusinessSite: ${businessSite.id}`);
+          }
+
+          // Link customer to the business site
+          await tx.customerBusinessSite.create({
+            data: {
+              userId: baseUser.id,
+              businessSiteId: businessSite.id,
+            },
+          });
+
+          this.logger.debug(
+            `Customer ${baseUser.id} linked to BusinessSite ${businessSite.id}`,
+          );
+        }
+
+        return baseUser;
       });
 
       this.logger.log(`User created successfully with ID: ${user.id}`);
@@ -126,11 +210,12 @@ export class AuthService {
     );
 
     try {
-      // Find user by email AND role so that each (email, role) account
-      // can have its own password and profile data.
+      // Find user by email AND role.
+      // For Customers we will also enforce that they belong to the given business site.
       this.logger.debug(
         `Looking up user with email: ${loginDto.email} and role: ${loginDto.role}`,
       );
+
       const user = await this.prisma.user.findFirst({
         where: {
           email: loginDto.email,
@@ -155,6 +240,34 @@ export class AuthService {
           `Login failed: User not found with email: ${loginDto.email}`,
         );
         throw new UnauthorizedException('Invalid credentials');
+      }
+
+      // If role is Customer, check that the user is attached to the given business site slug
+      if (loginDto.role === 'Customer') {
+        if (!loginDto.businessSiteSlug) {
+          this.logger.warn(
+            `Login failed: businessSiteSlug is required for Customer login (${loginDto.email})`,
+          );
+          throw new UnauthorizedException('Invalid credentials');
+        }
+
+        const customerSite = await this.prisma.customerBusinessSite.findFirst({
+          where: {
+            userId: user.id,
+            businessSite: {
+              slug: loginDto.businessSiteSlug,
+              deletedAt: null,
+            },
+          },
+          select: { id: true },
+        });
+
+        if (!customerSite) {
+          this.logger.warn(
+            `Login failed: Customer not associated with business site slug ${loginDto.businessSiteSlug} (${loginDto.email})`,
+          );
+          throw new UnauthorizedException('Invalid credentials');
+        }
       }
 
       // Check if user is active

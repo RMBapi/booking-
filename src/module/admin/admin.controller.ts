@@ -3,6 +3,7 @@ import {
   Get,
   Patch,
   Param,
+  Body,
   HttpStatus,
   UseGuards,
   Logger,
@@ -17,6 +18,7 @@ import { AdminService } from './admin.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '@prisma/client';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
@@ -62,23 +64,48 @@ export class AdminController {
     };
   }
 
-  @Patch('business-owner/:id/toggle-status')
+  @Patch('user/:id')
   @ApiOperation({
-    summary: 'Toggle business owner active status (Super Admin only)',
+    summary: 'Update user details (Super Admin only)',
+    description: `Update any user's information including firstName, lastName, email, phone, isActive status, and roles.
+    
+**Use Cases:**
+- Activate/deactivate user accounts (toggle isActive)
+- Update user contact information
+- Modify user roles
+- Correct user profile data
+
+**Request Body (all fields optional):**
+- \`firstName\` - User's first name
+- \`lastName\` - User's last name
+- \`email\` - User's email (must be unique)
+- \`phone\` - User's phone number
+- \`isActive\` - Active status (true/false)
+- \`roles\` - Array of user roles
+
+**Response:**
+Returns updated user information.`,
   })
   @ApiResponse({
     status: 200,
-    description: 'Business owner status updated successfully',
+    description: 'User updated successfully',
   })
-  async toggleBusinessOwnerStatus(@Param('id') id: string) {
-    const businessOwner =
-      await this.adminService.toggleBusinessOwnerStatus(id);
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email already in use',
+  })
+  async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    const user = await this.adminService.updateUser(id, updateUserDto);
     return {
       success: true,
       statusCode: HttpStatus.OK,
-      message: 'Business owner status updated successfully',
+      message: 'User updated successfully',
       timestamp: new Date().toISOString(),
-      data: businessOwner,
+      data: user,
     };
   }
 }

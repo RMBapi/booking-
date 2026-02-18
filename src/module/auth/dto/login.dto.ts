@@ -27,4 +27,13 @@ export class LoginDto {
   @IsEnum(UserRole)
   @IsNotEmpty()
   role: UserRole;
+
+  @ApiPropertyOptional({
+    description:
+      'Business site slug used to scope customer login. Required when role is Customer.',
+    example: 'my-awesome-salon',
+  })
+  @IsString()
+  @IsOptional()
+  businessSiteSlug?: string;
 }

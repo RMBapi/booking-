@@ -72,7 +72,60 @@ async function bootstrap() {
       .addServer('https://api.example.com', 'Production server')
       .build();
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api', app, document);
+    SwaggerModule.setup('api', app, document, {
+      customCss: `
+        .swagger-ui .opblock .opblock-summary-description {
+          word-wrap: break-word;
+          white-space: normal;
+        }
+        .swagger-ui .renderedMarkdown p {
+          margin: 10px 0;
+          line-height: 1.5;
+          color: #3b4151 !important;
+        }
+        .swagger-ui .opblock-description-wrapper p {
+          margin: 10px 0;
+          color: #3b4151 !important;
+          line-height: 1.6;
+        }
+        .swagger-ui .opblock-description-wrapper {
+          padding: 15px;
+          margin-bottom: 10px;
+        }
+        .swagger-ui .markdown p,
+        .swagger-ui .markdown pre,
+        .swagger-ui .markdown ul,
+        .swagger-ui .markdown li {
+          margin: 10px 0;
+          color: #3b4151 !important;
+        }
+        .swagger-ui .opblock-description-wrapper h4 {
+          margin-top: 15px;
+          margin-bottom: 8px;
+          font-weight: 600;
+        }
+        .swagger-ui .renderedMarkdown li,
+        .swagger-ui .opblock-description li {
+          color: #3b4151 !important;
+          line-height: 1.6;
+          margin: 5px 0;
+        }
+        .swagger-ui .markdown code {
+          color: #c7254e !important;
+          background-color: #f9f2f4 !important;
+          padding: 2px 4px;
+          border-radius: 4px;
+        }
+      `,
+      customSiteTitle: 'Booking Management System API',
+      swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        docExpansion: 'none',
+        filter: true,
+        showRequestHeaders: true,
+      },
+    });
 
     const port = process.env.PORT ?? 3000;
     await app.listen(port);

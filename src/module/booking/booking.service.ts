@@ -69,30 +69,40 @@ export class BookingService {
         throw new NotFoundException(`Service with ID ${createBookingDto.serviceId} not found for this business`);
       }
 
-      // Verify service provider exists and belongs to business
-      this.logger.debug(`Verifying service provider exists: ${createBookingDto.serviceProviderId}`);
-      const serviceProvider = await this.prisma.serviceProvider.findFirst({
-        where: {
-          id: createBookingDto.serviceProviderId,
-          businessId,
-          serviceId: createBookingDto.serviceId,
-          deletedAt: null,
-        },
-      });
+      // Verify service provider if provided, otherwise allow booking without provider
+      let serviceProviderId: string | undefined = createBookingDto.serviceProviderId;
+      
+      if (serviceProviderId) {
+        // Verify the provided service provider exists and belongs to business
+        this.logger.debug(`Verifying service provider exists: ${serviceProviderId}`);
+        const serviceProvider = await this.prisma.serviceProvider.findFirst({
+          where: {
+            id: serviceProviderId,
+            businessId,
+            serviceId: createBookingDto.serviceId,
+            deletedAt: null,
+          },
+        });
 
-      if (!serviceProvider) {
-        this.logger.warn(`Service provider ${createBookingDto.serviceProviderId} not found for business ${businessId}`);
-        throw new NotFoundException(`Service provider with ID ${createBookingDto.serviceProviderId} not found for this business`);
+        if (!serviceProvider) {
+          this.logger.warn(`Service provider ${serviceProviderId} not found for business ${businessId}`);
+          throw new NotFoundException(`Service provider with ID ${serviceProviderId} not found for this business`);
+        }
+        this.logger.debug(`Service provider verified: ${serviceProviderId}`);
+      } else {
+        // Allow booking without service provider - can be assigned later via update endpoint
+        this.logger.debug(`No service provider ID provided - booking will be created without provider and can be assigned later`);
       }
 
       this.logger.debug('Creating booking in database');
       // At this point, userId is guaranteed to be defined due to validation above
+      // serviceProviderId is optional and can be null
       const booking = await this.prisma.booking.create({
         data: {
           businessId,
           userId: createBookingDto.userId!, // Non-null assertion: validated above
           serviceId: createBookingDto.serviceId,
-          serviceProviderId: createBookingDto.serviceProviderId,
+          serviceProviderId: serviceProviderId || null, // Optional - can be null
           bookingTime: createBookingDto.bookingTime,
           status: createBookingDto.status,
           confirmationMethod: createBookingDto.confirmationMethod,
@@ -192,23 +202,30 @@ export class BookingService {
       };
     }
 
-    if (updateBookingDto.serviceProviderId) {
-      // Verify service provider exists and belongs to business
-      const serviceProvider = await this.prisma.serviceProvider.findFirst({
-        where: {
-          id: updateBookingDto.serviceProviderId,
-          businessId,
-          deletedAt: null,
-        },
-      });
+    if (updateBookingDto.serviceProviderId !== undefined) {
+      if (updateBookingDto.serviceProviderId === null || updateBookingDto.serviceProviderId === '') {
+        // Allow removing service provider assignment
+        updateData.serviceProvider = {
+          disconnect: true,
+        };
+      } else {
+        // Verify service provider exists and belongs to business
+        const serviceProvider = await this.prisma.serviceProvider.findFirst({
+          where: {
+            id: updateBookingDto.serviceProviderId,
+            businessId,
+            deletedAt: null,
+          },
+        });
 
-      if (!serviceProvider) {
-        throw new NotFoundException(`Service provider with ID ${updateBookingDto.serviceProviderId} not found for this business`);
+        if (!serviceProvider) {
+          throw new NotFoundException(`Service provider with ID ${updateBookingDto.serviceProviderId} not found for this business`);
+        }
+
+        updateData.serviceProvider = {
+          connect: { id: updateBookingDto.serviceProviderId },
+        };
       }
-
-      updateData.serviceProvider = {
-        connect: { id: updateBookingDto.serviceProviderId },
-      };
     }
 
     const booking = await this.prisma.booking.update({

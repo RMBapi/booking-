@@ -17,29 +17,22 @@ export class AuthController {
   @Post('register')
   @ApiOperation({
     summary: 'Register a new user',
-    description: `Register a new user account. This endpoint is public and does not require authentication.
-
-**Use Cases:**
-- User registration forms
-- Sign-up flows
-- Account creation
-
-**Available Roles:**
-- \`Customer\` - End users who can book services
-- \`Service_Provider\` - Staff members who provide services
-- \`Business_owner\` - Business owners who manage their business
-- \`Super_Admin\` - System administrators (use with caution)
-
-**Request Body:**
-- \`firstName\` (required) - User's first name
-- \`lastName\` (required) - User's last name
-- \`email\` (required) - User's email (must be unique)
-- \`phone\` (required) - User's phone number
-- \`password\` (required) - User's password (will be hashed)
-- \`role\` (required) - User role (Customer, Service_Provider, Business_owner, or Super_Admin)
-
-**Response:**
-Returns JWT access token and user information. Token expires in 7 days.`,
+    description:
+      'Register a new user account. This endpoint is public and does not require authentication.\n\n' +
+      '**Use Cases:** User registration forms, sign-up flows, account creation.\n\n' +
+      '**Available Roles:**\n' +
+      '• `Customer` - End users who can book services\n' +
+      '• `Service_Provider` - Staff members who provide services\n' +
+      '• `Business_owner` - Business owners who manage their business\n' +
+      '• `Super_Admin` - System administrators (use with caution)\n\n' +
+      '**Request Body:**\n' +
+      '• `firstName` (required) - User\'s first name\n' +
+      '• `lastName` (required) - User\'s last name\n' +
+      '• `email` (required) - User\'s email (must be unique)\n' +
+      '• `phone` (required) - User\'s phone number\n' +
+      '• `password` (required) - User\'s password (will be hashed)\n' +
+      '• `role` (required) - User role (Customer, Service_Provider, Business_owner, or Super_Admin)\n\n' +
+      '**Response:** Returns JWT access token and user information. Token expires in 7 days.',
   })
   @ApiResponse({
     status: 201,
@@ -76,26 +69,19 @@ Returns JWT access token and user information. Token expires in 7 days.`,
   @Post('login')
   @ApiOperation({
     summary: 'Login user',
-    description: `Login with email and password to get a JWT access token. This endpoint is public and does not require authentication.
-
-**Use Cases:**
-- User login forms
-- Authentication flows
-- Token generation for protected endpoints
-
-**Request Body:**
-- \`email\` (required) - User's email
-- \`password\` (required) - User's password
-- \`role\` (required) - User role (must match one of user's roles)
-
-**Response:**
-Returns JWT access token and user information. Token expires in 7 days.
-
-**Important Notes:**
-- User must be active (isActive === true)
-- User must not be soft-deleted
-- Password is verified against hashed password in database
-- Role must match one of the user's assigned roles`,
+    description:
+      'Login with email and password to get a JWT access token. This endpoint is public and does not require authentication.\n\n' +
+      '**Use Cases:** User login forms, authentication flows, token generation for protected endpoints.\n\n' +
+      '**Request Body:**\n' +
+      '• `email` (required) - User\'s email\n' +
+      '• `password` (required) - User\'s password\n' +
+      '• `role` (required) - User role (must match one of user\'s roles)\n\n' +
+      '**Response:** Returns JWT access token and user information. Token expires in 7 days.\n\n' +
+      '**Important Notes:**\n' +
+      '• User must be active (isActive === true)\n' +
+      '• User must not be soft-deleted\n' +
+      '• Password is verified against hashed password in database\n' +
+      '• Role must match one of the user\'s assigned roles',
   })
   @ApiResponse({
     status: 200,

@@ -126,6 +126,9 @@ export class BusinessService {
           },
         });
 
+        // Note: BusinessSite will be created automatically when the first customer registers
+        this.logger.debug(`Business created. BusinessSite will be auto-created on first customer registration.`);
+
         return business;
       });
 

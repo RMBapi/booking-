@@ -54,7 +54,7 @@ export class AppController {
       Super_Admin: [
         'GET /admin/business-owners - List all business owners',
         'GET /admin/business-owner/:id - Get business owner details',
-        'PATCH /admin/business-owner/:id/toggle-status - Toggle business owner status',
+        'PATCH /admin/user/:id - Update user details (including isActive)',
       ],
       Business_owner: [
         'POST /business - Create business profile',

@@ -275,7 +275,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
           )}
         </Modal.Body>
         <div className="overflow-hidden rounded-[2rem] border border-gray-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 px-6 py-6 md:px-10">
+          <div className="flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 panel-gutter py-6">
             <div>
               <h2 className="text-2xl font-semibold text-gray-900">Services</h2>
               <p className="mt-1 text-sm text-gray-500">Manage your service catalog and visibility.</p>
@@ -288,7 +288,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
             </Modal.Open>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 px-6 py-5 md:px-10">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 panel-gutter py-5">
             <div className="relative w-full max-w-md">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
@@ -351,9 +351,9 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
           </div>
 
           {isLoading ? (
-            <div className="px-6 py-16 text-center text-sm text-gray-500 md:px-10">Loading services...</div>
+            <div className="panel-gutter py-16 text-center text-sm text-gray-500">Loading services...</div>
           ) : services.length === 0 ? (
-            <div className="px-6 py-16 text-center text-sm text-gray-500 md:px-10">
+            <div className="panel-gutter py-16 text-center text-sm text-gray-500">
               No services found for this business.
             </div>
           ) : (
@@ -361,7 +361,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    <th className="px-6 py-7 text-left text-xs font-semibold uppercase tracking-[0.22em] text-gray-400 md:px-10">
+                    <th className="panel-gutter py-7 text-left text-xs font-semibold uppercase tracking-[0.22em] text-gray-400">
                       Service Name
                     </th>
                     <th className="px-6 py-7 text-left text-xs font-semibold uppercase tracking-[0.22em] text-gray-400">
@@ -376,7 +376,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
                     <th className="px-6 py-7 text-left text-xs font-semibold uppercase tracking-[0.22em] text-gray-400">
                       Status
                     </th>
-                    <th className="px-6 py-7 text-left text-xs font-semibold uppercase tracking-[0.22em] text-gray-400 md:pr-10">
+                    <th className="px-6 py-7 panel-edge-right text-left text-xs font-semibold uppercase tracking-[0.22em] text-gray-400">
                       Actions
                     </th>
                   </tr>
@@ -384,7 +384,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
                 <tbody>
                   {services.map((service: Service) => (
                     <tr key={service.id} className="border-b border-gray-100 last:border-b-0">
-                      <td className="px-6 py-8 md:px-10">
+                      <td className="panel-gutter py-8">
                         <span className="text-[1.65rem] font-semibold leading-none text-gray-900">
                           {service.name}
                         </span>
@@ -423,7 +423,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
                           {service.isActive ? "Active" : "Offline"}
                         </button>
                       </td>
-                      <td className="px-6 py-8 md:pr-10">
+                      <td className="px-6 py-8 panel-edge-right">
                         <div className="flex items-center gap-2">
                           <EditButtonWrapper service={service} disabled={isUpdating} />
                           <ManageProvidersButton service={service} />
@@ -446,7 +446,7 @@ export const ServiceManagement: React.FC<ServiceManagementProps> = ({
             </div>
           )}
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 px-6 py-8 md:px-10">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-100 panel-gutter py-8">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">
               Showing {fromItem} to {toItem} of {totalItems} services
             </p>
@@ -1037,7 +1037,7 @@ const SchedulerModal: React.FC<SchedulerModalProps> = ({
 
   return (
     <div className="max-h-[90vh] overflow-y-auto custom-scrollbar bg-[#f8fafc] text-gray-900 dark:!bg-[#f8fafc] dark:!text-gray-900">
-      <div className="mx-auto w-full max-w-6xl px-6 py-8 md:px-10">
+      <div className="mx-auto w-full max-w-6xl panel-gutter py-8">
         <div className="sticky top-0 z-10 -mx-2 mb-2 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white/95 px-3 py-3 backdrop-blur">
           <Modal.Close>
             <button

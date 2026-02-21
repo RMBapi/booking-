@@ -56,7 +56,7 @@ export const Container: React.FC<ContainerProps> = ({
   };
 
   return (
-    <div className={cn("mx-auto px-4 sm:px-6 lg:px-8 py-8", sizeStyles[size], className)}>
+    <div className={cn("content-shell py-8", sizeStyles[size], className)}>
       {children}
     </div>
   );

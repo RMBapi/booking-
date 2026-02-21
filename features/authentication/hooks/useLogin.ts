@@ -1,11 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { login as loginApi } from "@/services";
 import { useApiResponse } from "@/hooks";
 import { useRoleAuth } from "@/contexts";
-import { AuthResponse, LoginPayload, UserRole } from "@/types";
+import { AuthResponse, LoginPayload } from "@/types";
 import { getRoleRedirectPath } from "@/lib";
+import { extractApiErrorMessage } from "@/hooks/api-response";
 
 type MutationResponse = AxiosResponse<AuthResponse>;
 
@@ -14,13 +16,17 @@ export const useLogin = () => {
   const { setSession } = useRoleAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const { isPending: isLogging, mutate: login } = useMutation<
     MutationResponse,
-    Error,
+    unknown,
     LoginPayload
   >({
-    mutationFn: loginApi,
+    mutationFn: (variables) => {
+      setErrorMessage(null);
+      return loginApi(variables);
+    },
     onSuccess: (response, variables) => {
       // Debug: log the response structure
       if (process.env.NODE_ENV === "development") {
@@ -69,8 +75,26 @@ export const useLogin = () => {
       // Use replace to avoid adding to history
       router.replace(redirectPath);
     },
-    onError: handleError,
+    onError: (error) => {
+      const parsedMessage = extractApiErrorMessage(error);
+      const normalizedMessage = parsedMessage.toLowerCase();
+
+      // Make auth failures explicit for the login form UX.
+      if (
+        normalizedMessage.includes("unauthorized") ||
+        normalizedMessage.includes("invalid credential") ||
+        normalizedMessage.includes("invalid password")
+      ) {
+        setErrorMessage("Invalid email or password. Please try again.");
+      } else {
+        setErrorMessage(parsedMessage);
+      }
+
+      handleError(error);
+    },
   });
 
-  return { login, isLogging };
+  const clearError = () => setErrorMessage(null);
+
+  return { login, isLogging, errorMessage, clearError };
 };

@@ -31,8 +31,8 @@ export default function BusinessServicesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <main className="bo-dashboard-shell py-10 md:py-14">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <main className="bo-dashboard-shell flex flex-col gap-6 py-10 md:py-14">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-semibold text-gray-900 md:text-3xl">
             Services
           </h1>
@@ -61,4 +61,3 @@ export default function BusinessServicesPage() {
     </div>
   );
 }
-

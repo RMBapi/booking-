@@ -12,60 +12,62 @@ interface StatCardProps {
   trendType: 'up' | 'down' | 'neutral';
   icon: LucideIcon;
   data: { value: number }[];
-  color: string;
+  color?: string;
   strokeColor: string;
-  fillColor: string;
+  fillColor?: string;
 }
 
 export const StatCard = ({ 
   title, 
   value, 
   trend, 
-  trendType, 
   icon: Icon, 
   data, 
   color, 
   strokeColor, 
   fillColor 
 }: StatCardProps) => {
+  const areaColor = fillColor || strokeColor;
+
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="min-h-[210px] rounded-3xl border border-stone-100 bg-white p-7 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] transition-all duration-500 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)]"
+      className="group rounded-[32px] border border-stone-100/50 bg-white p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.02)] transition-all duration-700 hover:shadow-[0_20px_40px_-10px_rgba(0,0,0,0.04)]"
     >
-      <div className="mb-7 flex items-start justify-between">
-        <div className={`p-3 rounded-xl ${color}`}>
-          <Icon className="w-5 h-5 text-stone-600" />
+      <div className="mb-8 flex items-start justify-between">
+        <div className={`rounded-2xl p-4 transition-transform duration-500 group-hover:scale-110 ${color || "bg-stone-50"}`}>
+          <Icon className="h-6 w-6 text-stone-600" />
         </div>
         {trend && (
-          <div className="text-[11px] font-medium px-2 py-1 rounded-full bg-stone-50 text-stone-500 border border-stone-100 uppercase tracking-wider">
+          <div className="rounded-full border border-stone-100 bg-stone-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-stone-400">
             {trend}
           </div>
         )}
       </div>
-      
-      <div>
-        <h3 className="text-sm font-medium text-stone-600 tracking-tight">{title}</h3>
-        <p className="text-2xl font-semibold text-stone-700 mt-1">{value}</p>
+
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium uppercase tracking-widest text-stone-400">{title}</h3>
+        <p className="text-3xl font-semibold tracking-tight text-stone-900">{value}</p>
       </div>
-      
-      <div className="mt-7 h-14 -mx-1">
+
+      <div className="-mx-2 mt-8 h-16">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>
               <linearGradient id={`gradient-${title}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={fillColor} stopOpacity={0.2}/>
-                <stop offset="95%" stopColor={fillColor} stopOpacity={0}/>
+                <stop offset="0%" stopColor={areaColor} stopOpacity={0.15}/>
+                <stop offset="100%" stopColor={areaColor} stopOpacity={0.02}/>
               </linearGradient>
             </defs>
             <Area 
-              type="monotone" 
+              type="monotone"
               dataKey="value" 
               stroke={strokeColor} 
               fillOpacity={1} 
               fill={`url(#gradient-${title})`} 
-              strokeWidth={1.5}
+              strokeWidth={2}
+              className="transition-all duration-1000"
             />
           </AreaChart>
         </ResponsiveContainer>

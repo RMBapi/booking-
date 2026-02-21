@@ -30,7 +30,7 @@ export default function ProvidersPage() {
     <div className="min-h-screen bg-[#f8f7f4] font-sans text-stone-700 selection:bg-teal-100 selection:text-teal-900">
       <main className="flex min-w-0 flex-col">
         <DashboardHeader />
-        <div className="flex-1 overflow-y-auto pb-8">
+        <div className="flex-1 overflow-y-auto">
           <ServiceProviderManagement />
         </div>
       </main>

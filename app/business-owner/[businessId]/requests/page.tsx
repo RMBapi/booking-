@@ -32,17 +32,17 @@ export default function BusinessRequestsPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4]">
-      <main className="bo-dashboard-shell py-10 md:py-14">
+      <main className="bo-dashboard-shell flex flex-col gap-8 py-10 md:py-14">
         <button
           type="button"
           onClick={() => router.push("/business-owner")}
-          className="mb-8 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-stone-400 transition hover:text-stone-600"
+          className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-stone-400 transition hover:text-stone-600"
         >
           <ChevronLeft className="h-4 w-4" />
           Back to Dashboard
         </button>
 
-        <div className="mb-10">
+        <div>
           <h1 className="text-4xl font-semibold tracking-tight text-stone-900 md:text-6xl">
             Requests & Bookings
           </h1>

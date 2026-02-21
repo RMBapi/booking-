@@ -31,7 +31,7 @@ interface PageHeaderProps {
 
 /**
  * Standard page header with title, subtitle, and optional actions
- * STRICT: max-w-7xl mx-auto px-6 w-full
+ * Uses shared shell spacing with a max width guard.
  */
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -42,7 +42,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   return (
     <header className={cn("bg-white border-b border-border sticky top-0 z-10 shadow-sm w-full", className)}>
-      <div className="max-w-7xl mx-auto px-6 py-6 w-full">
+      <div className="app-shell max-w-7xl py-6">
         <div className="flex items-center justify-between gap-6">
           <div className="flex items-center gap-4 min-w-0 flex-1">
             {icon && (
@@ -73,14 +73,14 @@ interface PageContentProps {
 
 /**
  * Standard page content wrapper with max-width and padding
- * STRICT: max-w-7xl mx-auto px-6 w-full py-8
+ * Uses shared shell spacing with a max width guard.
  */
 export const PageContent: React.FC<PageContentProps> = ({
   children,
   className,
 }) => {
   return (
-    <main className={cn("max-w-7xl mx-auto px-6 w-full py-8", className)}>
+    <main className={cn("content-shell max-w-7xl py-8", className)}>
       {children}
     </main>
   );

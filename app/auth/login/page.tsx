@@ -4,8 +4,40 @@ import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts";
 import { getUserRoles } from "@/utils";
-import { Card, Button } from "@/components";
+import { Building2, Shield, Sparkles, Users } from "lucide-react";
+import { Card } from "@/components";
 import Link from "next/link";
+
+const roleCards = [
+  {
+    title: "Customer",
+    href: "/auth/login/customer",
+    description: "Access bookings and track your activity.",
+    icon: Users,
+    accentClass: "from-emerald-100 to-emerald-50 text-emerald-700",
+  },
+  {
+    title: "Service Provider",
+    href: "/auth/login/service-provider",
+    description: "Manage appointments, schedules, and services.",
+    icon: Sparkles,
+    accentClass: "from-sky-100 to-sky-50 text-sky-700",
+  },
+  {
+    title: "Business Owner",
+    href: "/auth/login/business-owner",
+    description: "Monitor businesses, providers, and requests.",
+    icon: Building2,
+    accentClass: "from-amber-100 to-amber-50 text-amber-700",
+  },
+  {
+    title: "Super Admin",
+    href: "/auth/login/super-admin",
+    description: "Platform-level controls and owner management.",
+    icon: Shield,
+    accentClass: "from-violet-100 to-violet-50 text-violet-700",
+  },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,7 +64,7 @@ export default function LoginPage() {
   // Show loading while checking auth or redirecting
   if (isLoading || user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,#ddeaf7_0%,#eef3f8_45%,#f8fafc_100%)]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -42,68 +74,44 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <Card className="w-full max-w-2xl">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Choose your login portal</p>
+    <div className="min-h-screen px-4 py-10 md:px-6 md:py-14 bg-[radial-gradient(circle_at_top,#ddeaf7_0%,#eef3f8_45%,#f8fafc_100%)]">
+      <Card className="mx-auto w-full max-w-3xl border border-white/60 bg-white/95 shadow-[0_25px_60px_rgba(15,23,42,0.1)] backdrop-blur" padding="lg">
+        <div className="text-center mb-10">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-primary-600 via-primary-700 to-sky-800 text-3xl font-black text-white shadow-xl shadow-primary-900/20">
+            C
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">Welcome Back</h1>
+          <p className="mt-2 text-gray-600">Choose your login portal</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link href="/auth/login/customer">
-            <div className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Customer
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Access your bookings and manage your account
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/auth/login/service-provider">
-            <div className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Service Provider
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Manage your services and bookings
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/auth/login/business-owner">
-            <div className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Business Owner
-              </h3>
-              <p className="text-gray-600 text-sm">
-                Manage your businesses and services
-              </p>
-            </div>
-          </Link>
-
-          <Link href="/auth/login/super-admin">
-            <div className="p-6 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Super Admin
-              </h3>
-              <p className="text-gray-600 text-sm">
-                System administration and management
-              </p>
-            </div>
-          </Link>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {roleCards.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link key={item.title} href={item.href} className="group">
+                <div className="h-full rounded-2xl border border-gray-200 bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary-300 hover:shadow-lg hover:shadow-primary-900/10">
+                  <div
+                    className={`mb-4 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br ${item.accentClass}`}
+                  >
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-semibold text-gray-900">{item.title}</h3>
+                  <p className="text-sm font-medium text-gray-600">{item.description}</p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-8 text-center">
           <p className="text-gray-600">
-            Don't have an account?{" "}
-            <a
+            Do not have an account?{" "}
+            <Link
               href="/auth/register"
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="font-medium text-primary-700 hover:text-primary-800"
             >
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </Card>

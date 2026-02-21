@@ -1,4 +1,4 @@
-import { AxiosError as HTTPError } from "axios";
+import axios, { AxiosError as HTTPError } from "axios";
 import * as toast from "@/lib/toast";
 
 type ApiError = {
@@ -14,9 +14,9 @@ const genericMessage = "Something went wrong. Please try again.";
 const networkErrorMessage = "Unable to connect. Please check your internet connection.";
 
 /**
- * Extracts a short, user-friendly error message from the error
+ * Extracts a short, user-friendly error message from an Axios error
  */
-function getShortErrorMessage(err: HTTPError<ApiError>): string {
+function getShortAxiosErrorMessage(err: HTTPError<ApiError>): string {
   const statusCode =
     err.response?.data?.error?.httpStatusCode ||
     err.response?.data?.statusCode ||
@@ -55,21 +55,25 @@ function getShortErrorMessage(err: HTTPError<ApiError>): string {
   return genericMessage;
 }
 
-export const useApiError = () => {
-  function isApiError(err: unknown): err is HTTPError<ApiError> {
-    return err instanceof HTTPError;
+/**
+ * Safe public extractor used by hooks/components that need inline error text.
+ */
+export function extractApiErrorMessage(err: unknown): string {
+  if (!err) return genericMessage;
+
+  if (!axios.isAxiosError<ApiError>(err)) {
+    return genericMessage;
   }
 
+  return getShortAxiosErrorMessage(err);
+}
+
+export const useApiError = () => {
   function handleError(err: unknown) {
     if (!err) return;
 
-    // Get short, user-friendly message for toast
-    if (!isApiError(err)) {
-      return toast.error(genericMessage);
-    }
-
     // Show short message in toast (UI)
-    const shortMessage = getShortErrorMessage(err);
+    const shortMessage = extractApiErrorMessage(err);
     toast.error(shortMessage);
 
     // Full error details are already logged to console by the HTTP logger

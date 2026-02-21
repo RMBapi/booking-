@@ -2,11 +2,23 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowRight, ChevronLeft, Clock3, Mail, MapPin, Phone, Star } from "lucide-react";
+import {
+  ArrowRight,
+  ChevronLeft,
+  Clock,
+  Mail,
+  MapPin,
+  Phone,
+  Star,
+  Instagram,
+  Facebook,
+  Twitter,
+} from "lucide-react";
 import { getBusinessBySlug, getPublicServicesByBusinessSlug } from "@/services";
 import { Business, Service } from "@/types";
 import { Card, Button, PageLoader, Modal, BookingForm } from "@/components";
 import { useRoleAuth } from "@/contexts";
+import { motion } from "framer-motion";
 
 const HERO_FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1800&q=80";
@@ -19,6 +31,40 @@ const SATURDAY_HOURS = "10:00 AM - 06:00 PM";
 const formatPrice = (price: number) => {
   if (Number.isNaN(price)) return "$0.00";
   return `$${price.toFixed(2)}`;
+};
+
+const getServiceDurationLabel = (service: Service) => {
+  const enrichedService = service as Service & {
+    durationMinutes?: number;
+    duration?: number;
+    durationInMinutes?: number;
+  };
+
+  const duration =
+    enrichedService.durationMinutes ??
+    enrichedService.duration ??
+    enrichedService.durationInMinutes;
+
+  if (typeof duration === "number" && Number.isFinite(duration) && duration > 0) {
+    return `${Math.round(duration)} min`;
+  }
+
+  return "Flexible";
+};
+
+const toTitleCase = (value: string) =>
+  value
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
+
+const getServiceDescriptionLabel = (service: Service) => {
+  const raw = service.description?.trim() || "";
+  if (!raw || /^\d+(\.\d+)?$/.test(raw)) {
+    return "A premium service tailored to your needs with expert care and attention to detail.";
+  }
+  return raw;
 };
 
 export default function PublicBusinessPage() {
@@ -169,110 +215,132 @@ export default function PublicBusinessPage() {
   const heroImage = business.logoUrl || HERO_FALLBACK_IMAGE;
   const philosophyImage = business.logoUrl || PHILOSOPHY_FALLBACK_IMAGE;
   const featuredService = services[0];
-  const description =
+  const philosophyDescription =
     business.description ||
-    `${business.name} offers precision grooming and personalized care in a calm, detail-driven space.`;
+    `${business.name} was born from the idea that personal care is more than a service. We combine traditional craft with a modern atmosphere so each visit feels focused, calm, and premium.`;
+  const displayAddress = business.address || "123 Coastal Park, Bengaluru 560001";
+  const displayPhone = business.phone || "+91 98765 43210";
+  const displayEmail = business.email || "hello@quietharbor.in";
+  const openedYear = new Date(business.createdAt).getFullYear();
+  const operatingHours = [
+    { day: "Mon - Fri", hours: WEEKDAY_HOURS },
+    { day: "Saturday", hours: SATURDAY_HOURS },
+    { day: "Sunday", hours: "Closed" },
+  ];
+  const servicesGridClass =
+    services.length >= 3
+      ? "grid grid-cols-1 md:grid-cols-3 gap-8"
+      : services.length === 2
+      ? "grid grid-cols-1 md:grid-cols-2 gap-8"
+      : "grid grid-cols-1 md:max-w-[420px] gap-8";
+
+  const goCustomerLogin = () => {
+    const returnUrl = `/business/slug/${slug}`;
+    router.push(
+      `/auth/login/customer?businessSiteSlug=${encodeURIComponent(slug)}&returnUrl=${encodeURIComponent(returnUrl)}`
+    );
+  };
+
+  const goCustomerSignup = () => {
+    const returnUrl = `/business/slug/${slug}`;
+    router.push(
+      `/auth/register?businessSiteSlug=${encodeURIComponent(slug)}&returnUrl=${encodeURIComponent(returnUrl)}`
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f6f3ef] via-[#f2f2f2] to-[#ececec] text-zinc-900">
-      <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-[#f8f6f3]/95 backdrop-blur">
-        <div className="mx-auto flex h-20 w-full max-w-[1360px] items-center justify-between px-5 md:px-10">
-          <div className="flex items-center gap-4 text-sm">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center gap-2 uppercase tracking-[0.25em] text-zinc-500 transition hover:text-zinc-800"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Exit Preview
-            </button>
-            <span className="hidden h-6 w-px bg-zinc-300 md:block" />
-            <p className="text-2xl font-extrabold tracking-tight text-zinc-900 md:text-3xl">{business.name}</p>
-          </div>
-
-          <div className="flex items-center gap-2 md:gap-4">
-            {authValidated && isCustomerForThisSite && customerUser ? (
-              <>
-                <span className="hidden text-sm font-medium text-zinc-600 md:inline">
-                  {customerUser.firstName} {customerUser.lastName}
-                </span>
-                <Button
-                  size="sm"
-                  className="rounded-full bg-zinc-900 px-6 text-white hover:bg-zinc-800"
-                  onClick={() => {
-                    logoutRole("Customer");
-                    window.location.reload();
-                  }}
-                >
-                  Logout
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="rounded-full px-4 text-zinc-700 hover:bg-zinc-200/70"
-                  onClick={() => {
-                    const returnUrl = `/business/slug/${slug}`;
-                    router.push(
-                      `/auth/login/customer?businessSiteSlug=${encodeURIComponent(slug)}&returnUrl=${encodeURIComponent(returnUrl)}`
-                    );
-                  }}
-                >
-                  Customer Login
-                </Button>
-                <Button
-                  size="sm"
-                  className="rounded-full bg-zinc-900 px-6 text-white hover:bg-zinc-800"
-                  onClick={() => {
-                    const returnUrl = `/business/slug/${slug}`;
-                    router.push(
-                      `/auth/register?businessSiteSlug=${encodeURIComponent(slug)}&returnUrl=${encodeURIComponent(returnUrl)}`
-                    );
-                  }}
-                >
-                  Join Now
-                </Button>
-              </>
-            )}
-          </div>
+    <div className="min-h-screen bg-[#FDFCFB] text-stone-900 selection:bg-stone-900 selection:text-white">
+      <nav className="fixed top-0 left-0 right-0 h-20 bg-white/80 backdrop-blur-md z-50 border-b border-stone-100/50 px-8 lg:px-16 flex items-center justify-between">
+        <div className="flex items-center gap-8">
+          <button
+            onClick={() => router.back()}
+            className="group flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-stone-400 transition-colors hover:text-stone-900"
+          >
+            <ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+            Exit Preview
+          </button>
+          <span className="hidden h-4 w-px bg-stone-100 sm:block" />
+          <span className="text-xl font-bold tracking-tight text-stone-900">{business.name}</span>
         </div>
-      </header>
 
-      <main className="pb-16">
-        <section className="relative h-[72vh] min-h-[520px] overflow-hidden">
-          <img
-            src={heroImage}
-            alt={`${business.name} storefront`}
-            className="h-full w-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/55" />
+        <div className="flex items-center gap-6">
+          {authValidated && isCustomerForThisSite && customerUser ? (
+            <>
+              <span className="hidden text-[13px] font-bold text-stone-500 sm:block">
+                {customerUser.firstName} {customerUser.lastName}
+              </span>
+              <button
+                onClick={() => {
+                  logoutRole("Customer");
+                  window.location.reload();
+                }}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white transition-all hover:bg-stone-800"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={goCustomerLogin}
+                className="text-[13px] font-bold text-stone-500 transition-colors hover:text-stone-900"
+              >
+                Customer Login
+              </button>
+              <button
+                onClick={goCustomerSignup}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-stone-900 px-6 py-2.5 text-[13px] font-bold text-white shadow-lg shadow-stone-900/10 transition-all hover:bg-stone-800"
+              >
+                Join Now
+              </button>
+            </>
+          )}
+        </div>
+      </nav>
 
-          <div className="absolute inset-0 mx-auto flex w-full max-w-[1360px] items-center justify-center px-5 md:px-10">
-            <div className="max-w-3xl text-center text-white">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-xs uppercase tracking-[0.25em] text-zinc-100">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                Premium Service
+      <main className="pt-20">
+        <section className="relative flex h-[85vh] w-full items-center overflow-hidden px-8 lg:px-16">
+          <div className="absolute inset-0 z-0">
+            <img
+              src={heroImage}
+              alt={`${business.name} hero`}
+              className="h-full w-full object-cover saturate-[0.9] contrast-[1.05]"
+            />
+            <div className="absolute inset-0 bg-stone-900/40" />
+          </div>
+
+          <div className="relative z-10 max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              <div className="mb-6 flex items-center gap-2">
+                <div className="flex text-amber-300">
+                  {[...Array(5)].map((_, index) => (
+                    <Star key={`star-${index}`} className="h-4 w-4 fill-current" />
+                  ))}
+                </div>
+                <span className="text-sm font-bold uppercase tracking-widest text-white/80">Premium Service</span>
               </div>
-              <h1 className="text-4xl font-extrabold leading-[1.05] tracking-tight md:text-6xl lg:text-7xl">
+
+              <h1 className="text-[72px] md:text-[96px] font-semibold text-[rgb(255,255,255)] tracking-tight leading-[0.95]">
                 Refine Your
                 <br />
-                <span className="bg-gradient-to-r from-amber-200 to-amber-50 bg-clip-text font-light italic text-transparent">
-                  Daily Ritual.
-                </span>
+                <span className="font-normal italic">Daily Ritual.</span>
               </h1>
-              <p className="mx-auto mt-6 max-w-2xl text-base text-zinc-200 md:text-xl">
-                Experience a new standard of personal grooming in a space designed for clarity and
-                relaxation.
+
+              <p className="mt-8 max-w-xl text-xl font-medium leading-relaxed text-white/90">
+                Experience a new standard of personal grooming in a space designed for clarity and relaxation.
               </p>
 
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+              <div className="mt-12 flex flex-wrap gap-4">
                 {featuredService ? (
                   <Modal>
                     <Modal.Open opens={`booking-featured-${featuredService.id}`}>
-                      <button className="inline-flex min-h-[48px] items-center gap-3 rounded-full bg-white px-8 py-3 text-base font-semibold text-zinc-900 transition hover:bg-amber-100">
+                      <button className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-stone-900 rounded-full text-[15px] font-bold hover:bg-stone-50 transition-all shadow-2xl">
                         Book Your Session
-                        <ArrowRight className="h-4 w-4" />
+                        <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                       </button>
                     </Modal.Open>
                     <Modal.Body
@@ -291,227 +359,250 @@ export default function PublicBusinessPage() {
                     </Modal.Body>
                   </Modal>
                 ) : (
-                  <button
-                    onClick={() =>
-                      document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" })
-                    }
-                    className="inline-flex min-h-[48px] items-center gap-3 rounded-full bg-white px-8 py-3 text-base font-semibold text-zinc-900 transition hover:bg-amber-100"
+                  <button 
+                    onClick={() => document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" })}
+                    className="group inline-flex items-center justify-center gap-3 px-10 py-5 bg-white text-stone-900 rounded-full text-[15px] font-bold hover:bg-stone-50 transition-all shadow-2xl"
                   >
                     Explore Services
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
                   </button>
                 )}
 
                 <button
-                  onClick={() =>
-                    document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" })
-                  }
-                  className="inline-flex min-h-[48px] items-center rounded-full border border-white/40 bg-white/10 px-10 py-3 text-base font-semibold text-white backdrop-blur transition hover:bg-white/20"
+                  onClick={goCustomerSignup}
+                  className="px-10 py-5 bg-white/10 backdrop-blur-md border border-white/20 text-white rounded-full text-[15px] font-bold hover:bg-white/20 transition-all"
                 >
-                  View Services
+                  Join Community
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        <section className="mx-auto mt-16 grid w-full max-w-[1200px] items-center gap-12 px-5 md:mt-24 md:grid-cols-2 md:px-10">
-          <div className="text-center md:text-left">
-            <p className="mb-4 text-xs font-bold uppercase tracking-[0.35em] text-amber-700">The Philosophy</p>
-            <h2 className="text-4xl font-extrabold leading-tight tracking-tight text-zinc-900 md:text-5xl">
+        <section className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-20 px-8 py-32 lg:grid-cols-2 lg:px-16">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="space-y-8"
+          >
+            <span className="text-xs font-bold uppercase tracking-[0.4em] text-stone-400">The Philosophy</span>
+            <h2 className="text-5xl font-semibold leading-tight tracking-tight text-stone-900">
               Crafting excellence with every detail.
             </h2>
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-600 md:text-xl">{description}</p>
-
-            <div className="mt-12 flex justify-center gap-12 md:justify-start md:gap-16">
-              <div>
-                <p className="text-4xl font-bold text-zinc-900 md:text-5xl">{services.length}+</p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">
-                  Active Services
-                </p>
+            <p className="text-lg font-medium leading-relaxed text-stone-500">{philosophyDescription}</p>
+            <div className="grid grid-cols-2 gap-8 pt-6">
+              <div className="space-y-2">
+                <span className="text-3xl font-semibold text-stone-900">{Math.max(services.length, 12)}+</span>
+                <p className="text-sm font-bold uppercase tracking-widest text-stone-400">Master Specialists</p>
               </div>
-              <div>
-                <p className="text-4xl font-bold text-zinc-900 md:text-5xl">
-                  {new Date(business.createdAt).getFullYear()}
-                </p>
-                <p className="mt-1 text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">Since</p>
+              <div className="space-y-2">
+                <span className="text-3xl font-semibold text-stone-900">{openedYear}</span>
+                <p className="text-sm font-bold uppercase tracking-widest text-stone-400">Established</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="overflow-hidden rounded-[3rem] shadow-lg">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            className="relative aspect-[4/5] overflow-hidden rounded-[64px] shadow-2xl"
+          >
             <img
               src={philosophyImage}
               alt={`${business.name} interior`}
-              className="h-[680px] w-full object-cover"
+              className="h-full w-full object-cover"
             />
-          </div>
+          </motion.div>
         </section>
 
-        <section id="services-section" className="mx-auto mt-20 w-full max-w-[1280px] px-5 md:mt-24 md:px-10">
-          <div className="mx-auto max-w-4xl text-center">
-            <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-700">Our Offerings</p>
-            <h2 className="mt-2 text-4xl font-extrabold tracking-tight text-zinc-900 md:text-5xl">Curated Services</h2>
-            <p className="mt-4 text-lg font-medium leading-snug text-zinc-600 md:text-xl">
-              All services include a complimentary consultation and premium styling products.
-            </p>
-          </div>
+        <section id="services-section" className="bg-stone-50 py-32 px-8 lg:px-16">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-20">
+              <div className="space-y-4">
+                <span className="text-xs font-bold text-stone-400 uppercase tracking-[0.4em]">Our Offerings</span>
+                <h2 className="text-5xl font-semibold text-stone-900 tracking-tight">Curated Services</h2>
+              </div>
+              <p className="text-stone-500 font-medium max-w-sm mb-2">
+                All services include a complimentary consultation and premium styling products.
+              </p>
+            </div>
 
-          {servicesLoading ? (
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
-              {[...Array(3)].map((_, index) => (
-                <div
-                  key={`service-loading-${index}`}
-                  className="h-80 animate-pulse rounded-[2rem] border border-zinc-200 bg-zinc-100"
-                />
-              ))}
-            </div>
-          ) : services.length === 0 ? (
-            <div className="mt-10 rounded-3xl border border-zinc-200 bg-white p-12 text-center">
-              <p className="text-2xl font-semibold text-zinc-800">No active services are listed right now.</p>
-              <p className="mt-2 text-lg text-zinc-500">Please check back soon or reach out for assistance.</p>
-            </div>
-          ) : (
-            <div className="mt-12 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-              {services.map((service) => {
-                const servicePrice = Number(service.price);
-                return (
+            {servicesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[...Array(3)].map((_, index) => (
                   <div
-                    key={service.id}
-                    className="rounded-[2rem] border border-zinc-200 bg-[#f7f7f7] p-8 shadow-[0_6px_20px_rgba(0,0,0,0.04)] transition hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.08)]"
-                  >
-                    <div className="flex items-start justify-between">
-                      <p className="text-3xl font-bold text-zinc-900 md:text-4xl">
-                        {service.priceDisplayMode ? formatPrice(servicePrice) : "Custom"}
-                      </p>
-                      <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-amber-100 text-amber-700">
-                        <Clock3 className="h-5 w-5" />
-                      </span>
-                    </div>
-                    <h3 className="mt-6 text-2xl font-bold tracking-tight text-zinc-900 md:text-3xl">{service.name}</h3>
-                    <p className="mt-3 min-h-[88px] text-base leading-relaxed text-zinc-600 md:text-lg">
-                      {service.description || "Tailored service with precise execution and careful finishing."}
-                    </p>
-                    <p className="mt-6 text-xs font-bold uppercase tracking-[0.2em] text-amber-700">
-                      Booking Available
-                    </p>
+                    key={`service-loading-${index}`}
+                    className="h-[420px] animate-pulse rounded-[48px] border border-stone-100 bg-white"
+                  />
+                ))}
+              </div>
+            ) : services.length === 0 ? (
+              <div className="rounded-[48px] border border-stone-100 bg-white p-12 text-center">
+                <p className="text-2xl font-semibold text-stone-900">No active services available right now.</p>
+                <p className="mt-2 font-medium text-stone-500">Please check back soon.</p>
+              </div>
+            ) : (
+              <div className={servicesGridClass}>
+                {services.map((service, index) => {
+                  const servicePrice = Number(service.price);
+                  return (
+                    <motion.div
+                      key={service.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: index * 0.1 }}
+                      className="bg-white p-10 rounded-[48px] border border-stone-100 hover:shadow-2xl hover:shadow-stone-900/5 transition-all duration-500 group"
+                    >
+                      <div className="flex justify-between items-start mb-8">
+                        <span className="text-3xl font-semibold text-stone-900">
+                          {service.priceDisplayMode ? formatPrice(servicePrice) : "Custom"}
+                        </span>
+                        <div className="p-3 bg-stone-50 rounded-2xl text-stone-400 group-hover:bg-stone-900 group-hover:text-white transition-colors">
+                          <Clock className="h-5 w-5" />
+                        </div>
+                      </div>
 
-                    <Modal>
-                      <Modal.Open opens={`booking-${service.id}`}>
-                        <button className="mt-8 inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-zinc-900 px-6 text-base font-bold text-white transition hover:bg-zinc-800">
-                          Book Now
-                        </button>
-                      </Modal.Open>
-                      <Modal.Body name={`booking-${service.id}`} size="full" className="w-full max-w-6xl p-0">
-                        <BookingForm
-                          service={service}
-                          businessSlug={slug}
-                          businessId={business.id}
-                          heroImageUrl={heroImage}
-                          businessName={business.name}
-                          onClose={() => {}}
-                        />
-                      </Modal.Body>
-                    </Modal>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                      <h3 className="text-xl font-bold text-stone-900 mb-4">{toTitleCase(service.name)}</h3>
+                      <p className="text-stone-500 font-medium text-sm leading-relaxed mb-8">
+                        {getServiceDescriptionLabel(service)}
+                      </p>
+                      <div className="flex items-center gap-2 text-[11px] font-bold text-stone-400 uppercase tracking-widest mb-10">
+                        <Clock className="h-3 w-3" /> {getServiceDurationLabel(service)}
+                      </div>
+
+                      <Modal>
+                        <Modal.Open opens={`booking-${service.id}`}>
+                          <button className="w-full py-4 bg-stone-50 text-stone-900 rounded-2xl text-[13px] font-bold hover:bg-stone-900 hover:text-white transition-all">
+                            Book Now
+                          </button>
+                        </Modal.Open>
+                        <Modal.Body name={`booking-${service.id}`} size="full" className="w-full max-w-6xl p-0">
+                          <BookingForm
+                            service={service}
+                            businessSlug={slug}
+                            businessId={business.id}
+                            heroImageUrl={heroImage}
+                            businessName={business.name}
+                            onClose={() => {}}
+                          />
+                        </Modal.Body>
+                      </Modal>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </section>
 
-        <section className="mx-auto mt-20 w-full max-w-[1200px] px-5 md:mt-24 md:px-10">
-          <div className="overflow-hidden rounded-[3.5rem] bg-[#171212] text-white">
-            <div className="grid md:grid-cols-2">
-              <div className="space-y-8 p-10 md:p-14">
-                <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-200">Get In Touch</p>
-                <h2 className="text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
-                  Visit us in the
-                  <br />
-                  heart of the city.
-                </h2>
+        <section className="mx-auto max-w-7xl px-8 py-32 lg:px-16">
+          <div className="relative overflow-hidden rounded-[64px] bg-stone-900 p-12 lg:p-24">
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 opacity-10">
+              <svg viewBox="0 0 400 400" className="h-full w-full fill-current text-white">
+                <path d="M0,400 Q200,300 400,400 L400,0 Q200,100 0,0 Z" />
+              </svg>
+            </div>
 
-                <div className="space-y-6">
-                  {business.address && (
-                    <div className="flex items-start gap-4">
-                      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/5">
-                        <MapPin className="h-6 w-6 text-zinc-300" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">Address</p>
-                        <p className="mt-1 text-xl font-semibold text-zinc-100 md:text-2xl">{business.address}</p>
-                      </div>
+            <div className="relative z-10 grid grid-cols-1 gap-20 md:grid-cols-2">
+              <div className="space-y-12">
+                <div className="space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-[0.4em] text-stone-400">Get In Touch</span>
+                  <h2 className="text-5xl font-semibold leading-tight tracking-tight text-white">
+                    Visit us in the
+                    <br />
+                    heart of the city.
+                  </h2>
+                </div>
+
+                <div className="space-y-8">
+                  <div className="group flex cursor-pointer items-center gap-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-white/40 transition-all group-hover:bg-white group-hover:text-stone-900">
+                      <MapPin className="h-6 w-6" />
                     </div>
-                  )}
-                  {business.phone && (
-                    <div className="flex items-start gap-4">
-                      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/5">
-                        <Phone className="h-6 w-6 text-zinc-300" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">Phone</p>
-                        <a
-                          href={`tel:${business.phone}`}
-                          className="mt-1 block text-xl font-semibold text-zinc-100 transition hover:text-white md:text-2xl"
-                        >
-                          {business.phone}
-                        </a>
-                      </div>
+                    <div>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-stone-500">Address</p>
+                      <p className="text-lg font-medium text-white">{displayAddress}</p>
                     </div>
-                  )}
-                  {business.email && (
-                    <div className="flex items-start gap-4">
-                      <span className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/5">
-                        <Mail className="h-6 w-6 text-zinc-300" />
-                      </span>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-500">Email</p>
-                        <a
-                          href={`mailto:${business.email}`}
-                          className="mt-1 block text-xl font-semibold text-zinc-100 transition hover:text-white md:text-2xl"
-                        >
-                          {business.email}
-                        </a>
-                      </div>
+                  </div>
+
+                  <div className="group flex cursor-pointer items-center gap-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-white/40 transition-all group-hover:bg-white group-hover:text-stone-900">
+                      <Phone className="h-6 w-6" />
                     </div>
-                  )}
+                    <div>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-stone-500">Phone</p>
+                      <p className="text-lg font-medium text-white">{displayPhone}</p>
+                    </div>
+                  </div>
+
+                  <div className="group flex cursor-pointer items-center gap-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-white/40 transition-all group-hover:bg-white group-hover:text-stone-900">
+                      <Mail className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-[11px] font-bold uppercase tracking-widest text-stone-500">Email</p>
+                      <p className="text-lg font-medium text-white">{displayEmail}</p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white/10 p-10 md:p-14">
-                <div className="rounded-[2.5rem] border border-white/10 bg-white/5 p-8 md:p-10">
-                  <h3 className="text-3xl font-bold tracking-tight text-zinc-100 md:text-4xl">Operating Hours</h3>
-                  <div className="mt-8 space-y-5 text-zinc-200">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Mon - Fri</p>
-                      <p className="text-lg font-semibold md:text-xl">{WEEKDAY_HOURS}</p>
-                    </div>
-                    <div className="flex items-center justify-between border-b border-white/10 pb-5">
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Saturday</p>
-                      <p className="text-lg font-semibold md:text-xl">{SATURDAY_HOURS}</p>
-                    </div>
-                    <div className="flex items-center justify-between pb-5">
-                      <p className="text-xs font-bold uppercase tracking-[0.2em] text-zinc-400">Sunday</p>
-                      <p className="text-lg font-semibold md:text-xl">Closed</p>
-                    </div>
+              <div className="flex flex-col justify-between rounded-[48px] border border-white/10 bg-white/5 p-12 backdrop-blur-xl">
+                <div>
+                  <h3 className="mb-8 text-2xl font-semibold text-white">Operating Hours</h3>
+                  <div className="space-y-4">
+                    {operatingHours.map((item) => (
+                      <div key={item.day} className="flex items-center justify-between border-b border-white/5 py-4 last:border-0">
+                        <span className="text-sm font-bold uppercase tracking-widest text-stone-400">{item.day}</span>
+                        <span className="font-medium text-white">{item.hours}</span>
+                      </div>
+                    ))}
                   </div>
-
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                      business.address || business.name
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-8 inline-flex min-h-[52px] w-full items-center justify-center rounded-2xl bg-white px-6 text-lg font-bold text-zinc-900 transition hover:bg-amber-100"
-                  >
-                    Get Directions
-                  </a>
                 </div>
+
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || business.name)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-12 inline-flex w-full items-center justify-center rounded-2xl bg-white py-5 text-[15px] font-bold text-stone-900 shadow-xl transition-all hover:bg-stone-100"
+                >
+                  Get Directions
+                </a>
               </div>
             </div>
           </div>
         </section>
       </main>
+
+      <footer className="border-t border-stone-100 bg-white px-8 py-20 lg:px-16">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-12 md:flex-row">
+          <div className="flex flex-col items-center md:items-start">
+            <span className="mb-4 text-2xl font-bold tracking-tight text-stone-900">{business.name}</span>
+            <p className="text-sm font-medium text-stone-400">© 2026 {business.name}. All rights reserved.</p>
+          </div>
+
+          <div className="flex items-center gap-10">
+            <a href="#" className="text-stone-400 transition-colors hover:text-stone-900">
+              <Instagram className="h-6 w-6" />
+            </a>
+            <a href="#" className="text-stone-400 transition-colors hover:text-stone-900">
+              <Facebook className="h-6 w-6" />
+            </a>
+            <a href="#" className="text-stone-400 transition-colors hover:text-stone-900">
+              <Twitter className="h-6 w-6" />
+            </a>
+          </div>
+
+          <div className="flex items-center gap-8 text-[11px] font-bold uppercase tracking-widest text-stone-400">
+            <a href="#" className="transition-colors hover:text-stone-900">Privacy</a>
+            <a href="#" className="transition-colors hover:text-stone-900">Terms</a>
+            <a href="#" className="transition-colors hover:text-stone-900">Cookies</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

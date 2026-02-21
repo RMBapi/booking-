@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { register as registerApi, getProfile } from "@/services";
 import { useApiResponse } from "@/hooks";
 import { useRoleAuth } from "@/contexts";
-import { AuthResponse, RegisterPayload, User, UserRole } from "@/types";
+import { AuthResponse, RegisterPayload, User } from "@/types";
 import { getRoleRedirectPath, saveRoleSession } from "@/lib";
 
 type MutationResponse = AxiosResponse<AuthResponse>;
@@ -14,6 +14,7 @@ export const useRegister = () => {
   const { setSession } = useRoleAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isDev = process.env.NODE_ENV === "development";
 
   const { isPending: isRegistering, mutate: register } = useMutation<
     MutationResponse,
@@ -23,18 +24,23 @@ export const useRegister = () => {
     mutationFn: registerApi,
     onSuccess: async (response, variables) => {
       // Debug: log the response structure
-      console.log("=== REGISTRATION RESPONSE DEBUG ===");
-      console.log("Full response:", response);
-      console.log("Response data:", response.data);
-      console.log("Response status:", response.status);
-      console.log("Registration payload sent:", variables);
+      if (isDev) {
+        console.log("=== REGISTRATION RESPONSE DEBUG ===");
+        console.log("Full response:", response);
+        console.log("Response data:", response.data);
+        console.log("Response status:", response.status);
+        console.log("Registration payload sent:", variables);
+      }
       
-      let { accessToken, user } = response.data || {};
+      const accessToken = response.data?.accessToken;
+      let user = response.data?.user;
       
-      console.log("Extracted accessToken:", accessToken);
-      console.log("Extracted user:", user);
-      console.log("User type:", typeof user);
-      console.log("User keys:", user ? Object.keys(user) : "N/A");
+      if (isDev) {
+        console.log("Extracted accessToken:", accessToken);
+        console.log("Extracted user:", user);
+        console.log("User type:", typeof user);
+        console.log("User keys:", user ? Object.keys(user) : "N/A");
+      }
       
       // If user object is empty or missing, but we have a token, fetch the user profile
       if (accessToken && (!user || Object.keys(user).length === 0)) {
@@ -46,11 +52,15 @@ export const useRegister = () => {
           
           // Fetch the user profile
           const profileResponse = await getProfile();
-          console.log("Profile fetch response:", profileResponse);
+          if (isDev) {
+            console.log("Profile fetch response:", profileResponse);
+          }
           
           if (profileResponse.data && profileResponse.data.success) {
             user = profileResponse.data.data;
-            console.log("✅ Successfully fetched user profile:", user);
+            if (isDev) {
+              console.log("✅ Successfully fetched user profile:", user);
+            }
           } else {
             console.error("❌ Failed to fetch user profile:", profileResponse);
             handleError(new Error("Registration successful but failed to load user profile. Please try logging in."));
@@ -72,9 +82,11 @@ export const useRegister = () => {
       // Check if user has roles array (new format) or role (old format)
       const userRoles = user.roles || (user.role ? [user.role] : []);
       
-      console.log("Extracted roles:", userRoles);
-      console.log("user.roles:", user.roles);
-      console.log("user.role:", user.role);
+      if (isDev) {
+        console.log("Extracted roles:", userRoles);
+        console.log("user.roles:", user.roles);
+        console.log("user.role:", user.role);
+      }
       
       if (userRoles.length === 0) {
         console.error("User object missing roles:", user);

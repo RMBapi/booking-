@@ -28,23 +28,23 @@ import { motion, AnimatePresence } from "framer-motion";
 const mockStatsData = {
   totalBusinesses: {
     title: 'Total Businesses',
-    trend: '',
-    trendType: 'up' as const,
+    trend: 'Stable',
+    trendType: 'neutral' as const,
     icon: Store,
     color: 'bg-stone-50',
     strokeColor: '#78716c',
-    fillColor: '#78716c',
+    fillColor: '#0b0b0b',
     data: [{ value: 10 }, { value: 15 }, { value: 8 }, { value: 22 }, { value: 18 }, { value: 25 }]
   },
   activeProviders: {
     title: 'Active Providers',
     value: '48',
-    trend: '',
+    trend: 'Optimal',
     trendType: 'up' as const,
     icon: Users,
-    color: 'bg-teal-50',
-    strokeColor: '#0d9488',
-    fillColor: '#0d9488',
+    color: 'bg-stone-50',
+    strokeColor: '#8BA88E',
+    fillColor: '#0b0b0b',
     data: [{ value: 20 }, { value: 25 }, { value: 30 }, { value: 28 }, { value: 35 }, { value: 48 }]
   },
   systemHealth: {
@@ -54,8 +54,8 @@ const mockStatsData = {
     trendType: 'neutral' as const,
     icon: Zap,
     color: 'bg-stone-50',
-    strokeColor: '#a8a29e',
-    fillColor: '#a8a29e',
+    strokeColor: '#78716c',
+    fillColor: '#0b0b0b',
     data: [{ value: 5 }, { value: 5 }, { value: 5 }, { value: 5 }, { value: 5 }, { value: 5 }]
   }
 };
@@ -100,20 +100,13 @@ export default function BusinessOwnerDashboard() {
     );
   };
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 18) return 'Good Afternoon';
-    return 'Good Evening';
-  };
-
   return (
-    <div className="min-h-screen bg-[#f8f7f4] font-sans text-stone-700 selection:bg-teal-100 selection:text-teal-900">
+    <div className="min-h-screen bg-[#FDFCFB] font-sans text-stone-900 selection:bg-stone-900 selection:text-white">
       <main className="flex flex-col min-w-0">
         <DashboardHeader />
         
-        <div className="flex-1 overflow-y-auto py-8 md:py-10">
-          <div className="bo-dashboard-shell space-y-12">
+        <div className="flex-1 overflow-y-auto">
+          <div className="bo-dashboard-shell section-stack py-8 md:py-10">
             
             {!hasBusiness ? (
               /* Empty State */
@@ -144,41 +137,40 @@ export default function BusinessOwnerDashboard() {
             ) : (
               <>
                 {/* Hero Section */}
-                <div className="flex flex-col justify-between gap-10 md:flex-row md:items-end">
+                <div className="flex flex-col justify-between gap-8 md:flex-row md:items-end">
                   <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
-                    className="max-w-3xl"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
                   >
-                    <h1 className="text-4xl font-semibold tracking-tight text-stone-800 md:text-5xl">
-                      {getGreeting()}, {user.firstName}
+                    <h1 className="text-5xl font-semibold tracking-tight text-stone-900">
+                      Welcome back, {user.firstName || "Alexander"}
                     </h1>
-                    <p className="mt-3 text-base font-medium leading-relaxed text-stone-500 md:text-lg">
-                      Take a moment to review your portfolio overview.
+                    <p className="mt-4 max-w-lg text-lg font-medium leading-relaxed text-stone-500">
+                      Take a breath and review your portfolio overview. Everything is running smoothly.
                     </p>
                   </motion.div>
                   
                   <div className="flex items-center gap-4">
                     <button 
                       onClick={() => router.push("/business-owner/providers")}
-                      className="inline-flex h-11 items-center justify-center whitespace-nowrap gap-[10px] rounded-2xl border border-stone-200 bg-white px-6 text-sm font-semibold leading-none text-stone-600 shadow-sm transition-all duration-300 hover:bg-stone-50"
+                      className="inline-flex h-14 min-w-[176px] items-center justify-center gap-3 whitespace-nowrap rounded-[24px] border border-stone-200 bg-white px-6 text-[14px] font-bold leading-none text-stone-600 shadow-sm transition-all duration-300 hover:bg-stone-50 active:scale-95"
                     >
-                      <Users className="w-4 h-4 opacity-70" />
-                      Providers
+                      <Users className="h-5 w-5 opacity-50" />
+                      View Providers
                     </button>
                     <button 
                       onClick={() => setShowCreateModal(true)}
-                      className="inline-flex h-11 items-center justify-center whitespace-nowrap gap-[10px] rounded-2xl bg-teal-800 px-7 text-sm font-semibold leading-none text-stone-50 shadow-lg shadow-teal-900/10 transition-all duration-300 hover:bg-teal-900"
+                      className="inline-flex h-14 min-w-[176px] items-center justify-center gap-3 whitespace-nowrap rounded-[24px] bg-stone-900 px-8 text-[14px] font-bold leading-none text-white shadow-xl shadow-stone-900/20 transition-all duration-300 hover:bg-stone-800 active:scale-95"
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="h-5 w-5" />
                       New Business
                     </button>
                   </div>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
                   <StatCard 
                     {...mockStatsData.totalBusinesses}
                     value={businesses.length.toString()}
@@ -188,41 +180,41 @@ export default function BusinessOwnerDashboard() {
                 </div>
 
                 {/* Content Controls */}
-                <div className="flex items-center justify-between border-b border-stone-100 pb-7 pt-4">
-                  <div className="flex items-center gap-6">
-                    <h2 className="text-xl font-semibold text-stone-800 flex items-center gap-3">
-                      My Businesses
-                      <span className="px-2.5 py-0.5 bg-stone-100 text-stone-600 text-[11px] font-bold rounded-full border border-stone-200">
+                <div className="flex items-center justify-between border-b border-stone-100/80 pb-8">
+                  <div className="flex items-center gap-10">
+                    <h2 className="flex items-center gap-4 text-2xl font-semibold text-stone-900">
+                      My Portfolio
+                      <span className="rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-[12px] font-bold text-stone-500 shadow-inner">
                         {businesses.length}
                       </span>
                     </h2>
-                    <div className="flex items-center rounded-xl border border-stone-100 bg-stone-50 p-1.5 shadow-inner">
+                    <div className="flex items-center rounded-2xl border border-stone-100/50 bg-stone-50 p-1.5 shadow-inner">
                       <button 
                         onClick={() => setViewMode('grid')}
-                        className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-white text-teal-800 shadow-sm' : 'text-stone-300'}`}
+                        className={`rounded-xl p-2.5 transition-all duration-500 ${viewMode === 'grid' ? 'bg-white text-stone-900 shadow-md' : 'text-stone-300 hover:text-stone-400'}`}
                       >
-                        <LayoutGrid className="w-4 h-4" />
+                        <LayoutGrid className="w-5 h-5" />
                       </button>
                       <button 
                         onClick={() => setViewMode('list')}
-                        className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-white text-teal-800 shadow-sm' : 'text-stone-300'}`}
+                        className={`rounded-xl p-2.5 transition-all duration-500 ${viewMode === 'list' ? 'bg-white text-stone-900 shadow-md' : 'text-stone-300 hover:text-stone-400'}`}
                       >
-                        <List className="w-4 h-4" />
+                        <List className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    <button className="inline-flex h-11 items-center justify-center whitespace-nowrap gap-[10px] rounded-2xl border border-stone-100 bg-white px-5 text-[13px] font-semibold leading-none text-stone-500 transition-all hover:bg-stone-50">
-                      <Filter className="w-4 h-4 opacity-50" />
-                      Refine
+                  <div className="flex items-center gap-4">
+                    <button className="inline-flex h-12 items-center justify-center gap-3 whitespace-nowrap rounded-2xl border border-stone-100 bg-white px-5 text-[14px] font-bold leading-none text-stone-500 transition-all hover:bg-stone-50 active:scale-95">
+                      <Filter className="w-4 h-4 opacity-40" />
+                      Refine View
                     </button>
                   </div>
                 </div>
 
                 {/* Businesses Grid */}
-                <div className="grid grid-cols-1 items-start gap-8 pb-20 md:grid-cols-2 lg:grid-cols-3">
-                  <AnimatePresence>
+                <div className="grid grid-cols-1 gap-10 pb-32 md:grid-cols-2 lg:grid-cols-3">
+                  <AnimatePresence mode="popLayout">
                     {businesses.map((business) => (
                       <EnhancedBusinessCard key={business.id} business={business} />
                     ))}
@@ -230,19 +222,21 @@ export default function BusinessOwnerDashboard() {
                   
                   {/* Empty State / Add New Placeholder */}
                   <motion.button 
-                    whileHover={{ y: -2 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    whileHover={{ y: -4 }}
                     onClick={() => setShowCreateModal(true)}
-                    className="group flex flex-col items-center justify-center p-10 border-2 border-dashed border-stone-200 rounded-[32px] hover:border-teal-200 hover:bg-teal-50/20 transition-all duration-500 min-h-[440px]"
+                    className="group flex min-h-[480px] flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-stone-200 p-12 transition-all duration-700 hover:border-stone-400 hover:bg-stone-50/40"
                   >
-                    <div className="w-16 h-16 bg-stone-50 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-teal-100/50 transition-colors duration-500">
-                      <Plus className="w-8 h-8 text-stone-300 group-hover:text-teal-600" />
+                    <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-stone-50 transition-all duration-700 group-hover:bg-white group-hover:shadow-xl">
+                      <Plus className="h-10 w-10 text-stone-300 transition-colors group-hover:text-stone-900" />
                     </div>
-                    <h3 className="text-stone-700 font-semibold text-lg">New Portfolio Item</h3>
-                    <p className="text-stone-600 text-sm mt-2 text-center max-w-[220px] font-medium leading-relaxed">
-                      Carefully add a new venture to your dashboard.
+                    <h3 className="text-xl font-semibold text-stone-900">Expand Portfolio</h3>
+                    <p className="mt-4 max-w-[240px] text-center text-[15px] font-medium leading-relaxed text-stone-400">
+                      Ready to start a new venture? Add it to your dashboard here.
                     </p>
-                    <div className="mt-8 flex items-center gap-2 text-[11px] font-bold text-teal-700 uppercase tracking-[0.2em] opacity-0 group-hover:opacity-100 transition-all translate-y-2 group-hover:translate-y-0">
-                      Begin Setup <ArrowUpRight className="w-4 h-4" />
+                    <div className="mt-10 flex translate-y-4 items-center gap-2 text-[12px] font-bold uppercase tracking-[0.3em] text-stone-900 opacity-0 transition-all duration-700 group-hover:translate-y-0 group-hover:opacity-100">
+                      Get Started <ArrowUpRight className="h-5 w-5" />
                     </div>
                   </motion.button>
                 </div>

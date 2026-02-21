@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components";
 import { useGetBookings, useGetContacts, useUpdateBookingStatus } from "../hooks";
 import { Booking, Contact } from "@/types";
@@ -68,7 +68,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       minute: "2-digit",
     });
 
-  const matchesSelectedDate = (isoDateString: string): boolean => {
+  const matchesSelectedDate = useCallback((isoDateString: string): boolean => {
     if (!selectedDate) return true;
     const [year, month, day] = selectedDate.split("-").map(Number);
     const date = new Date(isoDateString);
@@ -77,7 +77,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       date.getMonth() + 1 === month &&
       date.getDate() === day
     );
-  };
+  }, [selectedDate]);
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
@@ -109,7 +109,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
         notes.includes(value)
       );
     });
-  }, [bookings, searchTerm, selectedDate, statusFilter]);
+  }, [bookings, matchesSelectedDate, searchTerm, statusFilter]);
 
   const filteredContacts = useMemo(() => {
     return contacts.filter((contact) => {
@@ -137,7 +137,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
         notes.includes(value)
       );
     });
-  }, [contacts, searchTerm, selectedDate]);
+  }, [contacts, matchesSelectedDate, searchTerm]);
 
   const getStatusColor = (status: string): string => {
     switch (status) {
@@ -200,7 +200,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       </div>
 
       <section className="overflow-hidden rounded-[2.1rem] border border-stone-200 bg-white shadow-sm">
-      <div className="border-b border-stone-100 px-6 py-8 md:px-10">
+      <div className="border-b border-stone-100 panel-gutter py-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="relative w-full max-w-xl">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-300" />
@@ -259,7 +259,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
         <table className="min-w-full">
           <thead className="border-b border-stone-100 bg-stone-50/60">
             <tr>
-              <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400 md:px-10">
+              <th className="panel-gutter py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
                 Date & Time
               </th>
               <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
@@ -274,7 +274,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
               <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
                 Notes
               </th>
-              <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400 md:pr-10">
+              <th className="px-6 py-6 panel-edge-right text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
                 Actions
               </th>
             </tr>
@@ -285,7 +285,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
               !bookingsLoading &&
               pagedBookings.map((booking: Booking) => (
                 <tr key={booking.id} className="border-b border-stone-100 last:border-b-0">
-                  <td className="px-6 py-8 md:px-10">
+                  <td className="panel-gutter py-8">
                     {booking.bookingTime?.start ? (
                       <div>
                         <p className="text-2xl font-semibold text-stone-800">
@@ -321,7 +321,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
                   <td className="px-6 py-8 text-base italic text-stone-500">
                     {booking.customerNotes || "-"}
                   </td>
-                  <td className="px-6 py-8 md:pr-10">
+                  <td className="px-6 py-8 panel-edge-right">
                     <div className="flex items-center gap-3">
                       {booking.status === "Pending" ? (
                         <Button
@@ -346,7 +346,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
               !contactsLoading &&
               pagedContacts.map((contact: Contact) => (
                 <tr key={contact.id} className="border-b border-stone-100 last:border-b-0">
-                  <td className="px-6 py-8 md:px-10">
+                  <td className="panel-gutter py-8">
                     {contact.bookingTime?.start ? (
                       <div>
                         <p className="text-2xl font-semibold text-stone-800">
@@ -373,7 +373,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
                   <td className="px-6 py-8 text-base italic text-stone-500">
                     {contact.notes || "-"}
                   </td>
-                  <td className="px-6 py-8 md:pr-10">
+                  <td className="px-6 py-8 panel-edge-right">
                     <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-100 bg-stone-50 text-stone-400">
                       <MoreVertical className="h-4 w-4" />
                     </span>
@@ -385,30 +385,30 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       </div>
 
       {activeTab === "bookings" && bookingsLoading && (
-        <div className="px-6 py-16 text-center text-sm font-medium text-stone-500 md:px-10">
+        <div className="panel-gutter py-16 text-center text-sm font-medium text-stone-500">
           Loading bookings...
         </div>
       )}
 
       {activeTab === "contacts" && contactsLoading && (
-        <div className="px-6 py-16 text-center text-sm font-medium text-stone-500 md:px-10">
+        <div className="panel-gutter py-16 text-center text-sm font-medium text-stone-500">
           Loading contact requests...
         </div>
       )}
 
       {!bookingsLoading && activeTab === "bookings" && filteredBookings.length === 0 && (
-        <div className="px-6 py-16 text-center text-sm font-medium text-stone-500 md:px-10">
+        <div className="panel-gutter py-16 text-center text-sm font-medium text-stone-500">
           No bookings found.
         </div>
       )}
 
       {!contactsLoading && activeTab === "contacts" && filteredContacts.length === 0 && (
-        <div className="px-6 py-16 text-center text-sm font-medium text-stone-500 md:px-10">
+        <div className="panel-gutter py-16 text-center text-sm font-medium text-stone-500">
           No contact requests found.
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone-100 px-6 py-8 md:px-10">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone-100 panel-gutter py-8">
         <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
           Showing {currentItems.length} entries
         </p>

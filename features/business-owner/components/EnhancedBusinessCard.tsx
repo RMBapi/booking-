@@ -41,130 +41,130 @@ export const EnhancedBusinessCard = ({ business }: EnhancedBusinessCardProps) =>
   };
 
   const imageUrl = business.logoUrl && !imageError ? business.logoUrl : getPlaceholderImage();
+  const email = business.email || "Not available";
+  const phone = business.phone || "Not available";
+  const address = business.address || "Not available";
 
   return (
     <motion.div 
-      whileHover={{ y: -2 }}
-      className="self-start overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] transition-all duration-500 hover:shadow-[0_15px_35px_rgba(0,0,0,0.06)]"
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ y: -6 }}
+      className="group w-full overflow-hidden rounded-[40px] border border-stone-100/80 bg-white shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)] transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)]"
     >
-      <div className="relative h-40 w-full overflow-hidden">
+      <div className="relative h-[192px] w-full overflow-hidden">
         <img 
           src={imageUrl} 
           alt={business.name} 
-          className="w-full h-full object-cover saturate-[0.85] contrast-[0.95]"
+          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-[0.85]"
           onError={() => setImageError(true)}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-900/55 via-stone-900/15 to-transparent" />
-        <div className="absolute bottom-5 left-6 right-6">
-          <h3 className="text-xl font-semibold leading-none tracking-tight text-white">
+        <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-stone-900/20 to-transparent" />
+        <div className="absolute bottom-[24px] left-[32px] right-[32px]">
+          <h3 className="text-2xl font-semibold leading-none tracking-tight text-white">
             {business.name}
           </h3>
-          <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-white/90">
-            <AtSign className="w-3 h-3 opacity-70" />
+          <div className="mt-[10px] flex items-center gap-2 text-sm font-medium text-white/80">
+            <AtSign className="h-3.5 w-3.5 opacity-60" />
             <span>{business.slug}</span>
           </div>
         </div>
       </div>
 
-      <div className="px-7 pt-6 pb-7">
-        <div className="mb-7 space-y-4">
-          {business.email && (
-            <div className="flex items-center gap-3.5 text-stone-500">
-              <div className="rounded-xl bg-stone-50 p-2.5">
-                <Mail className="w-4 h-4 text-stone-600" />
+      <div className="flex flex-col p-[32px]">
+        <div>
+          <div className="mb-[40px] space-y-[14px]">
+            <div className="flex cursor-default items-center gap-[14px] text-stone-600">
+              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-stone-50">
+                <Mail className="h-4 w-4 text-stone-400" />
               </div>
-              <span className="truncate text-[13px] tracking-tight">{business.email}</span>
+              <span className="truncate text-[14px] font-medium tracking-tight text-stone-600">{email}</span>
             </div>
-          )}
-          {business.phone && (
-            <div className="flex items-center gap-3.5 text-stone-500">
-              <div className="rounded-xl bg-stone-50 p-2.5">
-                <Phone className="w-4 h-4 text-stone-600" />
+            <div className="flex cursor-default items-center gap-[14px] text-stone-600">
+              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-stone-50">
+                <Phone className="h-4 w-4 text-stone-400" />
               </div>
-              <span className="text-[13px] tracking-tight">{business.phone}</span>
+              <span className="truncate text-[14px] font-medium tracking-tight text-stone-600">{phone}</span>
             </div>
-          )}
-          {business.address && (
-            <div className="flex items-center gap-3.5 text-stone-500">
-              <div className="rounded-xl bg-stone-50 p-2.5">
-                <MapPin className="w-4 h-4 text-stone-600" />
+            <div className="flex cursor-default items-center gap-[14px] text-stone-600">
+              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-stone-50">
+                <MapPin className="h-4 w-4 text-stone-400" />
               </div>
-              <span className="truncate text-[13px] tracking-tight">{business.address}</span>
+              <span className="truncate text-[14px] font-medium tracking-tight text-stone-600">{address}</span>
             </div>
-          )}
-        </div>
-
-        <div className="mt-1 grid grid-cols-2 gap-3.5">
-          <a
-            href={`/business/slug/${business.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-2xl bg-teal-900/10 px-4 py-[10px] text-[13px] font-semibold leading-none text-teal-800 transition-all duration-300 hover:bg-teal-900/15"
-          >
-            <Eye className="w-4 h-4" />
-            View Detail
-          </a>
-
-          <a
-            href={`/business-owner/${business.id}/services`}
-            className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-2xl bg-stone-50 px-4 py-[10px] text-[13px] font-semibold leading-none text-stone-600 transition-all duration-300 hover:bg-stone-100"
-          >
-            <Settings className="w-4 h-4" />
-            Services
-          </a>
-
-          <a
-            href={`/business-owner/${business.id}/requests`}
-            className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-2xl bg-stone-50 px-4 py-[10px] text-[13px] font-semibold leading-none text-stone-600 transition-all duration-300 hover:bg-stone-100"
-          >
-            <Calendar className="w-4 h-4" />
-            Bookings
-          </a>
-
-          <Modal>
-            <Modal.Open opens={`team-${business.id}`}>
-              <button className="inline-flex h-11 items-center justify-center whitespace-nowrap rounded-2xl bg-stone-50 px-4 py-[10px] text-[13px] font-semibold leading-none text-stone-600 transition-all duration-300 hover:bg-stone-100">
-                <Users className="w-4 h-4" />
-                Team
-              </button>
-            </Modal.Open>
-
-            <Modal.Body name={`team-${business.id}`} className="w-full max-w-4xl p-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-8">
-                Manage Co-Owners - {business.name}
-              </h2>
-
-              <div className="mb-10">
-                <h3 className="text-xl font-medium text-gray-900 mb-6">
-                  Add Co-Owner
-                </h3>
-                <AddOwnerForm businessId={business.id} />
-              </div>
-
-              <div>
-                <h3 className="text-xl font-medium text-gray-900 mb-6">
-                  Current Owners
-                </h3>
-                <BusinessOwnersList businessId={business.id} />
-              </div>
-
-              <Modal.Close>
-                <Button variant="outline" className="mt-8 w-full" size="lg">
-                  Close
-                </Button>
-              </Modal.Close>
-            </Modal.Body>
-          </Modal>
-        </div>
-
-        
-        <div className="mt-7 flex items-center justify-between border-t border-stone-100 pb-1 pt-6">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
-            <span className="text-[11px] font-bold text-stone-600 uppercase tracking-widest">Active Now</span>
           </div>
-          <button className="p-2 text-stone-300 hover:text-stone-500 rounded-full hover:bg-stone-50 transition-all">
-            <MoreHorizontal className="w-5 h-5" />
+
+          <div className="grid grid-cols-2 gap-[16px]">
+            <a
+              href={`/business/slug/${business.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-900 px-4 text-[13px] leading-none font-bold text-stone-50 shadow-lg shadow-stone-900/10 transition-all duration-300 hover:bg-stone-800 hover:text-stone-50 active:scale-95"
+            >
+              <Eye className="h-4 w-4 text-stone-50" />
+              <span className="text-stone-50">Overview</span>
+            </a>
+
+            <a
+              href={`/business-owner/${business.id}/services`}
+              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-50 px-4 text-[13px] leading-none font-bold text-stone-700 transition-all duration-300 hover:bg-stone-100 hover:text-stone-700 active:scale-95"
+            >
+              <Settings className="h-4 w-4 text-stone-600" />
+              <span className="text-stone-700">Services</span>
+            </a>
+
+            <a
+              href={`/business-owner/${business.id}/requests`}
+              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-50 px-4 text-[13px] leading-none font-bold text-stone-700 transition-all duration-300 hover:bg-stone-100 hover:text-stone-700 active:scale-95"
+            >
+              <Calendar className="h-4 w-4 text-stone-600" />
+              <span className="text-stone-700">Bookings</span>
+            </a>
+
+            <Modal>
+              <Modal.Open opens={`team-${business.id}`}>
+                <button className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-50 px-4 text-[13px] leading-none font-bold text-stone-700 transition-all duration-300 hover:bg-stone-100 active:scale-95">
+                  <Users className="h-4 w-4 text-stone-600" />
+                  <span className="text-stone-700">Team</span>
+                </button>
+              </Modal.Open>
+
+              <Modal.Body name={`team-${business.id}`} className="w-full max-w-4xl p-8">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-8">
+                  Manage Co-Owners - {business.name}
+                </h2>
+
+                <div className="mb-10">
+                  <h3 className="text-xl font-medium text-gray-900 mb-6">
+                    Add Co-Owner
+                  </h3>
+                  <AddOwnerForm businessId={business.id} />
+                </div>
+
+                <div>
+                  <h3 className="text-xl font-medium text-gray-900 mb-6">
+                    Current Owners
+                  </h3>
+                  <BusinessOwnersList businessId={business.id} />
+                </div>
+
+                <Modal.Close>
+                  <Button variant="outline" className="mt-8 w-full" size="lg">
+                    Close
+                  </Button>
+                </Modal.Close>
+              </Modal.Body>
+            </Modal>
+          </div>
+        </div>
+
+        <div className="mt-7 flex items-center justify-between border-t border-stone-100 pt-4 pb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="h-2 w-2 rounded-full bg-[#8BA88E] shadow-[0_0_8px_rgba(139,168,142,0.6)] animate-pulse" />
+            <span className="text-xs leading-tight font-bold uppercase tracking-widest text-stone-400">Active Now</span>
+          </div>
+          <button className="rounded-full p-2.5 text-stone-300 transition-all hover:bg-stone-50 hover:text-stone-500">
+            <MoreHorizontal className="h-6 w-6" />
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { http } from "@/lib";
 import { LoginPayload, RegisterPayload } from "@/types";
+import { clearRoleSession } from "@/lib/roleBasedAuth";
 
 /**
  * Authentication Service
@@ -18,9 +19,5 @@ export const getProfile = async () => {
 };
 
 export const logout = async () => {
-  // Clear local storage
-  if (typeof window !== "undefined") {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-  }
+  clearRoleSession("Customer");
 };

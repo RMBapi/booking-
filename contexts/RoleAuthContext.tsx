@@ -1,102 +1,97 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import { User, UserRole } from "@/types";
-import { 
-  getRoleSession, 
-  saveRoleSession, 
-  clearRoleSession, 
+import {
+  getRoleSession,
+  saveRoleSession,
+  clearRoleSession,
   clearAllRoleSessions,
   getActiveRoleSessions,
-  migrateToRoleBasedStorage
+  migrateToRoleBasedStorage,
 } from "@/lib/roleBasedAuth";
 
+export interface RoleSession {
+  user: User | null;
+  token: string | null;
+  businessSiteSlug: string | null;
+}
+
 interface RoleAuthContextType {
-  // Get session for specific role
-  getSession: (role: UserRole) => { user: User | null; token: string | null };
-  
-  // Set session for specific role
-  setSession: (role: UserRole, token: string, user: User, additionalData?: Record<string, string>) => void;
-  
-  // Clear session for specific role
+  getSession: (role: UserRole) => RoleSession;
+  setSession: (
+    role: UserRole,
+    token: string,
+    user: User,
+    additionalData?: Record<string, string>,
+  ) => void;
   logout: (role: UserRole) => void;
-  
-  // Clear all role sessions
   logoutAll: () => void;
-  
-  // Check if logged in as specific role
   isLoggedInAs: (role: UserRole) => boolean;
-  
-  // Get all active roles
   activeRoles: UserRole[];
-  
-  // Loading state
   isLoading: boolean;
 }
 
-const RoleAuthContext = createContext<RoleAuthContextType | undefined>(undefined);
+const RoleAuthContext = createContext<RoleAuthContextType | undefined>(
+  undefined,
+);
 
-export const RoleAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const RoleAuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeRoles, setActiveRoles] = useState<UserRole[]>([]);
 
-  // Initialize - migrate old storage and load active roles
   useEffect(() => {
-    // Only run on client side
     if (typeof window === "undefined") {
       setIsLoading(false);
       return;
     }
-    
-    // Migrate old single-session storage to role-based storage
     migrateToRoleBasedStorage();
-    
-    // Load active role sessions
-    const active = getActiveRoleSessions();
-    setActiveRoles(active);
-    
+    setActiveRoles(getActiveRoleSessions());
     setIsLoading(false);
   }, []);
 
-  // Get session for a specific role
-  const getSession = useCallback((role: UserRole) => {
-    const { token, user } = getRoleSession(role);
-    return { token, user };
+  const getSession = useCallback((role: UserRole): RoleSession => {
+    const { token, user, additionalData } = getRoleSession(role);
+    return {
+      token,
+      user,
+      businessSiteSlug: additionalData?.businessSiteSlug ?? null,
+    };
   }, []);
 
-  // Set session for a specific role
-  const setSession = useCallback((
-    role: UserRole, 
-    token: string, 
-    user: User, 
-    additionalData?: Record<string, string>
-  ) => {
-    saveRoleSession(role, token, user, additionalData);
-    
-    // Update active roles
-    setActiveRoles(prev => {
-      if (!prev.includes(role)) {
-        return [...prev, role];
-      }
-      return prev;
-    });
-  }, []);
+  const setSession = useCallback(
+    (
+      role: UserRole,
+      token: string,
+      user: User,
+      additionalData?: Record<string, string>,
+    ) => {
+      saveRoleSession(role, token, user, additionalData);
+      setActiveRoles((prev) =>
+        prev.includes(role) ? prev : [...prev, role],
+      );
+    },
+    [],
+  );
 
-  // Clear session for a specific role
   const logout = useCallback((role: UserRole) => {
     clearRoleSession(role);
-    
-    // Update active roles
-    setActiveRoles(prev => prev.filter(r => r !== role));
+    setActiveRoles((prev) => prev.filter((r) => r !== role));
   }, []);
 
-  // Clear all role sessions
   const logoutAll = useCallback(() => {
     clearAllRoleSessions();
     setActiveRoles([]);
   }, []);
 
-  // Check if logged in as specific role
   const isLoggedInAs = useCallback((role: UserRole): boolean => {
     const { token, user } = getRoleSession(role);
     return !!(token && user);

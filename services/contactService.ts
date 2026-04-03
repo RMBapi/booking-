@@ -1,31 +1,18 @@
 import { http } from "@/lib";
-import { CreateContactPayload, PaginationParams } from "@/types";
+import { CreateContactPayload } from "@/types";
 
 /**
- * Contact Service
- * Used for non-logged-in users to submit booking requests
+ * Contact Service — for non-logged-in users submitting booking requests.
  */
 
 export const createContact = async (
   payload: CreateContactPayload,
-  businessSlug?: string
+  businessSlug?: string,
+  businessId?: string,
 ) => {
   const url = businessSlug
     ? `/contact?businessSlug=${businessSlug}`
     : "/contact";
-  return http.post(url, payload);
-};
-
-export const getAllContacts = async (
-  params?: PaginationParams,
-  businessId?: string
-) => {
-  return http.get("/contact", {
-    params,
-    headers: businessId ? { "x-business-id": businessId } : undefined,
-  });
-};
-
-export const getContactById = async (id: string) => {
-  return http.get(`/contact/${id}`);
+  const headers = businessId ? { "x-business-id": businessId } : undefined;
+  return http.post(url, payload, headers ? { headers } : undefined);
 };

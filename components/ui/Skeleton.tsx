@@ -35,7 +35,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       className={cn(
-        "bg-gray-200 dark:bg-gray-700",
+        "bg-gray-200",
         variantStyles[variant],
         animationStyles[animation],
         className
@@ -45,7 +45,6 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   );
 };
 
-// Compound components for common patterns
 export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
   lines = 3,
   className,
@@ -65,34 +64,10 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 
 export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) => {
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-gray-700 p-6", className)}>
+    <div className={cn("rounded-xl border border-gray-200 p-6", className)}>
       <Skeleton variant="rectangular" className="h-48 mb-4" />
       <Skeleton variant="text" className="h-6 w-3/4 mb-2" />
       <SkeletonText lines={2} />
-    </div>
-  );
-};
-
-export const SkeletonTable: React.FC<{ rows?: number; columns?: number }> = ({
-  rows = 5,
-  columns = 4,
-}) => {
-  return (
-    <div className="space-y-3">
-      {/* Header */}
-      <div className="flex gap-4">
-        {Array.from({ length: columns }).map((_, i) => (
-          <Skeleton key={i} variant="text" className="h-5 flex-1" />
-        ))}
-      </div>
-      {/* Rows */}
-      {Array.from({ length: rows }).map((_, rowIndex) => (
-        <div key={rowIndex} className="flex gap-4">
-          {Array.from({ length: columns }).map((_, colIndex) => (
-            <Skeleton key={colIndex} variant="text" className="h-4 flex-1" />
-          ))}
-        </div>
-      ))}
     </div>
   );
 };

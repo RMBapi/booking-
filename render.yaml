@@ -1,0 +1,16 @@
+# Optional: Render Blueprint — https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: booking-api
+    runtime: node
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm run start:prod
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: 3000

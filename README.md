@@ -26,22 +26,21 @@ npm install
 
 ### 2. Environment Variables
 
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (you can copy `.env.example`):
 
 ```env
 # Database
 DATABASE_URL="postgresql://user:password@localhost:5432/booking_db?schema=public"
 
-# JWT Configuration
-JWT_SECRET="your-super-secret-jwt-key-change-this-in-production"
-JWT_EXPIRES_IN="7d"
+# JWT
+JWT_SECRET="replace-with-strong-secret"
 
-# Server Configuration
+# Server
 PORT=3000
 NODE_ENV=development
 ```
 
-**⚠️ Important:** Change `JWT_SECRET` to a strong random string in production!
+**⚠️ Important:** `JWT_SECRET` is required in production and must be a strong random string.
 
 ### 4. Database Setup
 

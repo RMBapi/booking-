@@ -9,12 +9,17 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
+  const isProd = process.env.NODE_ENV === 'production';
 
   try {
-    logger.log('Starting application...');
+    if (!isProd) {
+      logger.log('Starting application...');
+    }
 
     const app = await NestFactory.create(AppModule, {
-      logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+      logger: isProd
+        ? ['error', 'warn']
+        : ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
     // Enable CORS if needed
@@ -38,42 +43,42 @@ async function bootstrap() {
       }),
     );
 
-    // Swagger Configuration
-    const config = new DocumentBuilder()
-      .setTitle('Booking Management System API')
-      .setDescription('API documentation for the Booking Management System')
-      .setVersion('1.0')
-      .setContact('Support', '', 'support@example.com')
-      .addTag('Authentication', 'User registration and login endpoints')
-      .addTag('User', 'User profile and personal data endpoints')
-      .addTag('Business', 'Business management endpoints')
-      .addTag('Service', 'Service management endpoints')
-      .addTag('Service Provider', 'Service provider management endpoints')
-      .addTag('Scheduler', 'Scheduler and time slot management endpoints')
-      .addTag(
-        'Contact',
-        'Contact management endpoints (for non-logged-in users)',
-      )
-      .addTag('Booking', 'Booking management endpoints')
-      .addTag('Admin', 'Super Admin only endpoints')
-      .addBearerAuth(
-        {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          name: 'JWT',
-          description:
-            'Enter JWT token. You can get this by registering or logging in via /auth/register or /auth/login endpoints. Format: Bearer {token} or just paste the token directly.',
-          in: 'header',
-        },
-        'JWT-auth',
-      )
-      .addServer('http://localhost:3000', 'Development server')
-      .addServer('https://api.example.com', 'Production server')
-      .build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api', app, document, {
-      customCss: `
+    if (!isProd) {
+      const config = new DocumentBuilder()
+        .setTitle('Booking Management System API')
+        .setDescription('API documentation for the Booking Management System')
+        .setVersion('1.0')
+        .setContact('Support', '', 'support@example.com')
+        .addTag('Authentication', 'User registration and login endpoints')
+        .addTag('User', 'User profile and personal data endpoints')
+        .addTag('Business', 'Business management endpoints')
+        .addTag('Service', 'Service management endpoints')
+        .addTag('Service Provider', 'Service provider management endpoints')
+        .addTag('Scheduler', 'Scheduler and time slot management endpoints')
+        .addTag(
+          'Contact',
+          'Contact management endpoints (for non-logged-in users)',
+        )
+        .addTag('Booking', 'Booking management endpoints')
+        .addTag('Admin', 'Super Admin only endpoints')
+        .addBearerAuth(
+          {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            name: 'JWT',
+            description:
+              'Enter JWT token. You can get this by registering or logging in via /auth/register or /auth/login endpoints. Format: Bearer {token} or just paste the token directly.',
+            in: 'header',
+          },
+          'JWT-auth',
+        )
+        .addServer('http://localhost:3000', 'Development server')
+        .addServer('https://api.example.com', 'Production server')
+        .build();
+      const document = SwaggerModule.createDocument(app, config);
+      SwaggerModule.setup('api', app, document, {
+        customCss: `
         .swagger-ui .opblock .opblock-summary-description {
           word-wrap: break-word;
           white-space: normal;
@@ -117,24 +122,30 @@ async function bootstrap() {
           border-radius: 4px;
         }
       `,
-      customSiteTitle: 'Booking Management System API',
-      swaggerOptions: {
-        persistAuthorization: true,
-        displayRequestDuration: true,
-        docExpansion: 'none',
-        filter: true,
-        showRequestHeaders: true,
-      },
-    });
+        customSiteTitle: 'Booking Management System API',
+        swaggerOptions: {
+          persistAuthorization: true,
+          displayRequestDuration: true,
+          docExpansion: 'none',
+          filter: true,
+          showRequestHeaders: true,
+        },
+      });
+    }
 
     const port = process.env.PORT ?? 3000;
     await app.listen(port);
 
-    logger.log(`Application is running on: http://localhost:${port}`);
-    logger.log(`Swagger documentation available at: http://localhost:${port}/api`);
-    logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    if (!isProd) {
+      logger.log(`Application is running on: http://localhost:${port}`);
+      logger.log(
+        `Swagger documentation available at: http://localhost:${port}/api`,
+      );
+      logger.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    }
   } catch (error) {
-    logger.error(`Failed to start application: ${error.message}`, error.stack);
+    const err = error as Error;
+    logger.error(`Failed to start application: ${err.message}`, err.stack);
     process.exit(1);
   }
 }

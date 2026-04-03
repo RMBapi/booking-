@@ -15,6 +15,13 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Public()
+  @Get('health')
+  @ApiExcludeEndpoint()
+  health(): { status: string } {
+    return { status: 'ok' };
+  }
+
   @Get('dashboard')
   @UseGuards(JwtAuthGuard)
   @ApiExcludeEndpoint()

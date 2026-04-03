@@ -1,6 +1,11 @@
-import { Injectable, ConflictException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { UserRole } from '@prisma/client';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class AdminService {
@@ -14,7 +19,7 @@ export class AdminService {
     try {
       const businessOwners = await this.prisma.user.findMany({
         where: {
-          roles: { has: UserRole.Business_owner },
+          userRoles: { some: { role: { name: 'Business_owner' } } },
           deletedAt: null,
         },
         select: {
@@ -23,38 +28,32 @@ export class AdminService {
           lastName: true,
           email: true,
           phone: true,
-          roles: true,
           isActive: true,
           createdAt: true,
+          userRoles: { select: { role: { select: { name: true } } } },
           userBusinesses: {
             include: {
               business: {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  email: true,
-                  phone: true,
-                },
+                select: { id: true, name: true, slug: true, email: true, phone: true },
               },
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: { createdAt: 'desc' },
       });
 
-      this.logger.log(`Retrieved ${businessOwners.length} business owners`);
-      return businessOwners;
+      const result = businessOwners.map((u) => ({
+        ...u,
+        roles: u.userRoles.map((ur) => ur.role.name),
+        userRoles: undefined,
+      }));
+
+      this.logger.log(`Retrieved ${result.length} business owners`);
+      return result;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Failed to fetch business owners: ${errorMessage}`,
-        errorStack,
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack  = error instanceof Error ? error.stack  : undefined;
+      this.logger.error(`Failed to fetch business owners: ${errorMessage}`, errorStack);
       throw error;
     }
   }
@@ -66,7 +65,7 @@ export class AdminService {
       const businessOwner = await this.prisma.user.findFirst({
         where: {
           id,
-          roles: { has: UserRole.Business_owner },
+          userRoles: { some: { role: { name: 'Business_owner' } } },
           deletedAt: null,
         },
         select: {
@@ -75,105 +74,105 @@ export class AdminService {
           lastName: true,
           email: true,
           phone: true,
-          roles: true,
           isActive: true,
           createdAt: true,
-          userBusinesses: {
-            include: {
-              business: true,
-            },
-          },
+          userRoles: { select: { role: { select: { name: true } } } },
+          userBusinesses: { include: { business: true } },
         },
       });
 
       if (!businessOwner) {
         this.logger.warn(`Business owner not found with ID: ${id}`);
-      } else {
-        this.logger.log(`Business owner found: ${businessOwner.email}`);
+        return null;
       }
 
-      return businessOwner;
+      return {
+        ...businessOwner,
+        roles: businessOwner.userRoles.map((ur) => ur.role.name),
+        userRoles: undefined,
+      };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Failed to fetch business owner ${id}: ${errorMessage}`,
-        errorStack,
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack  = error instanceof Error ? error.stack  : undefined;
+      this.logger.error(`Failed to fetch business owner ${id}: ${errorMessage}`, errorStack);
       throw error;
     }
   }
 
-  async updateUser(id: string, updateData: Partial<{
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    isActive: boolean;
-    roles: UserRole[];
-  }>) {
+  async updateUser(id: string, dto: UpdateUserDto) {
     this.logger.log(`Updating user with ID: ${id}`);
 
     try {
-      const user = await this.prisma.user.findFirst({
-        where: {
-          id,
-          deletedAt: null,
-        },
-      });
-
+      const user = await this.prisma.user.findFirst({ where: { id, deletedAt: null } });
       if (!user) {
-        this.logger.warn(`User not found with ID: ${id}`);
-        throw new ConflictException('User not found');
+        throw new NotFoundException('User not found');
       }
 
-      // If email is being updated, check if it's already in use
-      if (updateData.email && updateData.email !== user.email) {
-        const existingUser = await this.prisma.user.findFirst({
-          where: {
-            email: updateData.email,
-            id: { not: id },
-            deletedAt: null,
+      if (dto.email && dto.email !== user.email) {
+        const conflict = await this.prisma.user.findFirst({
+          where: { email: dto.email, id: { not: id }, deletedAt: null },
+        });
+        if (conflict) throw new ConflictException('Email is already in use');
+      }
+
+      // Resolve role name strings to Role IDs for the join table
+      let roleIds: string[] | undefined;
+      if (dto.roles !== undefined) {
+        const roles = await this.prisma.role.findMany({
+          where: { name: { in: dto.roles } },
+          select: { id: true, name: true },
+        });
+
+        const foundNames = new Set(roles.map((r) => r.name));
+        const missing = dto.roles.filter((n) => !foundNames.has(n));
+        if (missing.length) {
+          throw new ConflictException(`Unknown role(s): ${missing.join(', ')}`);
+        }
+        roleIds = roles.map((r) => r.id);
+      }
+
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const { roles: _roles, ...scalarData } = dto;
+
+        const updatedUser = await tx.user.update({
+          where: { id },
+          data: scalarData,
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            isActive: true,
+            createdAt: true,
+            updatedAt: true,
+            userRoles: { select: { role: { select: { name: true } } } },
           },
         });
 
-        if (existingUser) {
-          this.logger.warn(
-            `Email ${updateData.email} is already in use by another user`,
-          );
-          throw new ConflictException('Email is already in use');
+        // Replace all roles if provided
+        if (roleIds !== undefined) {
+          await tx.userRole.deleteMany({ where: { userId: id } });
+          if (roleIds.length > 0) {
+            await tx.userRole.createMany({
+              data: roleIds.map((roleId) => ({ userId: id, roleId })),
+            });
+          }
         }
-      }
 
-      this.logger.log(`Updating user ${id} with data: ${JSON.stringify(updateData)}`);
-
-      const updated = await this.prisma.user.update({
-        where: { id },
-        data: updateData,
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          roles: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+        return updatedUser;
       });
 
       this.logger.log(`User ${id} updated successfully`);
-      return updated;
+      return {
+        ...updated,
+        roles: updated.userRoles.map((ur) => ur.role.name),
+        userRoles: undefined,
+      };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Failed to update user ${id}: ${errorMessage}`,
-        errorStack,
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack  = error instanceof Error ? error.stack  : undefined;
+      this.logger.error(`Failed to update user ${id}: ${errorMessage}`, errorStack);
       throw error;
     }
   }

@@ -4,26 +4,18 @@ import {
   IsString,
   IsOptional,
   IsBoolean,
-  IsEnum,
   IsArray,
+  ArrayUnique,
+  IsNotEmpty,
 } from 'class-validator';
-import { UserRole } from '@prisma/client';
 
 export class UpdateUserDto {
-  @ApiProperty({
-    description: 'First name of the user',
-    example: 'John',
-    required: false,
-  })
+  @ApiProperty({ description: 'First name of the user', example: 'John', required: false })
   @IsOptional()
   @IsString()
   firstName?: string;
 
-  @ApiProperty({
-    description: 'Last name of the user',
-    example: 'Doe',
-    required: false,
-  })
+  @ApiProperty({ description: 'Last name of the user', example: 'Doe', required: false })
   @IsOptional()
   @IsString()
   lastName?: string;
@@ -37,33 +29,28 @@ export class UpdateUserDto {
   @IsEmail()
   email?: string;
 
-  @ApiProperty({
-    description: 'Phone number',
-    example: '+1234567890',
-    required: false,
-  })
+  @ApiProperty({ description: 'Phone number', example: '+1234567890', required: false })
   @IsOptional()
   @IsString()
   phone?: string;
 
-  @ApiProperty({
-    description: 'Active status of the user',
-    example: true,
-    required: false,
-  })
+  @ApiProperty({ description: 'Active status of the user', example: true, required: false })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
   @ApiProperty({
-    description: 'User roles',
-    enum: UserRole,
-    isArray: true,
-    example: [UserRole.Customer],
+    description:
+      'Role names to assign (replaces all existing roles). ' +
+      'Use Role.name values e.g. ["Customer", "Business_owner"].',
+    type: [String],
+    example: ['Customer'],
     required: false,
   })
   @IsOptional()
   @IsArray()
-  @IsEnum(UserRole, { each: true })
-  roles?: UserRole[];
+  @ArrayUnique()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  roles?: string[];
 }

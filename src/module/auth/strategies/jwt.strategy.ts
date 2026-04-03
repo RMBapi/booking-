@@ -6,6 +6,7 @@ import { PrismaService } from '../../../database/prisma.service';
 export interface JwtPayload {
   sub: string;
   email: string;
+  /** Role name string (e.g. "Customer", "Super_Admin") — unchanged externally */
   activeRole: string;
 }
 
@@ -28,8 +29,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         lastName: true,
         email: true,
         phone: true,
-        roles: true,
         isActive: true,
+        // Load roles via the dynamic UserRole join table
+        userRoles: {
+          select: {
+            role: { select: { name: true } },
+          },
+        },
       },
     });
 
@@ -37,14 +43,22 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    // Verify that the user still has the active role from the token
-    if (!user.roles.includes(payload.activeRole as any)) {
+    const roleNames = user.userRoles.map((ur) => ur.role.name);
+
+    // Verify the activeRole from the token still exists for this user
+    if (!roleNames.includes(payload.activeRole)) {
       throw new UnauthorizedException('User no longer has the specified role');
     }
 
-    // Return user with activeRole attached
+    // Return shape is the same as before; activeRole is still a plain string
     return {
-      ...user,
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      isActive: user.isActive,
+      roles: roleNames,           // string[] of all role names for this user
       activeRole: payload.activeRole,
     };
   }

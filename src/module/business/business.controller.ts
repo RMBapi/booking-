@@ -10,7 +10,12 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { BusinessService } from './business.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
@@ -21,7 +26,10 @@ import { plainToInstance } from 'class-transformer';
 import { BusinessResponseDto } from './dto/response/business-response.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
-import { AddBusinessOwnerDto, AddBusinessOwnerByEmailDto } from './dto/add-business-owner.dto';
+import {
+  AddBusinessOwnerDto,
+  AddBusinessOwnerByEmailDto,
+} from './dto/add-business-owner.dto';
 import { BusinessOwnerResponseDto } from './dto/response/business-owner-response.dto';
 import { ServiceResponseDto } from '../service/dto/response/service-response.dto';
 import { GetAllServiceDto } from '../service/dto/response/get-all-service.dto';
@@ -43,13 +51,9 @@ export class BusinessController {
   async findAll(@Query() queryDto: BusinessQueryDto) {
     const result = await this.businessService.findAll(queryDto);
 
-    const transformedData = plainToInstance(
-      BusinessResponseDto,
-      result.data,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    const transformedData = plainToInstance(BusinessResponseDto, result.data, {
+      excludeExtraneousValues: true,
+    });
 
     return {
       success: true,
@@ -132,7 +136,8 @@ export class BusinessController {
   @Public()
   @Get('slug/:slug/services')
   @ApiOperation({
-    summary: 'Get public services for a business by slug (Public - no authentication required)',
+    summary:
+      'Get public services for a business by slug (Public - no authentication required)',
     description: `Get all active services for a business using the business slug. This endpoint is public and does not require authentication.
 
 **Use Cases:**
@@ -167,7 +172,10 @@ Returns paginated list of active services with business information.`,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
-    console.log('✅ Route handler called - findPublicServicesBySlug with slug:', slug);
+    console.log(
+      '✅ Route handler called - findPublicServicesBySlug with slug:',
+      slug,
+    );
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 100;
 
@@ -188,9 +196,28 @@ Returns paginated list of active services with business information.`,
       };
     };
 
-    const normalizedData = result.data.map((service) =>
-      normalizeService(service),
-    );
+    const normalizedData = result.data.map((service) => {
+      const normalizedService = normalizeService(service);
+      const providers = (normalizedService.serviceProviders || []).map(
+        (provider: any) => ({
+          id: provider.id,
+          userId: provider.userId,
+          firstName: provider.user?.firstName,
+          lastName: provider.user?.lastName,
+          description: provider.description ?? null,
+          impUrl: provider.impUrl ?? null,
+        }),
+      );
+      const showProvider =
+        Boolean(normalizedService.allowCustomerChooseProvider) &&
+        providers.length > 0;
+
+      return {
+        ...normalizedService,
+        showProvider,
+        providers: showProvider ? providers : [],
+      };
+    });
 
     const transformedData = plainToInstance(
       ServiceResponseDto,
@@ -213,6 +240,47 @@ Returns paginated list of active services with business information.`,
       timestamp: new Date().toISOString(),
       data: dataWithBusinessId,
       meta: result.meta,
+    };
+  }
+
+  @Public()
+  @Get('slug/:slug/services/:serviceId/providers')
+  @ApiOperation({
+    summary: 'Get public providers for a service by business slug',
+    description: `Returns the providers attached to a service using the business slug.
+
+**Use Cases:**
+- Service details page (show provider selection)
+- Booking flow (choose provider before slots)
+
+**Important Notes:**
+- Public endpoint (no authentication required)
+- Providers are returned only if the service allows customer selection
+- Service must be Active and isActive = true`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Providers fetched successfully',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Business or service not found',
+  })
+  async findPublicServiceProviders(
+    @Param('slug') slug: string,
+    @Param('serviceId') serviceId: string,
+  ) {
+    const result = await this.businessService.findPublicServiceProvidersBySlug(
+      slug,
+      serviceId,
+    );
+
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: 'Providers fetched successfully',
+      timestamp: new Date().toISOString(),
+      data: result,
     };
   }
 
@@ -367,8 +435,7 @@ Access via: \`GET /business/slug/acme-salon-spa\``,
 
   @Post(':id/owners/by-email')
   @ApiOperation({
-    summary:
-      'Add an owner to a business by email (Business Owner only)',
+    summary: 'Add an owner to a business by email (Business Owner only)',
   })
   @ApiResponse({
     status: 201,
@@ -406,7 +473,9 @@ Access via: \`GET /business/slug/acme-salon-spa\``,
 
   @Delete(':id/owners/:userId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Remove an owner from a business (Business Owner only)' })
+  @ApiOperation({
+    summary: 'Remove an owner from a business (Business Owner only)',
+  })
   @ApiResponse({
     status: 200,
     description: 'Business owner removed successfully',

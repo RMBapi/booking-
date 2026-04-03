@@ -75,13 +75,14 @@ export class AuthController {
       '**Request Body:**\n' +
       '• `email` (required) - User\'s email\n' +
       '• `password` (required) - User\'s password\n' +
-      '• `role` (required) - User role (must match one of user\'s roles)\n\n' +
+      '• `role` (optional) - User role context. Required for `Customer`; optional for other roles\n' +
+      '• `businessSiteSlug` (required when role is `Customer`) - Site scope for customer login\n\n' +
       '**Response:** Returns JWT access token and user information. Token expires in 7 days.\n\n' +
       '**Important Notes:**\n' +
       '• User must be active (isActive === true)\n' +
       '• User must not be soft-deleted\n' +
       '• Password is verified against hashed password in database\n' +
-      '• Role must match one of the user\'s assigned roles',
+      '• If role is omitted, backend auto-selects a default non-customer role from assigned roles',
   })
   @ApiResponse({
     status: 200,
@@ -90,7 +91,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 401,
-    description: 'Unauthorized - Invalid email, password, or role',
+    description: 'Unauthorized - Invalid email, password, role, or customer site scope',
   })
   @ApiResponse({
     status: 400,

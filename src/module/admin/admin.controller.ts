@@ -15,22 +15,22 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { PermissionsGuard } from '../permissions/guards/permissions.guard';
+import { Permissions } from '../permissions/decorators/permissions.decorator';
+import { Permission } from '../permissions/permissions.constants';
 import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
 @Controller('admin')
-@UseGuards(RolesGuard)
-@Roles(UserRole.Super_Admin)
+@UseGuards(PermissionsGuard)
 export class AdminController {
   private readonly logger = new Logger(AdminController.name);
 
   constructor(private readonly adminService: AdminService) {}
 
   @Get('business-owners')
+  @Permissions(Permission.ADMIN_BUSINESS_OWNER_LIST)
   @ApiOperation({ summary: 'Get all business owners (Super Admin only)' })
   @ApiResponse({
     status: 200,
@@ -48,6 +48,7 @@ export class AdminController {
   }
 
   @Get('business-owner/:id')
+  @Permissions(Permission.ADMIN_BUSINESS_OWNER_READ)
   @ApiOperation({ summary: 'Get a business owner by ID (Super Admin only)' })
   @ApiResponse({
     status: 200,
@@ -65,6 +66,7 @@ export class AdminController {
   }
 
   @Patch('user/:id')
+  @Permissions(Permission.USER_UPDATE)
   @ApiOperation({
     summary: 'Update user details (Super Admin only)',
     description: `Update any user's information including firstName, lastName, email, phone, isActive status, and roles.

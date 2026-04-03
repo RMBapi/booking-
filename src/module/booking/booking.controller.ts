@@ -11,7 +11,12 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { BookingService } from './booking.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
@@ -46,13 +51,9 @@ export class BookingController {
   ) {
     const result = await this.bookingService.findAll(queryDto, businessId);
 
-    const transformedData = plainToInstance(
-      BookingResponseDto,
-      result.data,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
+    const transformedData = plainToInstance(BookingResponseDto, result.data, {
+      excludeExtraneousValues: true,
+    });
 
     return {
       success: true,
@@ -67,13 +68,20 @@ export class BookingController {
   @Post()
   @ApiOperation({
     summary: 'Create a new booking (userId auto-filled from token)',
-    description: 
+    description:
       'Create a new booking for a logged-in user. The userId is automatically filled from the JWT token.\n\n' +
       '**Authentication:** Requires JWT token. userId is automatically extracted.\n\n' +
       '**Business Context:** Provide businessId via `x-business-id` header OR `businessSlug` query parameter.\n\n' +
       '**Required Fields:**\n' +
       '- `serviceId` - The service being booked\n' +
       '- `bookingTime` - Object with start/end times (ISO 8601 format)\n\n' +
+      '**Provider Selection Rules:**\n' +
+      '- If service has `showProvider: true`, `serviceProviderId` is required\n' +
+      '- If service has `showProvider: false`, provider is ignored during booking\n\n' +
+      '**Capacity Rules:**\n' +
+      '- Slot capacity comes from scheduler `bookingsPerSlot`\n' +
+      '- When `showProvider: true`, capacity is calculated per provider\n' +
+      '- When `showProvider: false`, capacity is calculated at service level\n\n' +
       '**Optional Fields:**\n' +
       '- `serviceProviderId` - Specific service provider\n' +
       '- `status` - Booking status (defaults to "Pending")\n' +
@@ -107,7 +115,9 @@ export class BookingController {
     // Auto-fill userId from token if not provided
     if (!createBookingDto.userId) {
       if (!user?.id) {
-        throw new BadRequestException('User ID is required. Please ensure you are authenticated.');
+        throw new BadRequestException(
+          'User ID is required. Please ensure you are authenticated.',
+        );
       }
       createBookingDto.userId = user.id;
     }
@@ -123,7 +133,10 @@ export class BookingController {
       );
     }
 
-    const booking = await this.bookingService.create(createBookingDto, resolvedBusinessId);
+    const booking = await this.bookingService.create(
+      createBookingDto,
+      resolvedBusinessId,
+    );
     return {
       success: true,
       statusCode: HttpStatus.CREATED,
@@ -142,10 +155,7 @@ export class BookingController {
     description: 'Booking fetched successfully',
     type: GetSingleBookingDto,
   })
-  async findOne(
-    @Param('id') id: string,
-    @BusinessId() businessId: string,
-  ) {
+  async findOne(@Param('id') id: string, @BusinessId() businessId: string) {
     const booking = await this.bookingService.findOne(id, businessId);
     return {
       success: true,
@@ -170,7 +180,11 @@ export class BookingController {
     @Body() updateBookingDto: UpdateBookingDto,
     @BusinessId() businessId: string,
   ) {
-    const booking = await this.bookingService.update(id, updateBookingDto, businessId);
+    const booking = await this.bookingService.update(
+      id,
+      updateBookingDto,
+      businessId,
+    );
     return {
       success: true,
       statusCode: HttpStatus.OK,
@@ -195,7 +209,11 @@ export class BookingController {
     @Body('cancellationReason') cancellationReason: string,
     @BusinessId() businessId: string,
   ) {
-    const booking = await this.bookingService.cancel(id, cancellationReason, businessId);
+    const booking = await this.bookingService.cancel(
+      id,
+      cancellationReason,
+      businessId,
+    );
     return {
       success: true,
       statusCode: HttpStatus.OK,

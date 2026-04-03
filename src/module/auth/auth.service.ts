@@ -26,7 +26,6 @@ export class AuthService {
     );
 
     try {
-      // Prevent Super_Admin self-registration for security
       if (registerDto.role === 'Super_Admin') {
         this.logger.warn(
           `Registration blocked: Attempted Super_Admin self-registration for ${registerDto.email}`,
@@ -36,44 +35,41 @@ export class AuthService {
         );
       }
 
-      // Check if a user already exists with this email AND role
+      // Resolve the Role entity first (validates the role exists in DB)
+      const roleEntity = await this.prisma.role.findUnique({
+        where: { name: registerDto.role },
+      });
+      if (!roleEntity) {
+        throw new ConflictException(`Role '${registerDto.role}' does not exist`);
+      }
+
+      // Check if this email+role combination already exists (via UserRole join)
       this.logger.debug(
-        `Checking for existing user with email: ${registerDto.email} and role: ${registerDto.role}`,
+        `Checking existing user: email=${registerDto.email}, role=${registerDto.role}`,
       );
       const existingUserWithRole = await this.prisma.user.findFirst({
         where: {
           email: registerDto.email,
-          roles: {
-            has: registerDto.role,
-          },
           deletedAt: null,
+          userRoles: { some: { roleId: roleEntity.id } },
         },
       });
 
       if (existingUserWithRole) {
         this.logger.warn(
-          `Registration failed: Email ${registerDto.email} already registered with role ${registerDto.role}`,
+          `Registration failed: ${registerDto.email} already registered with role ${registerDto.role}`,
         );
         throw new ConflictException(
           `Email already registered with the role ${registerDto.role}`,
         );
       }
 
-      // Hash password
-      this.logger.debug('Hashing password');
       const saltRounds = 10;
       const passwordHash = await bcrypt.hash(registerDto.password, saltRounds);
 
-      // Determine isActive based on role
-      // Customers are active by default
-      // Business_owners and Service_Providers require activation
+      // Customers are immediately active; others require activation
       const isActive = registerDto.role === 'Customer';
-      this.logger.debug(
-        `Setting isActive to ${isActive} for role: ${registerDto.role}`,
-      );
 
-      // Create / connect user depending on role
-      this.logger.debug('Creating user in database');
       const user = await this.prisma.$transaction(async (tx) => {
         const baseUser = await tx.user.create({
           data: {
@@ -82,37 +78,36 @@ export class AuthService {
             email: registerDto.email,
             phone: registerDto.phone,
             passwordHash,
-            roles: [registerDto.role],
             isActive,
+            // Note: User.roles (legacy enum array) intentionally not written here.
+            // All role state is stored in the user_roles join table.
           },
           select: {
             id: true,
             firstName: true,
             lastName: true,
             email: true,
-            roles: true,
           },
         });
 
-        // For customers, also create mapping to a business site so their
-        // account is scoped to that site.
+        // Create the UserRole join row (dynamic RBAC)
+        await tx.userRole.create({
+          data: { userId: baseUser.id, roleId: roleEntity.id },
+        });
+
+        // For Customers, scope their account to the given business site
         if (registerDto.role === 'Customer') {
           if (!registerDto.businessSiteSlug) {
             this.logger.warn(
-              `Registration failed: businessSiteSlug is required for Customer role (${registerDto.email})`,
+              `Registration failed: businessSiteSlug required for Customer (${registerDto.email})`,
             );
             throw new ConflictException(
               'businessSiteSlug is required when registering a Customer',
             );
           }
 
-          // First, check if the business exists with this slug
-          this.logger.debug(`Looking up business with slug: ${registerDto.businessSiteSlug}`);
           const business = await tx.business.findFirst({
-            where: {
-              slug: registerDto.businessSiteSlug,
-              deletedAt: null,
-            },
+            where: { slug: registerDto.businessSiteSlug, deletedAt: null },
             select: { id: true, name: true, slug: true },
           });
 
@@ -120,28 +115,15 @@ export class AuthService {
             this.logger.warn(
               `Registration failed: Business not found for slug ${registerDto.businessSiteSlug}`,
             );
-            throw new ConflictException(
-              'Business not found for provided slug',
-            );
+            throw new ConflictException('Business not found for provided slug');
           }
 
-          this.logger.debug(`Found business: ${business.id} (${business.name})`);
-
-          // Check if BusinessSite already exists for this business
           let businessSite = await tx.businessSite.findFirst({
-            where: {
-              businessId: business.id,
-              slug: registerDto.businessSiteSlug,
-              deletedAt: null,
-            },
+            where: { businessId: business.id, slug: registerDto.businessSiteSlug, deletedAt: null },
             select: { id: true },
           });
 
-          // If BusinessSite doesn't exist, create it automatically
           if (!businessSite) {
-            this.logger.debug(
-              `BusinessSite not found for slug ${registerDto.businessSiteSlug}, creating automatically...`,
-            );
             businessSite = await tx.businessSite.create({
               data: {
                 businessId: business.id,
@@ -151,21 +133,11 @@ export class AuthService {
               select: { id: true },
             });
             this.logger.debug(`Created BusinessSite: ${businessSite.id}`);
-          } else {
-            this.logger.debug(`Using existing BusinessSite: ${businessSite.id}`);
           }
 
-          // Link customer to the business site
           await tx.customerBusinessSite.create({
-            data: {
-              userId: baseUser.id,
-              businessSiteId: businessSite.id,
-            },
+            data: { userId: baseUser.id, businessSiteId: businessSite.id },
           });
-
-          this.logger.debug(
-            `Customer ${baseUser.id} linked to BusinessSite ${businessSite.id}`,
-          );
         }
 
         return baseUser;
@@ -173,15 +145,12 @@ export class AuthService {
 
       this.logger.log(`User created successfully with ID: ${user.id}`);
 
-      // Generate JWT token
-      this.logger.debug('Generating JWT token');
       const accessToken = this.jwtService.sign({
         sub: user.id,
         email: user.email,
         activeRole: registerDto.role,
       });
 
-      this.logger.log(`Registration successful for user: ${user.email}`);
       return {
         accessToken,
         user: {
@@ -189,13 +158,13 @@ export class AuthService {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
+          roles: [registerDto.role],
           activeRole: registerDto.role,
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack  = error instanceof Error ? error.stack  : undefined;
       this.logger.error(
         `Registration failed for ${registerDto.email}: ${errorMessage}`,
         errorStack,
@@ -206,104 +175,113 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     this.logger.log(
-      `Login attempt for email: ${loginDto.email}, role: ${loginDto.role}`,
+      `Login attempt for email: ${loginDto.email}, role: ${loginDto.role ?? 'auto-select'}`,
     );
 
     try {
-      // Find user by email AND role.
-      // For Customers we will also enforce that they belong to the given business site.
-      this.logger.debug(
-        `Looking up user with email: ${loginDto.email} and role: ${loginDto.role}`,
-      );
-
+      // Find user by email and resolve assigned roles via UserRole join table
       const user = await this.prisma.user.findFirst({
         where: {
           email: loginDto.email,
-          roles: {
-            has: loginDto.role,
-          },
+          deletedAt: null,
         },
         select: {
           id: true,
           email: true,
           passwordHash: true,
-          roles: true,
           firstName: true,
           lastName: true,
           isActive: true,
           deletedAt: true,
+          userRoles: {
+            select: {
+              role: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
         },
       });
 
       if (!user) {
         this.logger.warn(
-          `Login failed: User not found with email: ${loginDto.email}`,
+          `Login failed: No user with email=${loginDto.email}`,
         );
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      // If role is Customer, check that the user is attached to the given business site slug
-      if (loginDto.role === 'Customer') {
-        if (!loginDto.businessSiteSlug) {
+      const roleNames = user.userRoles.map((ur) => ur.role.name);
+
+      let selectedRole: string;
+      if (loginDto.role) {
+        if (!roleNames.includes(loginDto.role)) {
           this.logger.warn(
-            `Login failed: businessSiteSlug is required for Customer login (${loginDto.email})`,
+            `Login failed: User ${loginDto.email} attempted unauthorized role ${loginDto.role}`,
           );
+          throw new UnauthorizedException('Invalid credentials');
+        }
+        selectedRole = loginDto.role;
+      } else {
+        const nonCustomerRoles = roleNames
+          .filter((roleName) => roleName !== 'Customer')
+          .sort();
+
+        if (!nonCustomerRoles.length) {
+          this.logger.warn(
+            `Login failed: Customer login requires explicit role and businessSiteSlug (${loginDto.email})`,
+          );
+          throw new UnauthorizedException('Invalid credentials');
+        }
+
+        selectedRole = nonCustomerRoles[0];
+      }
+
+      // Customers must belong to the requested business site
+      if (selectedRole === 'Customer') {
+        if (!loginDto.businessSiteSlug) {
           throw new UnauthorizedException('Invalid credentials');
         }
 
         const customerSite = await this.prisma.customerBusinessSite.findFirst({
           where: {
             userId: user.id,
-            businessSite: {
-              slug: loginDto.businessSiteSlug,
-              deletedAt: null,
-            },
+            businessSite: { slug: loginDto.businessSiteSlug, deletedAt: null },
           },
           select: { id: true },
         });
 
         if (!customerSite) {
           this.logger.warn(
-            `Login failed: Customer not associated with business site slug ${loginDto.businessSiteSlug} (${loginDto.email})`,
+            `Login failed: Customer not associated with slug ${loginDto.businessSiteSlug} (${loginDto.email})`,
           );
           throw new UnauthorizedException('Invalid credentials');
         }
       }
 
-      // Check if user is active
       if (!user.isActive) {
-        this.logger.warn(`Login failed: Account inactive for user: ${user.id}`);
         throw new UnauthorizedException('Account is inactive');
       }
 
-      // Check if user is deleted
       if (user.deletedAt) {
-        this.logger.warn(`Login failed: Account deleted for user: ${user.id}`);
         throw new UnauthorizedException('Account not found');
       }
 
-      // Verify password
-      this.logger.debug('Verifying password');
-      const isPasswordValid = await bcrypt.compare(
-        loginDto.password,
-        user.passwordHash,
-      );
-
+      const isPasswordValid = await bcrypt.compare(loginDto.password, user.passwordHash);
       if (!isPasswordValid) {
         this.logger.warn(`Login failed: Invalid password for user: ${user.id}`);
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      // Generate JWT token with activeRole
-      this.logger.debug('Generating JWT token');
       const accessToken = this.jwtService.sign({
         sub: user.id,
         email: user.email,
-        activeRole: loginDto.role,
+        activeRole: selectedRole,
       });
 
       this.logger.log(
-        `Login successful for user: ${user.email} (ID: ${user.id}) with role: ${loginDto.role}`,
+        `Login successful for user: ${user.email} (ID: ${user.id}) with role: ${selectedRole}`,
       );
       return {
         accessToken,
@@ -312,23 +290,19 @@ export class AuthService {
           firstName: user.firstName,
           lastName: user.lastName,
           email: user.email,
-          activeRole: loginDto.role,
+          roles: roleNames,
+          activeRole: selectedRole,
         },
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
-        // Don't log stack trace for expected auth failures
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        this.logger.warn(`Login failed for ${loginDto.email}: ${errorMessage}`);
-      } else {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error';
-        const errorStack = error instanceof Error ? error.stack : undefined;
-        this.logger.error(
-          `Login error for ${loginDto.email}: ${errorMessage}`,
-          errorStack,
+        this.logger.warn(
+          `Login failed for ${loginDto.email}: ${error instanceof Error ? error.message : 'Unknown'}`,
         );
+      } else {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack  = error instanceof Error ? error.stack  : undefined;
+        this.logger.error(`Login error for ${loginDto.email}: ${errorMessage}`, errorStack);
       }
       throw error;
     }
@@ -346,35 +320,23 @@ export class AuthService {
           lastName: true,
           email: true,
           phone: true,
-          roles: true,
           isActive: true,
+          userRoles: { select: { role: { select: { name: true } } } },
         },
       });
 
-      if (!user) {
-        this.logger.warn(
-          `User validation failed: User not found with ID: ${userId}`,
-        );
+      if (!user || !user.isActive) {
         throw new UnauthorizedException('User not found or inactive');
       }
 
-      if (!user.isActive) {
-        this.logger.warn(
-          `User validation failed: User inactive with ID: ${userId}`,
-        );
-        throw new UnauthorizedException('User not found or inactive');
-      }
-
-      this.logger.debug(`User validated successfully: ${user.email}`);
-      return user;
+      return {
+        ...user,
+        roles: user.userRoles.map((ur) => ur.role.name),
+      };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `User validation error for ${userId}: ${errorMessage}`,
-        errorStack,
-      );
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack  = error instanceof Error ? error.stack  : undefined;
+      this.logger.error(`User validation error for ${userId}: ${errorMessage}`, errorStack);
       throw error;
     }
   }

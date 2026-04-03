@@ -1,4 +1,11 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+/**
+ * Utility script: create (or verify) the Super Admin account.
+ * Uses the dynamic RBAC system (userRoles join table) post-migration.
+ *
+ * Run: npx ts-node scripts/create-super-admin.ts
+ */
+
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
@@ -16,105 +23,110 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function createSuperAdmin() {
-  console.log('🚀 Creating Super Admin account...\n');
+  console.log('Creating Super Admin account...\n');
 
-  const email = 'bapi@gmail.com';
-  const password = 'password';
-  const firstName = 'Super';
-  const lastName = 'Admin';
-  const phone = '+1234567890';
+  // Override defaults via env vars (avoids editing this file per environment)
+  const email = process.env.SUPER_ADMIN_EMAIL ?? 'bapi@gmail.com';
+  const password = process.env.SUPER_ADMIN_PASSWORD ?? 'password';
+  const firstName = process.env.SUPER_ADMIN_FIRST_NAME ?? 'Super';
+  const lastName = process.env.SUPER_ADMIN_LAST_NAME ?? 'Admin';
+  const phone = process.env.SUPER_ADMIN_PHONE ?? '01834284316';
+
+  console.log('Using Super Admin credentials:');
+  console.log('- Email:    ', email);
+  console.log('- FirstName:', firstName);
+  console.log('- LastName: ', lastName);
+  console.log('- Phone:    ', phone);
+  console.log('- Password: ', password ? '(set)' : '(empty)');
 
   try {
-    console.log(`Checking if Super Admin exists with email: ${email}`);
+    // Check existence via the dynamic userRoles join table
     const existing = await prisma.user.findFirst({
       where: {
-        email: email,
-        roles: {
-          has: UserRole.Super_Admin,
-        },
+        email,
+        userRoles: { some: { role: { name: 'Super_Admin' } } },
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        isActive: true,
       },
     });
 
     if (existing) {
-      console.log('⚠️  Super Admin already exists!');
-      console.log('📧 Email:', existing.email);
-      console.log('👤 Name:', existing.firstName, existing.lastName);
-      console.log('🆔 ID:', existing.id);
-      console.log('✅ Active:', existing.isActive);
-      console.log('\nTo login, use:');
-      console.log(`   Email: ${existing.email}`);
-      console.log(`   Role: Super_Admin`);
+      console.log('Super Admin already exists!');
+      console.log('Email:', existing.email);
+      console.log('Name:', existing.firstName, existing.lastName);
+      console.log('ID:', existing.id);
+      console.log('Active:', existing.isActive);
       return;
     }
 
-    console.log('\n🔒 Hashing password...');
-    const saltRounds = 10;
-    const passwordHash = await bcrypt.hash(password, saltRounds);
+    // Ensure the Super_Admin role row exists (run seed first if missing)
+    const superAdminRole = await prisma.role.findUnique({
+      where: { name: 'Super_Admin' },
+    });
+    if (!superAdminRole) {
+      throw new Error(
+        'Super_Admin Role not found in DB. Run seed first: npx ts-node -P tsconfig.seed.json prisma/seed.ts',
+      );
+    }
 
-    console.log('💾 Creating Super Admin in database...');
-    const admin = await prisma.user.create({
-      data: {
-        firstName: firstName,
-        lastName: lastName,
-        email: email,
-        phone: phone,
-        passwordHash: passwordHash,
-        roles: [UserRole.Super_Admin],
-        isActive: true,
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        email: true,
-        phone: true,
-        roles: true,
-        isActive: true,
-        createdAt: true,
-      },
+    console.log('Hashing password...');
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    console.log('Creating Super Admin in database...');
+    const admin = await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          phone,
+          passwordHash,
+          isActive: true,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phone: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
+
+      await tx.userRole.create({
+        data: { userId: user.id, roleId: superAdminRole.id },
+      });
+
+      return user;
     });
 
-    console.log('\n✅ Super Admin created successfully!\n');
+    console.log('\nSuper Admin created successfully!\n');
     console.log('='.repeat(50));
-    console.log('📋 SUPER ADMIN DETAILS');
+    console.log('ID:       ', admin.id);
+    console.log('Name:     ', admin.firstName, admin.lastName);
+    console.log('Email:    ', admin.email);
+    console.log('Phone:    ', admin.phone);
+    console.log('Password: ', password, '  (change after first login)');
+    console.log('Role:      Super_Admin');
+    console.log('Active:   ', admin.isActive);
+    console.log('Created:  ', admin.createdAt);
     console.log('='.repeat(50));
-    console.log('🆔 ID:', admin.id);
-    console.log('👤 Name:', admin.firstName, admin.lastName);
-    console.log('📧 Email:', admin.email);
-    console.log('📱 Phone:', admin.phone);
-    console.log('🔑 Password:', password);
-    console.log('👔 Role:', admin.roles.join(', '));
-    console.log('✅ Active:', admin.isActive);
-    console.log('📅 Created:', admin.createdAt);
-    console.log('='.repeat(50));
-
-    console.log('\n🎯 LOGIN CREDENTIALS:');
-    console.log('='.repeat(50));
-    console.log(`Email:    ${admin.email}`);
-    console.log(`Password: ${password}`);
-    console.log(`Role:     Super_Admin`);
-    console.log('='.repeat(50));
-
-    console.log('\n📝 API Login Request:');
-    console.log(JSON.stringify({
-      email: admin.email,
-      password: password,
-      role: 'Super_Admin',
-    }, null, 2));
-
-    console.log('\n⚠️  IMPORTANT: Save these credentials securely!');
-    console.log('Change the password after first login.\n');
-
   } catch (error) {
-    console.error('\n❌ Error creating Super Admin:', error);
+    console.error('\nError creating Super Admin:', error);
     throw error;
   } finally {
     await prisma.$disconnect();
+    await pool.end();
   }
 }
 
-createSuperAdmin()
-  .catch((error) => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
+createSuperAdmin().catch((error) => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

@@ -34,7 +34,7 @@ export class UpdateServiceDto {
 
   @ApiPropertyOptional({
     description: 'The price of the service',
-    example: 50.00,
+    example: 50.0,
   })
   @Transform(({ value }: { value: unknown }) => {
     if (typeof value === 'string') {
@@ -77,4 +77,15 @@ export class UpdateServiceDto {
   @IsBoolean({ message: 'Is active must be a boolean' })
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Whether customers can choose a provider for this service',
+    example: false,
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value === 'true' : value,
+  )
+  @IsBoolean({ message: 'Allow customer choose provider must be a boolean' })
+  @IsOptional()
+  allowCustomerChooseProvider?: boolean;
 }

@@ -20,8 +20,14 @@ const prisma = new PrismaClient({ adapter });
 async function resetSuperAdminPassword() {
   console.log('🔐 Resetting Super Admin password...\n');
 
-  const email = 'rafidbapi@example.com';
-  const newPassword = 'password123'; // This will be the new password
+  const email = process.env.SUPER_ADMIN_EMAIL;
+  const newPassword = process.env.SUPER_ADMIN_PASSWORD;
+
+  if (!email || !newPassword) {
+    throw new Error(
+      'Missing env vars. Set SUPER_ADMIN_EMAIL and SUPER_ADMIN_PASSWORD before running this script.',
+    );
+  }
 
   try {
     // Find Super Admin
@@ -65,14 +71,19 @@ async function resetSuperAdminPassword() {
     console.log('='.repeat(50));
 
     console.log('\n📝 Login Request Body:');
-    console.log(JSON.stringify({
-      email: email,
-      password: newPassword,
-      role: 'Super_Admin',
-    }, null, 2));
+    console.log(
+      JSON.stringify(
+        {
+          email: email,
+          password: newPassword,
+          role: 'Super_Admin',
+        },
+        null,
+        2,
+      ),
+    );
 
     console.log('\n✅ You can now login with these credentials!\n');
-
   } catch (error) {
     console.error('\n❌ Error resetting password:', error);
     throw error;
@@ -83,8 +94,7 @@ async function resetSuperAdminPassword() {
 }
 
 // Run the script
-resetSuperAdminPassword()
-  .catch((error) => {
-    console.error('Fatal error:', error);
-    process.exit(1);
-  });
+resetSuperAdminPassword().catch((error) => {
+  console.error('Fatal error:', error);
+  process.exit(1);
+});

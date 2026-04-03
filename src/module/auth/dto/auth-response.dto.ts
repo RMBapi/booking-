@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
 
 export class AuthResponseDto {
   @ApiProperty({
@@ -8,14 +7,14 @@ export class AuthResponseDto {
   })
   accessToken: string;
 
-  @ApiProperty({
-    description: 'User information',
-  })
+  @ApiProperty({ description: 'User information' })
   user: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
-    activeRole: UserRole;
+    roles: string[];
+    /** Role name string — same values as before (e.g. "Customer", "Super_Admin") */
+    activeRole: string;
   };
 }

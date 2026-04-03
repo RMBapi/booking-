@@ -21,10 +21,33 @@ export class ServiceService {
     private readonly paginationService: PaginationService,
   ) {}
 
+  private mapServiceWithProviderVisibility(service: any) {
+    const providers = (service.serviceProviders || []).map((provider: any) => ({
+      id: provider.id,
+      userId: provider.userId,
+      firstName: provider.user?.firstName,
+      lastName: provider.user?.lastName,
+      description: provider.description ?? null,
+      impUrl: provider.impUrl ?? null,
+    }));
+
+    const showProvider =
+      Boolean(service.allowCustomerChooseProvider) && providers.length > 0;
+
+    return {
+      ...service,
+      showProvider,
+      providers: showProvider ? providers : [],
+    };
+  }
+
   /**
    * Verify that the user owns the business
    */
-  private async verifyBusinessOwnership(businessId: string, userId: string): Promise<void> {
+  private async verifyBusinessOwnership(
+    businessId: string,
+    userId: string,
+  ): Promise<void> {
     const ownerLink = await this.prisma.userBusiness.findUnique({
       where: {
         userId_businessId: {
@@ -39,7 +62,11 @@ export class ServiceService {
     }
   }
 
-  async create(createServiceDto: CreateServiceDto, businessId: string, userId: string) {
+  async create(
+    createServiceDto: CreateServiceDto,
+    businessId: string,
+    userId: string,
+  ) {
     // Verify business exists
     const business = await this.prisma.business.findFirst({
       where: { id: businessId, deletedAt: null },
@@ -59,6 +86,8 @@ export class ServiceService {
         price: createServiceDto.price,
         status: createServiceDto.status,
         priceDisplayMode: createServiceDto.priceDisplayMode ?? false,
+        allowCustomerChooseProvider:
+          createServiceDto.allowCustomerChooseProvider ?? false,
         isActive: createServiceDto.isActive ?? true,
         businessServices: {
           create: {
@@ -68,7 +97,10 @@ export class ServiceService {
       },
     });
 
-    return service;
+    return this.mapServiceWithProviderVisibility({
+      ...service,
+      serviceProviders: [],
+    });
   }
 
   async findOne(id: string, businessId: string, userId: string) {
@@ -87,19 +119,39 @@ export class ServiceService {
         service: {
           include: {
             schedulers: true,
+            serviceProviders: {
+              where: {
+                deletedAt: null,
+              },
+              include: {
+                user: {
+                  select: {
+                    firstName: true,
+                    lastName: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
     if (!businessService) {
-      throw new NotFoundException(`Service with ID ${id} not found for this business`);
+      throw new NotFoundException(
+        `Service with ID ${id} not found for this business`,
+      );
     }
 
-    return businessService.service;
+    return this.mapServiceWithProviderVisibility(businessService.service);
   }
 
-  async update(id: string, updateServiceDto: UpdateServiceDto, businessId: string, userId: string) {
+  async update(
+    id: string,
+    updateServiceDto: UpdateServiceDto,
+    businessId: string,
+    userId: string,
+  ) {
     await this.findOne(id, businessId, userId); // Check if service exists and belongs to business
 
     const service = await this.prisma.service.update({
@@ -110,11 +162,28 @@ export class ServiceService {
         price: updateServiceDto.price,
         status: updateServiceDto.status,
         priceDisplayMode: updateServiceDto.priceDisplayMode,
+        allowCustomerChooseProvider:
+          updateServiceDto.allowCustomerChooseProvider,
         isActive: updateServiceDto.isActive,
+      },
+      include: {
+        serviceProviders: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    return service;
+    return this.mapServiceWithProviderVisibility(service);
   }
 
   async delete(id: string, businessId: string, userId: string) {
@@ -139,7 +208,8 @@ export class ServiceService {
     // Verify user owns the business
     await this.verifyBusinessOwnership(businessId, userId);
 
-    const paginationOptions = this.paginationService.buildPaginationOptions(queryDto);
+    const paginationOptions =
+      this.paginationService.buildPaginationOptions(queryDto);
 
     const where: Prisma.ServiceWhereInput = {
       deletedAt: null,
@@ -176,6 +246,19 @@ export class ServiceService {
         where,
         include: {
           schedulers: true,
+          serviceProviders: {
+            where: {
+              deletedAt: null,
+            },
+            include: {
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                },
+              },
+            },
+          },
         },
         ...paginationOptions,
       }),
@@ -186,6 +269,11 @@ export class ServiceService {
     const limit = queryDto.limit || 10;
     const meta = this.paginationService.buildMeta(page, limit, total);
 
-    return { data, meta };
+    return {
+      data: data.map((service) =>
+        this.mapServiceWithProviderVisibility(service),
+      ),
+      meta,
+    };
   }
 }

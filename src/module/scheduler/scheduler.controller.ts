@@ -11,7 +11,12 @@ import {
   HttpStatus,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { SchedulerService } from './scheduler.service';
 import { CreateSchedulerDto } from './dto/create-scheduler.dto';
 import { UpdateSchedulerDto } from './dto/update-scheduler.dto';
@@ -146,16 +151,17 @@ export class SchedulerController {
 - Frontend booking forms need to show available time slots
 - Both logged-in and non-logged-in users can access this endpoint
 - Slots are generated based on scheduler configuration (start/end time, interval, blocked times)
-- Only returns slots if \`allowUserSelection: true\` in scheduler config
+- Returns slot status for each slot (\`free\` / \`booked\`)
+- Supports provider-first flow when service has \`showProvider = true\`
 
 **Query Parameters:**
 - \`serviceId\` (required) - The service ID to get slots for
 - \`businessSlug\` (optional) - Business slug (alternative to x-business-id header)
-- \`date\` (required) - Date in YYYY-MM-DD format (e.g., "2025-11-20")
+- \`date\` (optional) - Date in YYYY-MM-DD format (defaults to today)
 - \`serviceProviderId\` (optional) - Filter slots by specific service provider
 
 **Response:**
-Returns an array of available time slots with start/end times in ISO format.`,
+Returns provider-aware slot availability with free/booked status and capacity metadata.`,
   })
   @ApiResponse({
     status: 200,
@@ -168,6 +174,35 @@ Returns an array of available time slots with start/end times in ISO format.`,
         timestamp: '2025-11-19T10:00:00.000Z',
         data: {
           date: '2025-11-20',
+          showProvider: true,
+          providers: [
+            {
+              id: 'provider-1',
+              userId: 'user-1',
+              firstName: 'Jane',
+              lastName: 'Doe',
+              description: 'Senior stylist',
+              impUrl: 'https://example.com/provider.png',
+            },
+          ],
+          slots: [
+            {
+              start: '2025-11-20T11:00:00.000Z',
+              end: '2025-11-20T11:30:00.000Z',
+              status: 'free',
+              available: true,
+              bookedCount: 0,
+              capacity: 1,
+            },
+            {
+              start: '2025-11-20T12:00:00.000Z',
+              end: '2025-11-20T12:30:00.000Z',
+              status: 'booked',
+              available: false,
+              bookedCount: 1,
+              capacity: 1,
+            },
+          ],
           availableSlots: [
             {
               start: '2025-11-20T11:00:00.000Z',
@@ -187,7 +222,8 @@ Returns an array of available time slots with start/end times in ISO format.`,
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad request - Missing required parameters (serviceId, date, or businessId/businessSlug)',
+    description:
+      'Bad request - Missing required parameters or invalid provider/slot selection',
   })
   @ApiResponse({
     status: 404,

@@ -11,7 +11,7 @@ import { PaginationService } from '../../common/services/pagination.service';
 import { CreateBusinessDto } from './dto/create-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessQueryDto } from './dto/business-query.dto';
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -77,13 +77,17 @@ export class BusinessService {
 
     // Fallback: if somehow we can't find a unique slug after 10 attempts,
     // append timestamp as last resort (extremely unlikely)
-    this.logger.warn(`Could not generate unique slug after ${maxAttempts} attempts for base: ${baseSlug}`);
+    this.logger.warn(
+      `Could not generate unique slug after ${maxAttempts} attempts for base: ${baseSlug}`,
+    );
     return `${baseSlug}-${Date.now().toString(36)}`;
   }
 
   async create(createBusinessDto: CreateBusinessDto, userId: string) {
-    this.logger.log(`Creating business: ${createBusinessDto.name} for user: ${userId}`);
-    
+    this.logger.log(
+      `Creating business: ${createBusinessDto.name} for user: ${userId}`,
+    );
+
     try {
       // Auto-generate slug from business name if not provided
       // If slug is provided, use it; otherwise generate from name
@@ -98,7 +102,9 @@ export class BusinessService {
 
       // Generate a unique slug (handles conflicts by appending suffix)
       const slug = await this.generateUniqueSlug(baseSlug);
-      this.logger.debug(`Generated unique slug: ${slug}${slug !== baseSlug ? ` (from base: ${baseSlug})` : ''}`);
+      this.logger.debug(
+        `Generated unique slug: ${slug}${slug !== baseSlug ? ` (from base: ${baseSlug})` : ''}`,
+      );
 
       // Create business and link to user in a transaction
       this.logger.debug('Starting database transaction');
@@ -127,12 +133,16 @@ export class BusinessService {
         });
 
         // Note: BusinessSite will be created automatically when the first customer registers
-        this.logger.debug(`Business created. BusinessSite will be auto-created on first customer registration.`);
+        this.logger.debug(
+          `Business created. BusinessSite will be auto-created on first customer registration.`,
+        );
 
         return business;
       });
 
-      this.logger.log(`Business created successfully with ID: ${result.id}, slug: ${result.slug}`);
+      this.logger.log(
+        `Business created successfully with ID: ${result.id}, slug: ${result.slug}`,
+      );
       return result;
     } catch (error) {
       // This catch block now mainly handles non-slug related errors
@@ -179,7 +189,7 @@ export class BusinessService {
 
   async findOne(id: string) {
     this.logger.debug(`Finding business with ID: ${id}`);
-    
+
     try {
       const business = await this.prisma.business.findFirst({
         where: {
@@ -266,6 +276,21 @@ export class BusinessService {
       where,
       skip,
       take,
+      include: {
+        serviceProviders: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -278,6 +303,67 @@ export class BusinessService {
       data,
       meta,
       businessId: business.id,
+    };
+  }
+
+  /**
+   * Get providers for a specific service by business slug (public)
+   */
+  async findPublicServiceProvidersBySlug(slug: string, serviceId: string) {
+    const business = await this.findOneBySlug(slug);
+
+    const service = await this.prisma.service.findFirst({
+      where: {
+        id: serviceId,
+        deletedAt: null,
+        status: 'Active',
+        isActive: true,
+        businessServices: {
+          some: {
+            businessId: business.id,
+          },
+        },
+      },
+      include: {
+        serviceProviders: {
+          where: {
+            deletedAt: null,
+          },
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!service) {
+      throw new NotFoundException(
+        `Service with ID ${serviceId} not found for this business`,
+      );
+    }
+
+    const providers = (service.serviceProviders || []).map((provider) => ({
+      id: provider.id,
+      userId: provider.userId,
+      firstName: provider.user?.firstName,
+      lastName: provider.user?.lastName,
+      description: provider.description ?? null,
+      impUrl: provider.impUrl ?? null,
+    }));
+
+    const showProvider =
+      Boolean(service.allowCustomerChooseProvider) && providers.length > 0;
+
+    return {
+      businessId: business.id,
+      serviceId: service.id,
+      showProvider,
+      providers: showProvider ? providers : [],
     };
   }
 
@@ -301,7 +387,9 @@ export class BusinessService {
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new BadRequestException('Business with this slug already exists');
+          throw new BadRequestException(
+            'Business with this slug already exists',
+          );
         }
       }
       throw error;
@@ -310,7 +398,7 @@ export class BusinessService {
 
   async delete(id: string) {
     this.logger.log(`Deleting business with ID: ${id}`);
-    
+
     try {
       await this.findOne(id); // Check if business exists
 
@@ -342,10 +430,13 @@ export class BusinessService {
   }
 
   async findAll(queryDto: BusinessQueryDto) {
-    this.logger.log(`Finding all businesses with filters: ${JSON.stringify(queryDto)}`);
-    
+    this.logger.log(
+      `Finding all businesses with filters: ${JSON.stringify(queryDto)}`,
+    );
+
     try {
-      const paginationOptions = this.paginationService.buildPaginationOptions(queryDto);
+      const paginationOptions =
+        this.paginationService.buildPaginationOptions(queryDto);
 
       const where: Prisma.BusinessWhereInput = {
         deletedAt: null,
@@ -431,9 +522,7 @@ export class BusinessService {
           businessId,
           user: {
             deletedAt: null,
-            roles: {
-              has: UserRole.Business_owner,
-            },
+            userRoles: { some: { role: { name: 'Business_owner' } } },
           },
         },
         include: {
@@ -450,7 +539,9 @@ export class BusinessService {
         },
       });
 
-      this.logger.log(`Found ${userBusinesses.length} owners for business ${businessId}`);
+      this.logger.log(
+        `Found ${userBusinesses.length} owners for business ${businessId}`,
+      );
       return userBusinesses.map((ub) => ub.user);
     } catch (error) {
       const errorMessage =
@@ -495,9 +586,7 @@ export class BusinessService {
       const newOwner = await this.prisma.user.findFirst({
         where: {
           id: newOwnerUserId,
-          roles: {
-            has: UserRole.Business_owner,
-          },
+          userRoles: { some: { role: { name: 'Business_owner' } } },
           deletedAt: null,
         },
       });
@@ -525,7 +614,9 @@ export class BusinessService {
         this.logger.warn(
           `User ${newOwnerUserId} is already an owner of business ${businessId}`,
         );
-        throw new ConflictException('User is already an owner of this business');
+        throw new ConflictException(
+          'User is already an owner of this business',
+        );
       }
 
       // Add the owner
@@ -573,17 +664,13 @@ export class BusinessService {
       const user = await this.prisma.user.findFirst({
         where: {
           email,
-          roles: {
-            has: UserRole.Business_owner,
-          },
+          userRoles: { some: { role: { name: 'Business_owner' } } },
           deletedAt: null,
         },
       });
 
       if (!user) {
-        this.logger.warn(
-          `No Business_owner found with email ${email}`,
-        );
+        this.logger.warn(`No Business_owner found with email ${email}`);
         throw new NotFoundException(
           'No Business_owner user found with this email. Please ensure they have registered as a Business_owner.',
         );

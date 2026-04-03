@@ -10,6 +10,17 @@ import { CreateSchedulerDto } from './dto/create-scheduler.dto';
 import { UpdateSchedulerDto } from './dto/update-scheduler.dto';
 import { GetAvailableSlotsDto } from './dto/get-available-slots.dto';
 
+type SlotWindow = { start: Date; end: Date };
+
+type SlotAvailability = {
+  start: string;
+  end: string;
+  status: 'free' | 'booked';
+  available: boolean;
+  bookedCount: number;
+  capacity: number;
+};
+
 @Injectable()
 export class SchedulerService {
   private readonly logger = new Logger(SchedulerService.name);
@@ -168,17 +179,35 @@ export class SchedulerService {
     businessId: string,
   ) {
     // Verify service exists and belongs to business
-    const businessService = await this.prisma.businessService.findFirst({
+    const service = await this.prisma.service.findFirst({
       where: {
-        serviceId: getAvailableSlotsDto.serviceId,
-        businessId,
-        service: {
-          deletedAt: null,
+        id: getAvailableSlotsDto.serviceId,
+        deletedAt: null,
+        businessServices: {
+          some: {
+            businessId,
+          },
+        },
+      },
+      include: {
+        serviceProviders: {
+          where: {
+            businessId,
+            deletedAt: null,
+          },
+          include: {
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
+          },
         },
       },
     });
 
-    if (!businessService) {
+    if (!service) {
       throw new NotFoundException(
         `Service with ID ${getAvailableSlotsDto.serviceId} not found for this business`,
       );
@@ -201,14 +230,29 @@ export class SchedulerService {
     const targetDate = getAvailableSlotsDto.date
       ? new Date(getAvailableSlotsDto.date)
       : new Date();
+    const targetDateStr = targetDate.toISOString().split('T')[0];
     const dayName = this.getDayName(targetDate.getDay());
+    const providerProfiles = service.serviceProviders.map((provider) => ({
+      id: provider.id,
+      userId: provider.userId,
+      firstName: provider.user.firstName,
+      lastName: provider.user.lastName,
+      description: provider.description,
+      impUrl: provider.impUrl,
+    }));
+    const showProvider =
+      Boolean(service.allowCustomerChooseProvider) &&
+      providerProfiles.length > 0;
 
     // Get day schedule
     const daySchedule = config[dayName.toLowerCase()];
 
     if (!daySchedule || daySchedule.isOff) {
       return {
-        date: targetDate.toISOString().split('T')[0],
+        date: targetDateStr,
+        showProvider,
+        providers: providerProfiles,
+        slots: [],
         availableSlots: [],
         message: 'Service is not available on this day',
       };
@@ -217,7 +261,10 @@ export class SchedulerService {
     // If user selection is not allowed, return empty slots
     if (!config.timeSlotConfig?.allowUserSelection) {
       return {
-        date: targetDate.toISOString().split('T')[0],
+        date: targetDateStr,
+        showProvider,
+        providers: providerProfiles,
+        slots: [],
         availableSlots: [],
         message: 'Time slot selection is not enabled for this service',
       };
@@ -231,55 +278,122 @@ export class SchedulerService {
       targetDate,
     );
 
-    // Get existing bookings for the date to check availability
-    const whereClause: any = {
-      serviceId: getAvailableSlotsDto.serviceId,
-      businessId,
-      status: {
-        not: 'Cancelled',
-      },
-    };
+    const bookingsPerSlot = Math.max(
+      1,
+      Number(config.timeSlotConfig.bookingsPerSlot || 1),
+    );
 
-    if (getAvailableSlotsDto.serviceProviderId) {
-      whereClause.serviceProviderId = getAvailableSlotsDto.serviceProviderId;
+    if (showProvider) {
+      if (getAvailableSlotsDto.serviceProviderId) {
+        const selectedProvider = providerProfiles.find(
+          (provider) => provider.id === getAvailableSlotsDto.serviceProviderId,
+        );
+
+        if (!selectedProvider) {
+          throw new BadRequestException(
+            'Selected provider is not attached to this service',
+          );
+        }
+
+        const bookings = await this.prisma.booking.findMany({
+          where: {
+            serviceId: getAvailableSlotsDto.serviceId,
+            businessId,
+            serviceProviderId: getAvailableSlotsDto.serviceProviderId,
+            status: {
+              not: 'Cancelled',
+            },
+          },
+        });
+
+        const slotsWithStatus = this.buildSlotsAvailability(
+          slots,
+          this.filterBookingsForDate(bookings, targetDateStr),
+          bookingsPerSlot,
+        );
+
+        return {
+          date: targetDateStr,
+          timeFormat: config.timeFormat || '24',
+          showProvider: true,
+          capacityScope: 'provider',
+          providers: providerProfiles,
+          selectedProviderId: getAvailableSlotsDto.serviceProviderId,
+          slots: slotsWithStatus,
+          availableSlots: slotsWithStatus.filter((slot) => slot.available),
+        };
+      }
+
+      const providerIds = providerProfiles.map((provider) => provider.id);
+      const bookings = await this.prisma.booking.findMany({
+        where: {
+          serviceId: getAvailableSlotsDto.serviceId,
+          businessId,
+          serviceProviderId: {
+            in: providerIds,
+          },
+          status: {
+            not: 'Cancelled',
+          },
+        },
+      });
+
+      const bookingsForDate = this.filterBookingsForDate(
+        bookings,
+        targetDateStr,
+      );
+      const providerAvailability = providerProfiles.map((provider) => {
+        const providerBookings = bookingsForDate.filter(
+          (booking) => booking.serviceProviderId === provider.id,
+        );
+        const slotsWithStatus = this.buildSlotsAvailability(
+          slots,
+          providerBookings,
+          bookingsPerSlot,
+        );
+
+        return {
+          providerId: provider.id,
+          slots: slotsWithStatus,
+          availableSlots: slotsWithStatus.filter((slot) => slot.available),
+        };
+      });
+
+      return {
+        date: targetDateStr,
+        timeFormat: config.timeFormat || '24',
+        showProvider: true,
+        capacityScope: 'provider',
+        providers: providerProfiles,
+        providerAvailability,
+        message: 'Select a provider to continue booking',
+      };
     }
 
-    const bookings = await this.prisma.booking.findMany({
-      where: whereClause,
+    const serviceLevelBookings = await this.prisma.booking.findMany({
+      where: {
+        serviceId: getAvailableSlotsDto.serviceId,
+        businessId,
+        status: {
+          not: 'Cancelled',
+        },
+      },
     });
 
-    // Filter bookings by date manually since Prisma JSON filtering is limited
-    const targetDateStr = targetDate.toISOString().split('T')[0];
-    const bookingsForDate = bookings.filter((booking) => {
-      const bookingTime = booking.bookingTime as any;
-      if (!bookingTime?.start) return false;
-      const bookingDate = new Date(bookingTime.start);
-      return bookingDate.toISOString().split('T')[0] === targetDateStr;
-    });
-
-    // Filter out slots that are fully booked
-    const bookingsPerSlot = config.timeSlotConfig.bookingsPerSlot || 1;
-    const availableSlots = slots.filter((slot) => {
-      const slotBookings = bookingsForDate.filter((booking) => {
-        const bookingTime = booking.bookingTime as any;
-        if (!bookingTime?.start) return false;
-        const bookingStart = new Date(bookingTime.start);
-        return (
-          bookingStart.toISOString() === slot.start.toISOString() ||
-          (bookingStart >= slot.start && bookingStart < slot.end)
-        );
-      });
-      return slotBookings.length < bookingsPerSlot;
-    });
+    const slotsWithStatus = this.buildSlotsAvailability(
+      slots,
+      this.filterBookingsForDate(serviceLevelBookings, targetDateStr),
+      bookingsPerSlot,
+    );
 
     return {
-      date: targetDate.toISOString().split('T')[0],
-      availableSlots: availableSlots.map((slot) => ({
-        start: slot.start.toISOString(),
-        end: slot.end.toISOString(),
-        available: true,
-      })),
+      date: targetDateStr,
       timeFormat: config.timeFormat || '24',
+      showProvider: false,
+      capacityScope: 'service',
+      providers: [],
+      slots: slotsWithStatus,
+      availableSlots: slotsWithStatus.filter((slot) => slot.available),
     };
   }
 
@@ -301,9 +415,11 @@ export class SchedulerService {
     intervalMinutes: number,
     blockedTimes: any[],
     date: Date,
-  ): Array<{ start: Date; end: Date }> {
-    const slots: Array<{ start: Date; end: Date }> = [];
-    const [startHour, startMinute] = daySchedule.startTime.split(':').map(Number);
+  ): SlotWindow[] {
+    const slots: SlotWindow[] = [];
+    const [startHour, startMinute] = daySchedule.startTime
+      .split(':')
+      .map(Number);
     const [endHour, endMinute] = daySchedule.endTime.split(':').map(Number);
 
     const startTime = new Date(date);
@@ -353,5 +469,43 @@ export class SchedulerService {
     }
 
     return slots;
+  }
+
+  private filterBookingsForDate(bookings: any[], targetDateStr: string): any[] {
+    return bookings.filter((booking) => {
+      const bookingTime = booking.bookingTime as any;
+      if (!bookingTime?.start) return false;
+      const bookingDate = new Date(bookingTime.start);
+      return bookingDate.toISOString().split('T')[0] === targetDateStr;
+    });
+  }
+
+  private buildSlotsAvailability(
+    slots: SlotWindow[],
+    bookingsForDate: any[],
+    capacity: number,
+  ): SlotAvailability[] {
+    return slots.map((slot) => {
+      const bookedCount = bookingsForDate.filter((booking) => {
+        const bookingTime = booking.bookingTime as any;
+        if (!bookingTime?.start) return false;
+        const bookingStart = new Date(bookingTime.start);
+        return (
+          bookingStart.toISOString() === slot.start.toISOString() ||
+          (bookingStart >= slot.start && bookingStart < slot.end)
+        );
+      }).length;
+
+      const available = bookedCount < capacity;
+
+      return {
+        start: slot.start.toISOString(),
+        end: slot.end.toISOString(),
+        status: available ? 'free' : 'booked',
+        available,
+        bookedCount,
+        capacity,
+      };
+    });
   }
 }

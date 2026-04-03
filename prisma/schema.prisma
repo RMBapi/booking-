@@ -6,13 +6,6 @@ datasource db {
   provider = "postgresql"
 }
 
-enum UserRole {
-  Customer
-  Service_Provider
-  Business_owner
-  Super_Admin
-}
-
 enum OAuthProvider {
   google
 }
@@ -68,18 +61,18 @@ model Business {
 }
 
 model User {
-  id           String     @id @default(uuid())
-  firstName    String     @map("first_name")
-  lastName     String     @map("last_name")
+  id           String            @id @default(uuid())
+  firstName    String            @map("first_name")
+  lastName     String            @map("last_name")
   phone        String
   email        String
-  roles        UserRole[]
-  passwordHash String     @map("password_hash")
-  isActive     Boolean    @default(true) @map("is_active")
-  createdAt    DateTime   @default(now()) @map("created_at")
-  updatedAt    DateTime   @updatedAt @map("updated_at")
-  deletedAt    DateTime?  @map("deleted_at")
+  passwordHash String            @map("password_hash")
+  isActive     Boolean           @default(true) @map("is_active")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  deletedAt    DateTime?         @map("deleted_at")
 
+  userRoles             UserRole[]
   userBusinesses        UserBusiness[]
   userOAuths            UserOAuth[]
   serviceProviders      ServiceProvider[]
@@ -123,6 +116,7 @@ model Service {
   price           Decimal       @db.Decimal(10, 2)
   status          ServiceStatus
   priceDisplayMode Boolean      @default(false) @map("price_display_mode")
+  allowCustomerChooseProvider Boolean @default(false) @map("allow_customer_choose_provider")
   isActive        Boolean       @default(true) @map("is_active")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
@@ -268,4 +262,60 @@ model CustomerBusinessSite {
 
   @@unique([userId, businessSiteId])
   @@map("customer_business_sites")
+}
+
+/// Dynamic role entity — replaces the hard-coded UserRole enum for auth/permission logic.
+/// Seeded with Customer, Service_Provider, Business_owner, Super_Admin on first deploy.
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false) @map("is_system")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+/// Join table: User ↔ Role (replaces User.roles enum array for all new logic).
+model UserRole {
+  id     String @id @default(uuid())
+  userId String @map("user_id")
+  roleId String @map("role_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+/// Fine-grained capability (e.g. user:update). Assigned to Role via RolePermission.
+model Permission {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+/// Many-to-many: which Role rows grant which Permission rows.
+/// Migrated from enum-keyed RolePermission — see migration Phase 2.
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String @map("role_id")
+  permissionId String @map("permission_id")
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@map("role_permissions")
 }

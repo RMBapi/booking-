@@ -2,6 +2,46 @@ import { Exclude, Expose } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ServiceStatus } from '../../../../types/enums';
 
+class ServiceProviderProfileDto {
+  @ApiProperty({
+    description: 'The service provider ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  id: string;
+
+  @ApiProperty({
+    description: 'The provider user ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  userId: string;
+
+  @ApiProperty({
+    description: 'Provider first name',
+    example: 'John',
+  })
+  firstName: string;
+
+  @ApiProperty({
+    description: 'Provider last name',
+    example: 'Doe',
+  })
+  lastName: string;
+
+  @ApiPropertyOptional({
+    description: 'Provider profile description',
+    example: 'Senior stylist',
+    nullable: true,
+  })
+  description?: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Provider image URL',
+    example: 'https://example.com/provider.png',
+    nullable: true,
+  })
+  impUrl?: string | null;
+}
+
 @Exclude()
 export class ServiceResponseDto {
   @Expose()
@@ -29,7 +69,7 @@ export class ServiceResponseDto {
   @Expose()
   @ApiProperty({
     description: 'The price of the service',
-    example: 50.00,
+    example: 50.0,
   })
   price: number;
 
@@ -54,6 +94,28 @@ export class ServiceResponseDto {
     example: true,
   })
   isActive: boolean;
+
+  @Expose()
+  @ApiProperty({
+    description: 'Whether customers can choose providers for this service',
+    example: false,
+  })
+  allowCustomerChooseProvider: boolean;
+
+  @Expose()
+  @ApiProperty({
+    description: 'Whether provider selection should be shown in booking flow',
+    example: true,
+  })
+  showProvider: boolean;
+
+  @Expose()
+  @ApiPropertyOptional({
+    description: 'Provider profiles attached to this service',
+    type: [ServiceProviderProfileDto],
+    nullable: true,
+  })
+  providers?: ServiceProviderProfileDto[];
 
   @Expose()
   @ApiProperty({

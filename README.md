@@ -15,7 +15,6 @@
 
 ---
 
-
 ## Installation & Setup
 
 ### 1. Install Dependencies
@@ -76,7 +75,6 @@ npm run start:debug
 
 ---
 
-
 ## 📁 Project Structure
 
 ```
@@ -105,4 +103,3 @@ src/
 prisma/
 └── schema.prisma             # Database schema
 ```
-

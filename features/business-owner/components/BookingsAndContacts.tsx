@@ -213,7 +213,8 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
               <select
                 value={statusFilter}
                 onChange={(e) => {
-                  setStatusFilter(e.target.value);
+                  const nextValue = e.target.value as BookingStatus | "";
+                  setStatusFilter(nextValue);
                   setCurrentPage(1);
                 }}
                 className="h-14 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-700 outline-none focus:border-stone-300"

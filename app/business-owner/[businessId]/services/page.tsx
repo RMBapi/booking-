@@ -34,6 +34,23 @@ import {
 import type { Service } from "@/types";
 
 const ITEMS_PER_PAGE = 10;
+type DayKey =
+  | "sunday"
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday";
+const DAY_KEYS = new Set<DayKey>([
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+]);
 
 const STATUS_OPTIONS = [
   { label: "All Statuses", value: "" },
@@ -209,13 +226,18 @@ export default function BusinessServicesPage() {
       };
 
       data.schedules.forEach((schedule) => {
-        const dayKey = schedule.day.toLowerCase();
-        if (!schedule.isActive) {
-          config[dayKey as keyof CanScheduleTime] = { isOff: true };
+        const rawDayKey = schedule.day.toLowerCase();
+        if (!DAY_KEYS.has(rawDayKey as DayKey)) {
           return;
         }
 
-        config[dayKey as keyof CanScheduleTime] = {
+        const dayKey = rawDayKey as DayKey;
+        if (!schedule.isActive) {
+          config[dayKey] = { isOff: true };
+          return;
+        }
+
+        config[dayKey] = {
           startTime: schedule.startTime,
           endTime: schedule.endTime,
           isOff: false,

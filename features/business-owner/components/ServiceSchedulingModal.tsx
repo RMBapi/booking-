@@ -43,6 +43,23 @@ const DAYS_OF_WEEK = [
   "Friday",
   "Saturday",
 ];
+type DayKey =
+  | "sunday"
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday";
+const DAY_KEYS = new Set<DayKey>([
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+]);
 
 export const ServiceSchedulingModal = ({
   isOpen,
@@ -91,9 +108,19 @@ export const ServiceSchedulingModal = ({
 
     setSchedules(
       DAYS_OF_WEEK.map((day) => {
-        const dayKey = day.toLowerCase();
-        const dayConfig =
-          initialConfig[dayKey as keyof CanScheduleTime] ?? undefined;
+        const rawDayKey = day.toLowerCase();
+        if (!DAY_KEYS.has(rawDayKey as DayKey)) {
+          return {
+            day,
+            isActive: true,
+            startTime: "09:00",
+            endTime: "17:00",
+            blockedFrames: [],
+          };
+        }
+
+        const dayKey = rawDayKey as DayKey;
+        const dayConfig = initialConfig[dayKey];
         const isOff = dayConfig?.isOff ?? false;
         const frames = blockedTimes[dayKey] ?? [];
 

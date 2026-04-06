@@ -3,9 +3,11 @@ services:
   - type: web
     name: booking-api
     runtime: node
-    buildCommand: npm install --include=dev && npm run build
-    startCommand: npm run start:prod
+    buildCommand: npm run build
+    startCommand: npm run start
     envVars:
+      - key: NODE_VERSION
+        value: 22.11.0
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL

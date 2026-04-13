@@ -16,3 +16,15 @@ export const BRAND = {
 } as const;
 
 export type BrandTheme = typeof BRAND;
+
+/**
+ * Resolve an image path from the API into a full URL.
+ * - External URLs (http/https) are returned as-is.
+ * - Local uploads (e.g. "/uploads/abc.png") are proxied through /api.
+ * - Null/undefined returns null.
+ */
+export function getImageUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  if (value.startsWith("http://") || value.startsWith("https://")) return value;
+  return `/api${value}`;
+}

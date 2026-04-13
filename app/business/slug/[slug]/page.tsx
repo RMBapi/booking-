@@ -6,7 +6,7 @@ import { getBusinessBySlug, getPublicServicesByBusinessSlug } from "@/services";
 import { Business, Service, User } from "@/types";
 import { PageLoader } from "@/components";
 import { useRoleAuth } from "@/contexts";
-import { BRAND } from "@/lib/publicBrand";
+import { BRAND, getImageUrl } from "@/lib/publicBrand";
 import { HERO_FALLBACK } from "./_constants";
 import { HeroSection } from "./_components/HeroSection";
 import { ServicesGrid } from "./_components/ServicesGrid";
@@ -132,7 +132,7 @@ export default function PublicBusinessPage() {
     );
   }
 
-  const heroImage = business.logoUrl || HERO_FALLBACK;
+  const heroImage = getImageUrl(business.image) || getImageUrl(business.logoUrl) || HERO_FALLBACK;
   const displayAddress = business.address || "Address not available";
   const displayPhone = business.phone || "Phone not available";
   const displayEmail = business.email || "Email not available";

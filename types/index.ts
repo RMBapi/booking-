@@ -53,6 +53,8 @@ export interface Business {
   email?: string;
   phone?: string;
   address?: string;
+  logo?: string;
+  image?: string;
   logoUrl?: string;
   createdAt: string;
   updatedAt: string;

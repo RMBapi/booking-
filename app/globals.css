@@ -149,7 +149,6 @@
     text-rendering: optimizeLegibility;
   }
 
-  html,
   body {
     max-width: 100vw;
     overflow-x: hidden;
@@ -234,10 +233,8 @@
   overflow: hidden;
 }
 
-/* Smooth scrolling */
-.smooth-scroll {
-  scroll-behavior: smooth;
-}
+/* Smooth scrolling — handled via JS scrollIntoView({ behavior: "smooth" })
+   rather than CSS scroll-behavior to avoid scroll-event contention. */
 
 /* Custom scrollbar */
 .custom-scrollbar::-webkit-scrollbar {

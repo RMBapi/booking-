@@ -6,7 +6,7 @@ import { Menu, User as UserIcon, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Business, Service, User } from "@/types";
 import { Modal, BookingForm } from "@/components";
-import { BRAND } from "@/lib/publicBrand";
+import { BRAND, getImageUrl } from "@/lib/publicBrand";
 import { EASE_OUT_QUART } from "../_constants";
 
 interface PageNavigationProps {
@@ -53,12 +53,20 @@ export function PageNavigation({
         style={{ backgroundColor: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)" }}
       >
         <div className="flex items-center gap-3">
-          <span
-            className="font-black text-lg uppercase tracking-[0.12em]"
-            style={{ color: BRAND.dark, letterSpacing: "0.1em" }}
-          >
-            {business.name}
-          </span>
+          {getImageUrl(business.logo) ? (
+            <img
+              src={getImageUrl(business.logo)!}
+              alt={`${business.name} logo`}
+              className="h-10 w-auto object-contain"
+            />
+          ) : (
+            <span
+              className="font-black text-lg uppercase tracking-[0.12em]"
+              style={{ color: BRAND.dark, letterSpacing: "0.1em" }}
+            >
+              {business.name}
+            </span>
+          )}
         </div>
 
         <div className="hidden md:flex items-center gap-8">

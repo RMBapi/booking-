@@ -269,7 +269,7 @@ export default function PublicBusinessPage() {
     );
   }
 
-  const heroImage = business.logoUrl || HERO_FALLBACK;
+  const heroImage = business.image || business.logo || HERO_FALLBACK;
   const displayAddress = business.address || "Address not available";
   const displayPhone = business.phone || "Phone not available";
   const displayEmail = business.email || "Email not available";

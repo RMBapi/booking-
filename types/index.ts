@@ -70,7 +70,8 @@ export interface Business {
   email?: string;
   phone?: string;
   address?: string;
-  logoUrl?: string;
+  logo?: string;
+  image?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -81,7 +82,8 @@ export interface CreateBusinessPayload {
   email?: string;
   phone?: string;
   address?: string;
-  logoUrl?: string;
+  logo?: string;
+  image?: string;
   slug?: string;
 }
 

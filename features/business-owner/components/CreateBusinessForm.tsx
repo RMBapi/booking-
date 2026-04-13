@@ -21,7 +21,8 @@ export const CreateBusinessForm: React.FC<CreateBusinessFormProps> = ({
     email: "",
     phone: "",
     address: "",
-    logoUrl: "",
+    logo: "",
+    image: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -97,13 +98,21 @@ export const CreateBusinessForm: React.FC<CreateBusinessFormProps> = ({
       />
 
       <Input
-        label="Logo URL"
-        type="url"
-        name="logoUrl"
-        value={formData.logoUrl || ""}
+        label="Logo"
+        name="logo"
+        value={formData.logo || ""}
         onChange={handleChange}
-        placeholder="https://example.com/logo.png"
-        helperText="Optional: Provide a link to your business logo"
+        placeholder="Logo image path"
+        helperText="Optional: Path to your business logo"
+      />
+
+      <Input
+        label="Image"
+        name="image"
+        value={formData.image || ""}
+        onChange={handleChange}
+        placeholder="Business image path"
+        helperText="Optional: Path to your business image"
       />
 
       <Button type="submit" isLoading={isCreating} className="w-full" size="lg">

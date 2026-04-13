@@ -33,9 +33,9 @@ export const BusinessSwitcher: React.FC<BusinessSwitcherProps> = ({
         className="flex items-center gap-3 px-4 py-2.5 bg-white border border-stone-200 rounded-2xl hover:bg-stone-50 hover:border-stone-300 transition-all group min-w-[240px] shadow-sm"
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          {currentBusiness.logoUrl ? (
+          {currentBusiness.logo ? (
             <img
-              src={currentBusiness.logoUrl}
+              src={currentBusiness.logo}
               alt={currentBusiness.name}
               className="w-8 h-8 rounded-xl object-cover border border-stone-200"
             />
@@ -96,9 +96,9 @@ export const BusinessSwitcher: React.FC<BusinessSwitcherProps> = ({
                         ${isSelected ? "bg-[#D4A574]/5" : ""}
                       `}
                     >
-                      {business.logoUrl ? (
+                      {business.logo ? (
                         <img
-                          src={business.logoUrl}
+                          src={business.logo}
                           alt={business.name}
                           className="w-10 h-10 rounded-xl object-cover border border-stone-200 flex-shrink-0"
                         />

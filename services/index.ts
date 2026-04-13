@@ -6,4 +6,5 @@ export * from "./bookingService";
 export * from "./contactService";
 export * from "./serviceProviderService";
 export * from "./schedulerService";
+export * from "./uploadService";
 export type { ServiceProviderFilters } from "./serviceProviderService";

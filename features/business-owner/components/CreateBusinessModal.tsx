@@ -1,19 +1,20 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   X,
   Upload,
-  Link as LinkIcon,
   Building2,
   Mail,
   Phone,
   MapPin,
   FileText,
   Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CreateBusinessPayload } from "@/types";
+import { uploadImage } from "@/services";
 
 interface CreateBusinessModalProps {
   isOpen: boolean;
@@ -22,9 +23,10 @@ interface CreateBusinessModalProps {
   isSubmitting?: boolean;
 }
 
-type LogoUploadMode = "none" | "url" | "file";
+type FormErrors = Partial<Record<keyof CreateBusinessPayload | "logoFile" | "imageFile", string>>;
 
-type FormErrors = Partial<Record<keyof CreateBusinessPayload, string>>;
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
   isOpen,
@@ -35,15 +37,22 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
   const [formData, setFormData] = useState<CreateBusinessPayload>({
     name: "",
     description: "",
-    logoUrl: "",
+    logo: "",
+    image: "",
     email: "",
     phone: "",
     address: "",
   });
 
-  const [logoMode, setLogoMode] = useState<LogoUploadMode>("none");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string>("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isUploading, setIsUploading] = useState(false);
+
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (
     field: keyof CreateBusinessPayload,
@@ -55,33 +64,68 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateFile = (file: File, fieldName: string): string | null => {
+    if (!ACCEPTED_TYPES.includes(file.type)) {
+      return `Invalid file type. Accepted: JPEG, PNG, WebP, GIF, SVG`;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `File size must be less than 5MB`;
+    }
+    return null;
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrors((prev) => ({
-        ...prev,
-        logoUrl: "File size must be less than 5MB",
-      }));
+    const error = validateFile(file, "logoFile");
+    if (error) {
+      setErrors((prev) => ({ ...prev, logoFile: error }));
       return;
     }
 
+    setErrors((prev) => ({ ...prev, logoFile: "" }));
+    setLogoFile(file);
+
     const reader = new FileReader();
     reader.onloadend = () => {
-      const result = reader.result as string;
-      setLogoPreview(result);
-      setFormData((prev) => ({ ...prev, logoUrl: result }));
+      setLogoPreview(reader.result as string);
     };
     reader.readAsDataURL(file);
   };
 
-  const handleUrlChange = (url: string) => {
-    setFormData((prev) => ({ ...prev, logoUrl: url }));
-    setLogoPreview(url);
-    if (errors.logoUrl) {
-      setErrors((prev) => ({ ...prev, logoUrl: "" }));
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const error = validateFile(file, "imageFile");
+    if (error) {
+      setErrors((prev) => ({ ...prev, imageFile: error }));
+      return;
     }
+
+    setErrors((prev) => ({ ...prev, imageFile: "" }));
+    setImageFile(file);
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview("");
+    setFormData((prev) => ({ ...prev, logo: "" }));
+    if (logoInputRef.current) logoInputRef.current.value = "";
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setFormData((prev) => ({ ...prev, image: "" }));
+    if (imageInputRef.current) imageInputRef.current.value = "";
   };
 
   const validateForm = (): boolean => {
@@ -113,12 +157,38 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (isSubmitting) return;
-    if (validateForm()) {
-      onSubmit(formData);
+    if (isSubmitting || isUploading) return;
+    if (!validateForm()) return;
+
+    setIsUploading(true);
+
+    try {
+      let logoUrl = formData.logo || "";
+      let imageUrl = formData.image || "";
+
+      // Upload logo file if selected
+      if (logoFile) {
+        logoUrl = await uploadImage(logoFile);
+      }
+
+      // Upload image file if selected
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+
+      onSubmit({
+        ...formData,
+        logo: logoUrl || undefined,
+        image: imageUrl || undefined,
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.message || "Failed to upload image. Please try again.";
+      setErrors((prev) => ({ ...prev, logoFile: logoFile ? message : "", imageFile: imageFile ? message : "" }));
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -126,18 +196,24 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
     setFormData({
       name: "",
       description: "",
-      logoUrl: "",
+      logo: "",
+      image: "",
       email: "",
       phone: "",
       address: "",
     });
-    setLogoMode("none");
+    setLogoFile(null);
     setLogoPreview("");
+    setImageFile(null);
+    setImagePreview("");
     setErrors({});
+    setIsUploading(false);
     onClose();
   };
 
   if (!isOpen) return null;
+
+  const isBusy = isSubmitting || isUploading;
 
   return (
     <AnimatePresence>
@@ -185,6 +261,7 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
 
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-8 py-6">
             <div className="space-y-6">
+              {/* Business Name */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
                   <Building2 className="w-4 h-4 text-stone-400" />
@@ -208,6 +285,7 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
                 )}
               </div>
 
+              {/* Description */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
                   <FileText className="w-4 h-4 text-stone-400" />
@@ -233,120 +311,127 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
                 )}
               </div>
 
+              {/* Logo Upload */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
                   <ImageIcon className="w-4 h-4 text-stone-400" />
-                  Business Logo (Optional)
+                  Logo (Optional)
                 </label>
 
-                <div className="flex gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLogoMode("file");
-                      setLogoPreview("");
-                      setFormData((prev) => ({ ...prev, logoUrl: "" }));
-                    }}
-                    className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                      logoMode === "file"
-                        ? "bg-stone-900 text-white"
-                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                    }`}
-                  >
-                    <Upload className="w-4 h-4 inline mr-2" />
-                    Upload File
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLogoMode("url");
-                      setLogoPreview("");
-                      setFormData((prev) => ({ ...prev, logoUrl: "" }));
-                    }}
-                    className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                      logoMode === "url"
-                        ? "bg-stone-900 text-white"
-                        : "bg-stone-100 text-stone-600 hover:bg-stone-200"
-                    }`}
-                  >
-                    <LinkIcon className="w-4 h-4 inline mr-2" />
-                    From URL
-                  </button>
-                </div>
-
-                {logoMode === "file" && (
-                  <div className="border-2 border-dashed border-stone-200 rounded-2xl p-6 text-center hover:border-stone-300 transition-colors">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="logo-upload"
-                    />
-                    <label htmlFor="logo-upload" className="cursor-pointer">
-                      {logoPreview ? (
-                        <div className="flex flex-col items-center gap-3">
-                          <img
-                            src={logoPreview}
-                            alt="Logo preview"
-                            className="w-24 h-24 rounded-2xl object-cover border border-stone-200"
-                          />
-                          <p className="text-sm text-stone-600 font-medium">
-                            Click to change image
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center">
-                            <Upload className="w-8 h-8 text-stone-400" />
-                          </div>
-                          <p className="text-sm font-bold text-stone-700">
-                            Click to upload logo
-                          </p>
-                          <p className="text-xs text-stone-400">
-                            PNG, JPG up to 5MB
-                          </p>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-                )}
-
-                {logoMode === "url" && (
-                  <div>
-                    <input
-                      type="url"
-                      value={formData.logoUrl}
-                      onChange={(e) => handleUrlChange(e.target.value)}
-                      placeholder="https://example.com/logo.png"
-                      className="w-full px-4 py-3 border border-stone-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#D4A574]/20 focus:border-[#D4A574] transition-all"
-                    />
-                    {logoPreview && (
-                      <div className="mt-3 flex justify-center">
+                <div className="border-2 border-dashed border-stone-200 rounded-2xl p-6 text-center hover:border-stone-300 transition-colors">
+                  <input
+                    ref={logoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    id="logo-upload"
+                  />
+                  {logoPreview ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative">
                         <img
                           src={logoPreview}
                           alt="Logo preview"
                           className="w-24 h-24 rounded-2xl object-cover border border-stone-200"
-                          onError={() => {
-                            setLogoPreview("");
-                            setErrors((prev) => ({
-                              ...prev,
-                              logoUrl: "Failed to load image from URL",
-                            }));
-                          }}
                         />
+                        <button
+                          type="button"
+                          onClick={removeLogo}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                       </div>
-                    )}
-                  </div>
-                )}
+                      <label htmlFor="logo-upload" className="cursor-pointer text-sm text-stone-600 font-medium hover:text-stone-800">
+                        Click to change logo
+                      </label>
+                    </div>
+                  ) : (
+                    <label htmlFor="logo-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-stone-400" />
+                        </div>
+                        <p className="text-sm font-bold text-stone-700">
+                          Click to upload logo
+                        </p>
+                        <p className="text-xs text-stone-400">
+                          JPEG, PNG, WebP, GIF, SVG up to 5MB
+                        </p>
+                      </div>
+                    </label>
+                  )}
+                </div>
 
-                {errors.logoUrl && (
+                {errors.logoFile && (
                   <p className="text-xs text-red-500 mt-1.5 font-medium">
-                    {errors.logoUrl}
+                    {errors.logoFile}
                   </p>
                 )}
               </div>
 
+              {/* Image Upload */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
+                  <ImageIcon className="w-4 h-4 text-stone-400" />
+                  Image (Optional)
+                </label>
+
+                <div className="border-2 border-dashed border-stone-200 rounded-2xl p-6 text-center hover:border-stone-300 transition-colors">
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,image/svg+xml"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  {imagePreview ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="relative">
+                        <img
+                          src={imagePreview}
+                          alt="Image preview"
+                          className="w-full max-w-xs h-40 rounded-2xl object-cover border border-stone-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={removeImage}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <label htmlFor="image-upload" className="cursor-pointer text-sm text-stone-600 font-medium hover:text-stone-800">
+                        Click to change image
+                      </label>
+                    </div>
+                  ) : (
+                    <label htmlFor="image-upload" className="cursor-pointer">
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="w-16 h-16 rounded-2xl bg-stone-100 flex items-center justify-center">
+                          <Upload className="w-8 h-8 text-stone-400" />
+                        </div>
+                        <p className="text-sm font-bold text-stone-700">
+                          Click to upload image
+                        </p>
+                        <p className="text-xs text-stone-400">
+                          JPEG, PNG, WebP, GIF, SVG up to 5MB
+                        </p>
+                      </div>
+                    </label>
+                  )}
+                </div>
+
+                {errors.imageFile && (
+                  <p className="text-xs text-red-500 mt-1.5 font-medium">
+                    {errors.imageFile}
+                  </p>
+                )}
+              </div>
+
+              {/* Email */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
                   <Mail className="w-4 h-4 text-stone-400" />
@@ -370,6 +455,7 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
                 )}
               </div>
 
+              {/* Phone */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
                   <Phone className="w-4 h-4 text-stone-400" />
@@ -393,6 +479,7 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
                 )}
               </div>
 
+              {/* Address */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-bold text-stone-700 mb-2">
                   <MapPin className="w-4 h-4 text-stone-400" />
@@ -429,10 +516,10 @@ export const CreateBusinessModal: React.FC<CreateBusinessModalProps> = ({
             <button
               type="submit"
               onClick={handleSubmit}
-              disabled={isSubmitting}
+              disabled={isBusy}
               className="flex-1 px-6 py-3 bg-stone-900 text-white font-bold rounded-2xl hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/10 active:scale-[0.97] disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? "Creating..." : "Create Business"}
+              {isUploading ? "Uploading..." : isSubmitting ? "Creating..." : "Create Business"}
             </button>
           </div>
         </motion.div>

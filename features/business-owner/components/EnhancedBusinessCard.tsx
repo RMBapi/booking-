@@ -39,7 +39,7 @@ export const EnhancedBusinessCard = ({
   };
 
   const imageUrl =
-    business.logoUrl && !imageError ? business.logoUrl : getPlaceholderImage();
+    business.logo && !imageError ? business.logo : getPlaceholderImage();
   const email = business.email || "Not available";
   const phone = business.phone || "Not available";
   const address = business.address || "Not available";

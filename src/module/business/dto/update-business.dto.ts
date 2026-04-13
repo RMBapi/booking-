@@ -37,15 +37,26 @@ export class UpdateBusinessDto {
   slug?: string;
 
   @ApiPropertyOptional({
-    description: 'The logo URL of the business',
-    example: 'https://example.com/logo.png',
+    description: 'Business logo image URL (upload via POST /upload/image or provide an external URL)',
+    example: '/uploads/abc123.png',
   })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
-  @IsString({ message: 'Logo URL must be a string' })
+  @IsString({ message: 'Logo must be a string' })
   @IsOptional()
-  logoUrl?: string;
+  logo?: string;
+
+  @ApiPropertyOptional({
+    description: 'Business image URL (upload via POST /upload/image or provide an external URL)',
+    example: '/uploads/abc123.png',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'Image must be a string' })
+  @IsOptional()
+  image?: string;
 
   @ApiPropertyOptional({
     description: 'The email of the business',

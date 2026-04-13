@@ -14,7 +14,7 @@ describe('BusinessController', () => {
     name: 'Test Business',
     slug: 'test-business',
     description: 'Test Description',
-    logoUrl: 'https://example.com/logo.png',
+    logo: '/uploads/test-logo.png',
     email: 'test@example.com',
     phone: '+1234567890',
     address: '123 Test St',

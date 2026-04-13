@@ -115,7 +115,8 @@ export class BusinessService {
           data: {
             name: createBusinessDto.name,
             description: createBusinessDto.description,
-            logoUrl: createBusinessDto.logoUrl,
+            logo: createBusinessDto.logo,
+            image: createBusinessDto.image,
             email: createBusinessDto.email,
             phone: createBusinessDto.phone,
             address: createBusinessDto.address,
@@ -376,7 +377,8 @@ export class BusinessService {
         data: {
           name: updateBusinessDto.name,
           description: updateBusinessDto.description,
-          logoUrl: updateBusinessDto.logoUrl,
+          logo: updateBusinessDto.logo,
+          image: updateBusinessDto.image,
           email: updateBusinessDto.email,
           phone: updateBusinessDto.phone,
           address: updateBusinessDto.address,

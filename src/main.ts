@@ -60,6 +60,7 @@ async function bootstrap() {
           'Contact management endpoints (for non-logged-in users)',
         )
         .addTag('Booking', 'Booking management endpoints')
+        .addTag('Upload', 'File upload endpoints')
         .addTag('Admin', 'Super Admin only endpoints')
         .addBearerAuth(
           {

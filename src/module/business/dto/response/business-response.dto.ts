@@ -34,11 +34,19 @@ export class BusinessResponseDto {
 
   @Expose()
   @ApiPropertyOptional({
-    description: 'The logo URL of the business',
-    example: 'https://example.com/logo.png',
+    description: 'Business logo image URL',
+    example: '/uploads/abc123.png',
     nullable: true,
   })
-  logoUrl: string | null;
+  logo: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    description: 'Business image URL',
+    example: '/uploads/abc123.png',
+    nullable: true,
+  })
+  image: string | null;
 
   @Expose()
   @ApiPropertyOptional({

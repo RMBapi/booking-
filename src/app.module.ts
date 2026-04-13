@@ -1,4 +1,5 @@
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
@@ -11,10 +12,19 @@ import { ServiceProviderModule } from './module/service_provider/service_provide
 import { ContactModule } from './module/contact/contact.module';
 import { BookingModule } from './module/booking/booking.module';
 import { SchedulerModule } from './module/scheduler/scheduler.module';
+import { UploadModule } from './module/upload/upload.module';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import * as path from 'path';
 
 @Module({
   imports: [
+    ServeStaticModule.forRoot({
+      rootPath: path.resolve(process.env.UPLOAD_DIR || './uploads'),
+      serveRoot: '/uploads',
+      serveStaticOptions: {
+        index: false,
+      },
+    }),
     DatabaseModule,
     AuthModule,
     AdminModule,
@@ -25,6 +35,7 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     ContactModule,
     BookingModule,
     SchedulerModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [AppService],

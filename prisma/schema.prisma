@@ -41,7 +41,8 @@ model Business {
   id          String    @id @default(uuid())
   name        String
   description String?
-  logoUrl     String?   @map("logo_url")
+  logo        String?
+  image       String?
   email       String?
   phone       String?
   address     String?

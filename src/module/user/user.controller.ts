@@ -110,7 +110,7 @@ export class UserController {
             slug: true,
             email: true,
             phone: true,
-            logoUrl: true,
+            logo: true,
             createdAt: true,
           },
         },

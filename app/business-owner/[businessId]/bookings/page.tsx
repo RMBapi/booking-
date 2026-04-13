@@ -10,12 +10,12 @@ export default function BookingsPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
-      <main className="bo-dashboard-shell flex flex-col gap-8 py-10 md:py-14">
+      <main className="bo-dashboard-shell flex flex-col gap-6 py-6 lg:py-8">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl">
+          <h1 className="text-xl font-semibold tracking-tight text-stone-900">
             Bookings
           </h1>
-          <p className="mt-1 text-base text-stone-500">
+          <p className="mt-1 text-sm text-stone-500">
             View and manage all customer bookings
           </p>
         </div>

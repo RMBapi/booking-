@@ -133,7 +133,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
-      <main className="bo-dashboard-shell flex flex-col gap-8 py-10 md:py-14">
+      <main className="bo-dashboard-shell flex flex-col gap-6 py-6 lg:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
@@ -142,20 +142,20 @@ export default function AnalyticsPage() {
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl">
+            <h1 className="text-xl font-semibold tracking-tight text-stone-900">
               Analytics
             </h1>
-            <p className="mt-1 text-base text-stone-500">
+            <p className="mt-1 text-sm text-stone-500">
               Track performance and business insights
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             {timeRangeOptions.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setTimeRange(opt.value)}
                 className={cn(
-                  "rounded-2xl px-4 py-2 text-sm font-medium transition",
+                  "rounded-lg px-3 py-1.5 text-sm font-medium transition",
                   timeRange === opt.value
                     ? "bg-stone-900 text-white shadow-sm"
                     : "bg-white text-stone-600 border border-stone-200 hover:bg-stone-50"
@@ -185,19 +185,19 @@ export default function AnalyticsPage() {
                   variants={fadeUp}
                   initial="hidden"
                   animate="visible"
-                  className="flex items-center gap-4 rounded-3xl border border-stone-100 bg-white p-5 shadow-sm"
+                  className="flex items-center gap-4 rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm"
                 >
                   <div
                     className={cn(
-                      "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br",
+                      "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br",
                       stat.gradient
                     )}
                   >
                     <stat.icon className={cn("h-5 w-5", stat.iconColor)} />
                   </div>
                   <div>
-                    <p className="text-sm text-stone-500">{stat.label}</p>
-                    <p className="text-2xl font-semibold text-stone-900">
+                    <p className="text-xs text-stone-500">{stat.label}</p>
+                    <p className="text-xl font-semibold text-stone-900">
                       {stat.value}
                     </p>
                   </div>
@@ -206,7 +206,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Chart Placeholders */}
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {[
                 { title: "Revenue Overview", sub: "Monthly revenue breakdown" },
                 { title: "Booking Trends", sub: "Booking volume over time" },
@@ -217,16 +217,16 @@ export default function AnalyticsPage() {
                   variants={fadeUp}
                   initial="hidden"
                   animate="visible"
-                  className="flex flex-col items-center justify-center rounded-3xl border border-stone-100 bg-white p-8 shadow-sm"
+                  className="flex flex-col items-center justify-center rounded-2xl border border-stone-200/60 bg-white p-8 shadow-sm"
                 >
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4A574]/10 to-[#8BA88E]/10">
-                    <BarChart3 className="h-7 w-7 text-[#D4A574]" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4A574]/10 to-[#8BA88E]/10">
+                    <BarChart3 className="h-5 w-5 text-[#D4A574]" />
                   </div>
-                  <h3 className="mt-4 text-base font-semibold text-stone-900">
+                  <h3 className="mt-3 text-sm font-semibold text-stone-900">
                     {chart.title}
                   </h3>
-                  <p className="mt-1 text-sm text-stone-400">{chart.sub}</p>
-                  <p className="mt-4 text-xs text-stone-300">
+                  <p className="mt-1 text-xs text-stone-400">{chart.sub}</p>
+                  <p className="mt-3 text-xs text-stone-300">
                     Chart integration coming soon
                   </p>
                 </motion.div>
@@ -234,20 +234,20 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Bottom Row: Top Services + Top Providers */}
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               {/* Top Services */}
               <motion.div
                 custom={6}
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
-                className="rounded-3xl border border-stone-100 bg-white p-6 shadow-sm"
+                className="rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm"
               >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4A574]/20 to-[#D4A574]/5">
-                    <Briefcase className="h-4.5 w-4.5 text-[#D4A574]" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#D4A574]/20 to-[#D4A574]/5">
+                    <Briefcase className="h-4 w-4 text-[#D4A574]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-stone-900">
+                  <h3 className="text-sm font-semibold text-stone-900">
                     Top Services
                   </h3>
                 </div>
@@ -289,13 +289,13 @@ export default function AnalyticsPage() {
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
-                className="rounded-3xl border border-stone-100 bg-white p-6 shadow-sm"
+                className="rounded-2xl border border-stone-200/60 bg-white p-6 shadow-sm"
               >
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#8BA88E]/20 to-[#8BA88E]/5">
-                    <Crown className="h-4.5 w-4.5 text-[#8BA88E]" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#8BA88E]/20 to-[#8BA88E]/5">
+                    <Crown className="h-4 w-4 text-[#8BA88E]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-stone-900">
+                  <h3 className="text-sm font-semibold text-stone-900">
                     Top Providers
                   </h3>
                 </div>

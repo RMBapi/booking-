@@ -155,18 +155,18 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
   const contactCountLabel = contactsMeta?.total ?? contacts.length;
 
   return (
-    <div className="space-y-8">
-      <div className="flex w-full max-w-md items-center rounded-3xl border border-stone-200 bg-stone-50 p-1.5">
+    <div className="space-y-6">
+      <div className="flex w-full max-w-sm items-center rounded-xl border border-stone-200 bg-stone-50 p-1">
         <button
           type="button"
           onClick={() => {
             setActiveTab("bookings");
             setCurrentPage(1);
           }}
-          className={`flex-1 rounded-2xl px-5 py-3 text-sm font-semibold transition ${
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
             activeTab === "bookings"
               ? "bg-white text-stone-900 shadow-sm"
-              : "text-stone-400"
+              : "text-stone-500"
           }`}
         >
           User ({bookingCountLabel})
@@ -177,21 +177,21 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             setActiveTab("contacts");
             setCurrentPage(1);
           }}
-          className={`flex-1 rounded-2xl px-5 py-3 text-sm font-semibold transition ${
+          className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition ${
             activeTab === "contacts"
               ? "bg-white text-stone-900 shadow-sm"
-              : "text-stone-400"
+              : "text-stone-500"
           }`}
         >
           Guest user ({contactCountLabel})
         </button>
       </div>
 
-      <section className="overflow-hidden rounded-[2.1rem] border border-stone-200 bg-white shadow-sm">
-      <div className="border-b border-stone-100 panel-gutter py-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="relative w-full max-w-xl">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-300" />
+      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+      <div className="border-b border-stone-100 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative w-full max-w-sm">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
             <input
               value={searchTerm}
               onChange={(e) => {
@@ -204,11 +204,11 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
                   ? "Search user bookings..."
                   : "Search guest requests..."
               }
-              className="h-14 w-full rounded-2xl border border-stone-200 bg-white pl-12 pr-4 text-base font-medium text-stone-700 outline-none transition placeholder:text-stone-300 focus:border-stone-300"
+              className="h-10 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-4 text-sm text-stone-700 outline-none transition placeholder:text-stone-400 focus:border-stone-300 focus:ring-2 focus:ring-stone-200"
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {activeTab === "bookings" && (
               <select
                 value={statusFilter}
@@ -217,7 +217,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
                   setStatusFilter(nextValue);
                   setCurrentPage(1);
                 }}
-                className="h-14 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-700 outline-none focus:border-stone-300"
+                className="h-10 rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-700 outline-none focus:border-stone-300"
               >
                 <option value="">All Statuses</option>
                 <option value="Pending">Pending</option>
@@ -227,7 +227,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
               </select>
             )}
 
-            <label className="inline-flex h-14 items-center gap-2 rounded-2xl border border-stone-200 bg-white px-4 text-sm font-semibold text-stone-600">
+            <label className="inline-flex h-10 items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-600">
               <CalendarDays className="h-4 w-4" />
               <span>{selectedDate ? "Date selected" : "Filter by Date"}</span>
               <input
@@ -248,22 +248,22 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
         <table className="min-w-full">
           <thead className="border-b border-stone-100 bg-stone-50/60">
             <tr>
-              <th className="panel-gutter py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-stone-500">
                 Date & Time
               </th>
-              <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-stone-500">
                 {activeTab === "bookings" ? "User" : "Guest"}
               </th>
-              <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-stone-500">
                 Service
               </th>
-              <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-stone-500">
                 {activeTab === "bookings" ? "Status" : "Email"}
               </th>
-              <th className="px-6 py-6 text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-stone-500">
                 Notes
               </th>
-              <th className="px-6 py-6 panel-edge-right text-left text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-stone-500">
                 Actions
               </th>
             </tr>
@@ -273,14 +273,14 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             {activeTab === "bookings" &&
               !bookingsLoading &&
               pagedBookings.map((booking: Booking) => (
-                <tr key={booking.id} className="border-b border-stone-100 last:border-b-0">
-                  <td className="panel-gutter py-8">
+                <tr key={booking.id} className="border-b border-stone-100 last:border-b-0 hover:bg-stone-50/50 transition-colors">
+                  <td className="px-6 py-4">
                     {booking.bookingTime?.start ? (
                       <div>
-                        <p className="text-2xl font-semibold text-stone-800">
+                        <p className="text-sm font-medium text-stone-900">
                           {formatDateShortYear(booking.bookingTime.start)}
                         </p>
-                        <p className="mt-1 text-sm font-medium text-stone-400">
+                        <p className="text-xs text-stone-400">
                           {formatTime(booking.bookingTime.start)}
                         </p>
                       </div>
@@ -288,41 +288,41 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
                       <span className="text-sm text-stone-400">N/A</span>
                     )}
                   </td>
-                  <td className="px-6 py-8">
-                    <p className="text-lg font-semibold text-stone-800">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-medium text-stone-900">
                       {(booking.user || booking.customer)
                         ? `${(booking.user || booking.customer)!.firstName} ${(booking.user || booking.customer)!.lastName}`
                         : "N/A"}
                     </p>
                   </td>
-                  <td className="px-6 py-8 text-lg font-medium text-stone-700">
+                  <td className="px-6 py-4 text-sm text-stone-700">
                     {booking.service?.name || "N/A"}
                   </td>
-                  <td className="px-6 py-8">
+                  <td className="px-6 py-4">
                     <span
-                      className={`inline-flex rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] ${getStatusColor(
+                      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusColor(
                         booking.status
                       )}`}
                     >
                       {booking.status}
                     </span>
                   </td>
-                  <td className="px-6 py-8 text-base italic text-stone-500">
+                  <td className="px-6 py-4 text-sm text-stone-500">
                     {booking.customerNotes || "-"}
                   </td>
-                  <td className="px-6 py-8 panel-edge-right">
-                    <div className="flex items-center gap-3">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
                       {booking.status === "Pending" ? (
                         <Button
                           size="sm"
                           onClick={() => handleConfirmBooking(booking.id)}
                           disabled={isUpdating}
-                          className="rounded-2xl bg-stone-900 px-5 py-2.5 text-white hover:bg-black"
+                          className="rounded-lg bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-800"
                         >
                           Confirm
                         </Button>
                       ) : (
-                        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-100 bg-stone-50 text-stone-400">
+                        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-400">
                           <MoreVertical className="h-4 w-4" />
                         </span>
                       )}
@@ -334,14 +334,14 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             {activeTab === "contacts" &&
               !contactsLoading &&
               pagedContacts.map((contact: Contact) => (
-                <tr key={contact.id} className="border-b border-stone-100 last:border-b-0">
-                  <td className="panel-gutter py-8">
+                <tr key={contact.id} className="border-b border-stone-100 last:border-b-0 hover:bg-stone-50/50 transition-colors">
+                  <td className="px-6 py-4">
                     {contact.bookingTime?.start ? (
                       <div>
-                        <p className="text-2xl font-semibold text-stone-800">
+                        <p className="text-sm font-medium text-stone-900">
                           {formatDate(contact.bookingTime.start)}
                         </p>
-                        <p className="mt-1 text-sm font-medium text-stone-400">
+                        <p className="text-xs text-stone-400">
                           {formatYear(contact.bookingTime.start)}
                         </p>
                       </div>
@@ -349,21 +349,21 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
                       <span className="text-sm text-stone-400">N/A</span>
                     )}
                   </td>
-                  <td className="px-6 py-8">
-                    <p className="text-lg font-semibold text-stone-800">
+                  <td className="px-6 py-4">
+                    <p className="text-sm font-medium text-stone-900">
                       {contact.firstName} {contact.lastName}
                     </p>
-                    <p className="text-sm text-stone-500">{contact.phone}</p>
+                    <p className="text-xs text-stone-500">{contact.phone}</p>
                   </td>
-                  <td className="px-6 py-8 text-lg font-medium text-stone-700">
+                  <td className="px-6 py-4 text-sm text-stone-700">
                     {contact.service?.name || "N/A"}
                   </td>
-                  <td className="px-6 py-8 text-base text-stone-600">{contact.email}</td>
-                  <td className="px-6 py-8 text-base italic text-stone-500">
+                  <td className="px-6 py-4 text-sm text-stone-600">{contact.email}</td>
+                  <td className="px-6 py-4 text-sm text-stone-500">
                     {contact.notes || "-"}
                   </td>
-                  <td className="px-6 py-8 panel-edge-right">
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-stone-100 bg-stone-50 text-stone-400">
+                  <td className="px-6 py-4">
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-stone-50 text-stone-400">
                       <MoreVertical className="h-4 w-4" />
                     </span>
                   </td>
@@ -397,25 +397,25 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone-100 panel-gutter py-8">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-stone-100 px-6 py-4">
+        <p className="text-xs text-stone-500">
           Showing {currentItems.length} of {totalEntries} entries
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 disabled:opacity-40 transition-colors hover:bg-stone-50"
             disabled={safePage <= 1}
             onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="inline-flex h-12 min-w-12 items-center justify-center rounded-2xl bg-stone-900 px-3 text-lg font-semibold text-white shadow-lg shadow-stone-900/20">
+          <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-lg bg-stone-900 px-2.5 text-sm font-medium text-white">
             {safePage}
           </span>
           <button
             type="button"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white text-stone-500 disabled:opacity-40"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 disabled:opacity-40 transition-colors hover:bg-stone-50"
             disabled={safePage >= totalPages}
             onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
           >

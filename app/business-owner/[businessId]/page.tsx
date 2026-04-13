@@ -230,14 +230,14 @@ export default function BusinessDashboardPage() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="max-w-7xl mx-auto space-y-8"
+        className="max-w-7xl mx-auto space-y-6"
       >
         {/* Header */}
         <motion.div variants={item}>
-          <h1 className="text-2xl font-semibold text-stone-900 tracking-tight">
+          <h1 className="text-xl font-semibold text-stone-900 tracking-tight">
             Dashboard
           </h1>
-          <p className="text-stone-500 mt-1">
+          <p className="text-sm text-stone-500 mt-1">
             Here&apos;s what&apos;s happening with your business today.
           </p>
         </motion.div>
@@ -248,20 +248,20 @@ export default function BusinessDashboardPage() {
             <motion.div
               key={stat.label}
               variants={item}
-              className="bg-white rounded-3xl border border-stone-200/60 p-5 flex items-start justify-between"
+              className="bg-white rounded-2xl border border-stone-200/60 p-5 flex items-start justify-between"
             >
               <div>
-                <p className="text-sm text-stone-500 font-medium">
+                <p className="text-xs text-stone-500 font-medium">
                   {stat.label}
                 </p>
-                <p className="text-2xl font-semibold text-stone-900 mt-1">
+                <p className="text-xl font-semibold text-stone-900 mt-1">
                   {stat.value}
                 </p>
-                <p className="text-xs text-stone-400 mt-1">{stat.sub}</p>
+                <p className="text-xs text-stone-400 mt-0.5">{stat.sub}</p>
               </div>
               <div
                 className={cn(
-                  "w-10 h-10 rounded-2xl flex items-center justify-center shrink-0",
+                  "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
                   stat.iconBg,
                 )}
               >
@@ -272,14 +272,14 @@ export default function BusinessDashboardPage() {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Upcoming Bookings */}
           <motion.div
             variants={item}
-            className="lg:col-span-2 bg-white rounded-3xl border border-stone-200/60 p-6"
+            className="lg:col-span-2 bg-white rounded-2xl border border-stone-200/60 p-6"
           >
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold text-stone-900">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-stone-900">
                 Upcoming Bookings
               </h2>
               <button
@@ -355,9 +355,9 @@ export default function BusinessDashboardPage() {
           {/* Recent Activity */}
           <motion.div
             variants={item}
-            className="bg-white rounded-3xl border border-stone-200/60 p-6"
+            className="bg-white rounded-2xl border border-stone-200/60 p-6"
           >
-            <h2 className="text-lg font-semibold text-stone-900 mb-5">
+            <h2 className="text-sm font-semibold text-stone-900 mb-4">
               Recent Activity
             </h2>
 
@@ -414,7 +414,7 @@ export default function BusinessDashboardPage() {
 
         {/* Quick Links */}
         <motion.div variants={item}>
-          <h2 className="text-lg font-semibold text-stone-900 mb-4">
+          <h2 className="text-sm font-semibold text-stone-900 mb-3">
             Quick Links
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -423,14 +423,14 @@ export default function BusinessDashboardPage() {
                 key={link.title}
                 onClick={() => router.push(link.href)}
                 className={cn(
-                  "bg-gradient-to-br rounded-3xl border p-5 text-left transition-all hover:shadow-md hover:-translate-y-0.5",
+                  "bg-gradient-to-br rounded-2xl border p-5 text-left transition-all hover:shadow-md hover:-translate-y-0.5",
                   link.gradient,
                   link.border,
                 )}
               >
-                <link.icon className={cn("w-6 h-6 mb-3", link.iconColor)} />
-                <p className="font-semibold text-stone-900">{link.title}</p>
-                <p className="text-sm text-stone-500 mt-0.5">
+                <link.icon className={cn("w-5 h-5 mb-2", link.iconColor)} />
+                <p className="text-sm font-semibold text-stone-900">{link.title}</p>
+                <p className="text-xs text-stone-500 mt-0.5">
                   {link.description}
                 </p>
               </button>

@@ -32,7 +32,6 @@ export const EnhancedBusinessCard = ({
 }: EnhancedBusinessCardProps) => {
   const [imageError, setImageError] = useState(false);
 
-  // Get a consistent placeholder image based on business ID
   const getPlaceholderImage = () => {
     const index = parseInt(business.id.slice(-1), 16) % UNSPLASH_IMAGES.length;
     return UNSPLASH_IMAGES[index];
@@ -48,103 +47,95 @@ export const EnhancedBusinessCard = ({
     <motion.div
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      whileHover={{ y: -6 }}
-      className="group w-full overflow-hidden rounded-[40px] border border-stone-100/80 bg-white shadow-[0_2px_15px_-3px_rgba(0,0,0,0.03)] transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)]"
+      whileHover={{ y: -4 }}
+      className="group w-full overflow-hidden rounded-2xl border border-stone-200/60 bg-white shadow-sm transition-all hover:shadow-lg"
     >
-      <div className="relative h-[192px] w-full overflow-hidden">
+      <div className="relative h-40 w-full overflow-hidden">
         <img
           src={imageUrl}
           alt={business.name}
-          className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105 saturate-[0.85]"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105 saturate-[0.85]"
           onError={() => setImageError(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-900/60 via-stone-900/20 to-transparent" />
-        <div className="absolute bottom-[24px] left-[32px] right-[32px]">
-          <h3 className="text-2xl font-semibold leading-none tracking-tight text-white">
+        <div className="absolute bottom-4 left-5 right-5">
+          <h3 className="text-base font-semibold leading-tight text-white">
             {business.name}
           </h3>
-          <div className="mt-[10px] flex items-center gap-2 text-sm font-medium text-white/80">
-            <AtSign className="h-3.5 w-3.5 opacity-60" />
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-white/80">
+            <AtSign className="h-3 w-3 opacity-60" />
             <span>{business.slug}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col p-[32px]">
-        <div>
-          <div className="mb-[40px] space-y-[14px]">
-            <div className="flex cursor-default items-center gap-[14px] text-stone-600">
-              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-stone-50">
-                <Mail className="h-4 w-4 text-stone-400" />
-              </div>
-              <span className="truncate text-[14px] font-medium tracking-tight text-stone-600">
-                {email}
-              </span>
+      <div className="flex flex-col p-5">
+        <div className="mb-5 space-y-3">
+          <div className="flex items-center gap-3 text-stone-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-50">
+              <Mail className="h-3.5 w-3.5 text-stone-400" />
             </div>
-            <div className="flex cursor-default items-center gap-[14px] text-stone-600">
-              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-stone-50">
-                <Phone className="h-4 w-4 text-stone-400" />
-              </div>
-              <span className="truncate text-[14px] font-medium tracking-tight text-stone-600">
-                {phone}
-              </span>
-            </div>
-            <div className="flex cursor-default items-center gap-[14px] text-stone-600">
-              <div className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-stone-50">
-                <MapPin className="h-4 w-4 text-stone-400" />
-              </div>
-              <span className="truncate text-[14px] font-medium tracking-tight text-stone-600">
-                {address}
-              </span>
-            </div>
+            <span className="truncate text-sm text-stone-600">{email}</span>
           </div>
-
-          <div className="grid grid-cols-2 gap-[16px]">
-            <a
-              href={`/business/slug/${business.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-900 px-4 text-[13px] leading-none font-bold text-stone-50 shadow-lg shadow-stone-900/10 transition-all duration-300 hover:bg-stone-800 hover:text-stone-50 active:scale-95"
-            >
-              <Eye className="h-4 w-4 text-stone-50" />
-              <span className="text-stone-50">Public Site</span>
-            </a>
-
-            <a
-              href={`/business-owner/${business.id}`}
-              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-50 px-4 text-[13px] leading-none font-bold text-stone-700 transition-all duration-300 hover:bg-stone-100 hover:text-stone-700 active:scale-95"
-            >
-              <Settings className="h-4 w-4 text-stone-600" />
-              <span className="text-stone-700">Dashboard</span>
-            </a>
-
-            <a
-              href={`/business-owner/${business.id}/bookings`}
-              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-50 px-4 text-[13px] leading-none font-bold text-stone-700 transition-all duration-300 hover:bg-stone-100 hover:text-stone-700 active:scale-95"
-            >
-              <Calendar className="h-4 w-4 text-stone-600" />
-              <span className="text-stone-700">Bookings</span>
-            </a>
-
-            <a
-              href={`/business-owner/${business.id}/settings`}
-              className="inline-flex h-[46px] items-center justify-center gap-3 rounded-[20px] bg-stone-50 px-4 text-[13px] leading-none font-bold text-stone-700 transition-all duration-300 hover:bg-stone-100 active:scale-95"
-            >
-              <Users className="h-4 w-4 text-stone-600" />
-              <span className="text-stone-700">Team</span>
-            </a>
+          <div className="flex items-center gap-3 text-stone-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-50">
+              <Phone className="h-3.5 w-3.5 text-stone-400" />
+            </div>
+            <span className="truncate text-sm text-stone-600">{phone}</span>
+          </div>
+          <div className="flex items-center gap-3 text-stone-600">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-stone-50">
+              <MapPin className="h-3.5 w-3.5 text-stone-400" />
+            </div>
+            <span className="truncate text-sm text-stone-600">{address}</span>
           </div>
         </div>
 
-        <div className="mt-7 flex items-center justify-between border-t border-stone-100 pt-4 pb-2">
-          <div className="flex items-center gap-2.5">
-            <div className="h-2 w-2 rounded-full bg-[#8BA88E] shadow-[0_0_8px_rgba(139,168,142,0.6)] animate-pulse" />
-            <span className="text-xs leading-tight font-bold uppercase tracking-widest text-stone-400">
-              Active Now
+        <div className="grid grid-cols-2 gap-2">
+          <a
+            href={`/business/slug/${business.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-stone-900 px-3 text-sm font-medium text-white transition-all hover:bg-stone-800 active:scale-[0.97]"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            Public Site
+          </a>
+
+          <a
+            href={`/business-owner/${business.id}`}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-stone-50 px-3 text-sm font-medium text-stone-700 transition-all hover:bg-stone-100 active:scale-[0.97]"
+          >
+            <Settings className="h-3.5 w-3.5 text-stone-500" />
+            Dashboard
+          </a>
+
+          <a
+            href={`/business-owner/${business.id}/bookings`}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-stone-50 px-3 text-sm font-medium text-stone-700 transition-all hover:bg-stone-100 active:scale-[0.97]"
+          >
+            <Calendar className="h-3.5 w-3.5 text-stone-500" />
+            Bookings
+          </a>
+
+          <a
+            href={`/business-owner/${business.id}/settings`}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-stone-50 px-3 text-sm font-medium text-stone-700 transition-all hover:bg-stone-100 active:scale-[0.97]"
+          >
+            <Users className="h-3.5 w-3.5 text-stone-500" />
+            Team
+          </a>
+        </div>
+
+        <div className="mt-4 flex items-center justify-between border-t border-stone-100 pt-3">
+          <div className="flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-[#8BA88E] animate-pulse" />
+            <span className="text-xs font-medium text-stone-400">
+              Active
             </span>
           </div>
-          <button className="rounded-full p-2.5 text-stone-300 transition-all hover:bg-stone-50 hover:text-stone-500">
-            <MoreHorizontal className="h-6 w-6" />
+          <button className="rounded-lg p-1.5 text-stone-300 transition-all hover:bg-stone-50 hover:text-stone-500">
+            <MoreHorizontal className="h-4 w-4" />
           </button>
         </div>
       </div>

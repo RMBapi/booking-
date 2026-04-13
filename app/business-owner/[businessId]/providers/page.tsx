@@ -74,7 +74,7 @@ export default function ProvidersPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
-      <main className="bo-dashboard-shell flex flex-col gap-8 py-10 md:py-14">
+      <main className="bo-dashboard-shell flex flex-col gap-6 py-6 lg:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -12 }}
@@ -83,17 +83,17 @@ export default function ProvidersPage() {
           className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-stone-900 md:text-4xl">
+            <h1 className="text-xl font-semibold tracking-tight text-stone-900">
               Team & Providers
             </h1>
-            <p className="mt-1 text-base text-stone-500">
+            <p className="mt-1 text-sm text-stone-500">
               Manage your service providers and team members
             </p>
           </div>
           <button
             type="button"
             className={cn(
-              "inline-flex items-center gap-2 rounded-2xl bg-[#D4A574] px-5 py-2.5",
+              "inline-flex items-center gap-2 h-10 rounded-lg bg-[#D4A574] px-4",
               "text-sm font-medium text-white shadow-sm transition",
               "hover:bg-[#c4955f] active:scale-[0.97]",
             )}
@@ -113,19 +113,19 @@ export default function ProvidersPage() {
               variants={fadeUp}
               initial="hidden"
               animate="visible"
-              className="flex items-center gap-4 rounded-3xl border border-stone-100 bg-white p-5 shadow-sm"
+              className="flex items-center gap-4 rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm"
             >
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br",
+                  "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br",
                   stat.gradient,
                 )}
               >
                 <stat.icon className={cn("h-5 w-5", stat.iconColor)} />
               </div>
               <div>
-                <p className="text-sm text-stone-500">{stat.label}</p>
-                <p className="text-2xl font-semibold text-stone-900">
+                <p className="text-xs text-stone-500">{stat.label}</p>
+                <p className="text-xl font-semibold text-stone-900">
                   {stat.value}
                 </p>
               </div>
@@ -135,16 +135,16 @@ export default function ProvidersPage() {
 
         {/* Search */}
         <div className="relative max-w-sm">
-          <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
           <input
             type="text"
             placeholder="Search providers..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={cn(
-              "w-full rounded-2xl border border-stone-200 bg-white py-2.5 pl-10 pr-4",
+              "w-full h-10 rounded-lg border border-stone-200 bg-white pl-9 pr-4",
               "text-sm text-stone-800 placeholder:text-stone-400",
-              "outline-none transition focus:border-[#D4A574]/50 focus:ring-2 focus:ring-[#D4A574]/20",
+              "outline-none transition focus:border-stone-300 focus:ring-2 focus:ring-stone-200",
             )}
           />
         </div>
@@ -178,7 +178,7 @@ export default function ProvidersPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="grid grid-cols-1 gap-5 md:grid-cols-2"
+                className="grid grid-cols-1 gap-4 md:grid-cols-2"
               >
                 {filtered.map((provider, i) => {
                   const firstName =
@@ -197,37 +197,37 @@ export default function ProvidersPage() {
                       variants={fadeUp}
                       initial="hidden"
                       animate="visible"
-                      className="group relative overflow-hidden rounded-3xl border border-stone-100 bg-white p-6 shadow-sm transition hover:shadow-md"
+                      className="group relative overflow-hidden rounded-2xl border border-stone-200/60 bg-white p-5 shadow-sm transition hover:shadow-md"
                     >
                       {/* Actions */}
-                      <div className="absolute right-4 top-4 flex gap-1.5 opacity-0 transition group-hover:opacity-100">
-                        <button className="rounded-xl bg-stone-100 p-2 text-stone-500 transition hover:bg-[#D4A574]/10 hover:text-[#D4A574]">
+                      <div className="absolute right-4 top-4 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                        <button className="rounded-lg bg-stone-100 p-1.5 text-stone-500 transition hover:bg-[#D4A574]/10 hover:text-[#D4A574]">
                           <Edit3 className="h-3.5 w-3.5" />
                         </button>
-                        <button className="rounded-xl bg-stone-100 p-2 text-stone-500 transition hover:bg-red-50 hover:text-red-500">
+                        <button className="rounded-lg bg-stone-100 p-1.5 text-stone-500 transition hover:bg-red-50 hover:text-red-500">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
 
-                      <div className="flex items-start gap-4">
+                      <div className="flex items-start gap-3">
                         {/* Avatar */}
                         {avatar ? (
                           <img
                             src={avatar}
                             alt={fullName}
-                            className="h-14 w-14 rounded-2xl object-cover"
+                            className="h-10 w-10 rounded-xl object-cover"
                           />
                         ) : (
-                          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#D4A574]/20 to-[#8BA88E]/20">
-                            <UserCircle className="h-7 w-7 text-[#D4A574]" />
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#D4A574]/20 to-[#8BA88E]/20">
+                            <UserCircle className="h-5 w-5 text-[#D4A574]" />
                           </div>
                         )}
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-base font-semibold text-stone-900">
+                          <h3 className="truncate text-sm font-semibold text-stone-900">
                             {fullName}
                           </h3>
-                          <p className="mt-0.5 truncate text-sm text-stone-500">
+                          <p className="mt-0.5 truncate text-xs text-stone-500">
                             {provider.description ?? "Service Provider"}
                           </p>
                         </div>

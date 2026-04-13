@@ -73,12 +73,12 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           >
             <div className="min-w-0 flex-1">
               {title && (
-                <h3 className="text-xl font-semibold text-gray-900">
+                <h3 className="text-base font-medium text-gray-900">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-sm text-gray-600 mt-1.5">{subtitle}</p>
+                <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
               )}
             </div>
             {headerAction && <div className="shrink-0">{headerAction}</div>}

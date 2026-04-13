@@ -75,7 +75,7 @@ export const Table = <T extends Record<string, any>>({
                   key={index}
                   style={{ width: col.width }}
                   className={cn(
-                    "px-6 py-3.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider",
+                    "px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider",
                     col.className
                   )}
                 >

@@ -98,7 +98,7 @@ function SidebarContent({
     <div className="flex h-full flex-col">
       {businesses.length > 0 && currentBusiness && onBusinessChange && onCreateBusiness ? (
         <div className="px-4 pb-6 pt-8 border-b border-stone-200/50">
-          <p className="text-[10px] font-bold text-stone-400 uppercase tracking-[0.2em] px-2 mb-3">
+          <p className="text-xs text-stone-400 uppercase tracking-wider font-medium px-2 mb-3">
             Current Business
           </p>
           <BusinessSwitcher

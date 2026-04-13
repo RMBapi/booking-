@@ -306,15 +306,15 @@ export default function BusinessServicesPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFCFB]">
-      <div className="px-4 md:px-8 py-8 md:py-12 max-w-[1400px] mx-auto">
+      <div className="px-6 lg:px-8 py-6 lg:py-8 max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8"
+          className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6"
         >
           <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-stone-900">
+            <h1 className="text-xl font-semibold text-stone-900">
               Services
             </h1>
             <p className="text-sm text-stone-500 mt-1">
@@ -323,7 +323,7 @@ export default function BusinessServicesPage() {
           </div>
           <button
             type="button"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-stone-900 text-white rounded-full text-sm font-medium hover:bg-stone-800 transition-colors"
+            className="inline-flex items-center gap-2 h-10 px-4 bg-stone-900 text-white rounded-lg text-sm font-medium hover:bg-stone-800 transition-colors"
             onClick={() => setIsAddServiceOpen(true)}
           >
             <Plus className="w-4 h-4" />
@@ -336,19 +336,19 @@ export default function BusinessServicesPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-white rounded-[48px] border border-stone-200 shadow-sm overflow-hidden"
+          className="bg-white rounded-2xl border border-stone-200 shadow-sm overflow-hidden"
         >
           {/* Toolbar */}
-          <div className="px-6 md:px-8 pt-6 md:pt-8 pb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="px-6 pt-4 pb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
             <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Search services..."
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 focus:border-transparent transition"
+                className="w-full h-10 pl-9 pr-4 bg-white border border-stone-200 rounded-lg text-sm text-stone-700 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-200 focus:border-stone-300 transition"
               />
             </div>
 
@@ -356,7 +356,7 @@ export default function BusinessServicesPage() {
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-50 border border-stone-200 rounded-2xl text-sm text-stone-600 hover:bg-stone-100 transition-colors"
+                className="inline-flex items-center gap-2 h-10 px-3 bg-white border border-stone-200 rounded-lg text-sm text-stone-600 hover:bg-stone-50 transition-colors"
               >
                 {selectedStatusLabel}
                 <ChevronDown
@@ -379,7 +379,7 @@ export default function BusinessServicesPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -4 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute right-0 top-full mt-1 z-20 bg-white border border-stone-200 rounded-2xl shadow-lg py-1.5 min-w-[160px]"
+                      className="absolute right-0 top-full mt-1 z-20 bg-white border border-stone-200 rounded-lg shadow-lg py-1 min-w-[160px]"
                     >
                       {STATUS_OPTIONS.map((opt) => (
                         <button
@@ -444,7 +444,7 @@ export default function BusinessServicesPage() {
                     ].map((heading) => (
                       <th
                         key={heading}
-                        className="px-6 md:px-8 py-3 text-left text-[11px] font-semibold text-stone-400 uppercase tracking-wider"
+                        className="px-6 py-3 text-left text-xs font-medium text-stone-500 uppercase tracking-wider"
                       >
                         {heading}
                       </th>
@@ -463,28 +463,28 @@ export default function BusinessServicesPage() {
                         transition={{ delay: idx * 0.03 }}
                         className="border-b border-stone-50 hover:bg-stone-50/50 transition-colors group"
                       >
-                        <td className="px-6 md:px-8 py-4">
+                        <td className="px-6 py-4">
                           <span className="text-sm font-semibold text-stone-800">
                             {service.name}
                           </span>
                         </td>
-                        <td className="px-6 md:px-8 py-4">
+                        <td className="px-6 py-4">
                           <span className="text-sm text-stone-500 line-clamp-1 max-w-[200px]">
                             {service.description || "—"}
                           </span>
                         </td>
-                        <td className="px-6 md:px-8 py-4">
+                        <td className="px-6 py-4">
                           <span className="text-sm font-medium text-stone-700">
                             {currencyFormat(service.price)}
                           </span>
                         </td>
-                        <td className="px-6 md:px-8 py-4">
+                        <td className="px-6 py-4">
                           <VisibilityBadge visible={service.priceDisplayMode} />
                         </td>
-                        <td className="px-6 md:px-8 py-4">
+                        <td className="px-6 py-4">
                           <StatusBadge status={service.status} />
                         </td>
-                        <td className="px-6 md:px-8 py-4">
+                        <td className="px-6 py-4">
                           <div className="flex items-center gap-1">
                             <ActionButton
                               icon={<Pencil className="w-4 h-4" />}
@@ -523,8 +523,8 @@ export default function BusinessServicesPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="px-6 md:px-8 py-5 border-t border-stone-100 flex items-center justify-between">
-              <p className="text-sm text-stone-500">
+            <div className="px-6 py-4 border-t border-stone-100 flex items-center justify-between">
+              <p className="text-xs text-stone-500">
                 Showing{" "}
                 <span className="font-medium text-stone-700">
                   {(page - 1) * ITEMS_PER_PAGE + 1}

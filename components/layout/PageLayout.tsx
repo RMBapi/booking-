@@ -51,11 +51,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl font-semibold text-gray-900 truncate">
+              <h1 className="text-xl font-semibold text-gray-900 truncate leading-snug">
                 {title}
               </h1>
               {subtitle && (
-                <p className="text-sm text-gray-600 mt-1.5">{subtitle}</p>
+                <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
               )}
             </div>
           </div>
@@ -111,10 +111,10 @@ export const Section: React.FC<SectionProps> = ({
         <div className="flex items-start justify-between gap-6 w-full">
           <div className="min-w-0 flex-1">
             {title && (
-              <h2 className="text-2xl font-semibold text-gray-900">{title}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
             )}
             {subtitle && (
-              <p className="text-sm text-gray-600 mt-1.5">{subtitle}</p>
+              <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
             )}
           </div>
           {action && <div className="flex-shrink-0">{action}</div>}
@@ -151,9 +151,9 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           {icon}
         </div>
       )}
-      <h3 className="text-2xl font-semibold text-gray-900 mb-3">{title}</h3>
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
       {description && (
-        <p className="text-sm text-gray-600 max-w-md mb-8">{description}</p>
+        <p className="text-sm text-gray-500 max-w-md mb-6">{description}</p>
       )}
       {action}
     </div>

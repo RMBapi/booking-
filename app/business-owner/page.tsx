@@ -134,17 +134,17 @@ export default function BusinessOwnerDashboard() {
                   <div className="w-20 h-20 bg-primary-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
                     <Building2 className="w-10 h-10 text-primary-600" />
                   </div>
-                  <h2 className="text-3xl font-semibold text-stone-800 mb-4">
+                  <h2 className="text-xl font-semibold text-stone-800 mb-3">
                     Welcome to Your Dashboard!
                   </h2>
-                  <p className="text-stone-500 mb-8 leading-relaxed">
+                  <p className="text-sm text-stone-500 mb-6 leading-relaxed">
                     You haven&apos;t created a business profile yet. Let&apos;s
                     get started and unlock all the powerful features to grow
                     your business.
                   </p>
                   <button
                     onClick={() => setIsCreateBusinessOpen(true)}
-                    className="inline-flex h-12 items-center justify-center whitespace-nowrap leading-none gap-[10px] px-8 py-[14px] bg-teal-800 text-stone-50 rounded-xl text-sm font-bold hover:bg-teal-900 transition-all duration-300 shadow-lg shadow-teal-900/10 mx-auto"
+                    className="inline-flex h-10 items-center justify-center whitespace-nowrap gap-2 px-5 bg-teal-800 text-white rounded-lg text-sm font-medium hover:bg-teal-900 transition-all mx-auto"
                   >
                     <Plus className="w-5 h-5" />
                     Create Business Profile
@@ -160,10 +160,10 @@ export default function BusinessOwnerDashboard() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8, ease: "easeOut" }}
                   >
-                    <h1 className="text-5xl font-semibold tracking-tight text-stone-900">
+                    <h1 className="text-xl font-semibold tracking-tight text-stone-900">
                       Welcome back, {user.firstName || "Alexander"}
                     </h1>
-                    <p className="mt-4 max-w-lg text-lg font-medium leading-relaxed text-stone-500">
+                    <p className="mt-1 max-w-lg text-sm text-stone-500">
                       Take a breath and review your portfolio overview.
                       Everything is running smoothly.
                     </p>
@@ -172,16 +172,16 @@ export default function BusinessOwnerDashboard() {
                   <div className="flex items-center gap-4">
                     <button
                       onClick={() => setIsCreateBusinessOpen(true)}
-                      className="inline-flex h-14 min-w-[176px] items-center justify-center gap-3 whitespace-nowrap rounded-[24px] bg-stone-900 px-8 text-[14px] font-bold leading-none text-white shadow-xl shadow-stone-900/20 transition-all duration-300 hover:bg-stone-800 active:scale-95"
+                      className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-stone-900 px-4 text-sm font-medium text-white transition-all hover:bg-stone-800 active:scale-[0.97]"
                     >
-                      <Plus className="h-5 w-5" />
+                      <Plus className="h-4 w-4" />
                       New Business
                     </button>
                   </div>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                   <StatCard
                     {...mockStatsData.totalBusinesses}
                     value={businesses.length.toString()}
@@ -190,40 +190,40 @@ export default function BusinessOwnerDashboard() {
                 </div>
 
                 {/* Content Controls */}
-                <div className="flex items-center justify-between border-b border-stone-100/80 pb-8">
-                  <div className="flex items-center gap-10">
-                    <h2 className="flex items-center gap-4 text-2xl font-semibold text-stone-900">
+                <div className="flex items-center justify-between border-b border-stone-200/60 pb-4">
+                  <div className="flex items-center gap-4">
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-stone-900">
                       My Portfolio
-                      <span className="rounded-full border border-stone-200 bg-stone-100 px-3 py-1 text-[12px] font-bold text-stone-500 shadow-inner">
+                      <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-500">
                         {businesses.length}
                       </span>
                     </h2>
-                    <div className="flex items-center rounded-2xl border border-stone-100/50 bg-stone-50 p-1.5 shadow-inner">
+                    <div className="flex items-center rounded-lg border border-stone-200 bg-stone-50 p-0.5">
                       <button
                         onClick={() => setViewMode("grid")}
-                        className={`rounded-xl p-2.5 transition-all duration-500 ${viewMode === "grid" ? "bg-white text-stone-900 shadow-md" : "text-stone-300 hover:text-stone-400"}`}
+                        className={`rounded-md p-1.5 transition-all ${viewMode === "grid" ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-500"}`}
                       >
-                        <LayoutGrid className="w-5 h-5" />
+                        <LayoutGrid className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setViewMode("list")}
-                        className={`rounded-xl p-2.5 transition-all duration-500 ${viewMode === "list" ? "bg-white text-stone-900 shadow-md" : "text-stone-300 hover:text-stone-400"}`}
+                        className={`rounded-md p-1.5 transition-all ${viewMode === "list" ? "bg-white text-stone-900 shadow-sm" : "text-stone-400 hover:text-stone-500"}`}
                       >
-                        <List className="w-5 h-5" />
+                        <List className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    <button className="inline-flex h-12 items-center justify-center gap-3 whitespace-nowrap rounded-2xl border border-stone-100 bg-white px-5 text-[14px] font-bold leading-none text-stone-500 transition-all hover:bg-stone-50 active:scale-95">
-                      <Filter className="w-4 h-4 opacity-40" />
+                  <div className="flex items-center gap-2">
+                    <button className="inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-stone-200 bg-white px-3 text-sm font-medium text-stone-500 transition-all hover:bg-stone-50">
+                      <Filter className="w-3.5 h-3.5 opacity-40" />
                       Refine View
                     </button>
                   </div>
                 </div>
 
                 {/* Businesses Grid */}
-                <div className="grid grid-cols-1 gap-10 pb-32 md:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-6 pb-16 md:grid-cols-2 lg:grid-cols-3">
                   <AnimatePresence mode="popLayout">
                     {businesses.map((business) => (
                       <EnhancedBusinessCard
@@ -237,22 +237,22 @@ export default function BusinessOwnerDashboard() {
                   <motion.button
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    whileHover={{ y: -4 }}
+                    whileHover={{ y: -2 }}
                     onClick={() => setIsCreateBusinessOpen(true)}
-                    className="group flex min-h-[480px] flex-col items-center justify-center rounded-[48px] border-2 border-dashed border-stone-200 p-12 transition-all duration-700 hover:border-stone-400 hover:bg-stone-50/40"
+                    className="group flex min-h-[320px] flex-col items-center justify-center rounded-2xl border-2 border-dashed border-stone-200 p-8 transition-all hover:border-stone-300 hover:bg-stone-50/40"
                   >
-                    <div className="mb-8 flex h-20 w-20 items-center justify-center rounded-3xl bg-stone-50 transition-all duration-700 group-hover:bg-white group-hover:shadow-xl">
-                      <Plus className="h-10 w-10 text-stone-300 transition-colors group-hover:text-stone-900" />
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-stone-50 transition-all group-hover:bg-white group-hover:shadow-md">
+                      <Plus className="h-6 w-6 text-stone-300 transition-colors group-hover:text-stone-900" />
                     </div>
-                    <h3 className="text-xl font-semibold text-stone-900">
+                    <h3 className="text-sm font-semibold text-stone-900">
                       Expand Portfolio
                     </h3>
-                    <p className="mt-4 max-w-[240px] text-center text-[15px] font-medium leading-relaxed text-stone-400">
+                    <p className="mt-2 max-w-[200px] text-center text-xs text-stone-400">
                       Ready to start a new venture? Add it to your dashboard
                       here.
                     </p>
-                    <div className="mt-10 flex translate-y-4 items-center gap-2 text-[12px] font-bold uppercase tracking-[0.3em] text-stone-900 opacity-0 transition-all duration-700 group-hover:translate-y-0 group-hover:opacity-100">
-                      Get Started <ArrowUpRight className="h-5 w-5" />
+                    <div className="mt-4 flex translate-y-2 items-center gap-1 text-xs font-medium uppercase tracking-wider text-stone-900 opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
+                      Get Started <ArrowUpRight className="h-3.5 w-3.5" />
                     </div>
                   </motion.button>
                 </div>

@@ -1,57 +1,67 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
+  IsIn,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MinLength,
-  IsOptional,
 } from 'class-validator';
+import { ALL_SYSTEM_ROLES } from '../../../common/constants/permissions';
 
 export class RegisterDto {
-  @ApiProperty({ description: 'First name of the user', example: 'John' })
+  @ApiProperty({ example: 'John' })
   @IsString()
   @IsNotEmpty()
   firstName: string;
 
-  @ApiProperty({ description: 'Last name of the user', example: 'Doe' })
+  @ApiProperty({ example: 'Doe' })
   @IsString()
   @IsNotEmpty()
   lastName: string;
 
-  @ApiProperty({ description: 'Email address', example: 'john.doe@example.com' })
+  @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ description: 'Phone number', example: '+1234567890' })
+  @ApiProperty({ example: '+1234567890' })
   @IsString()
   @IsNotEmpty()
   phone: string;
 
-  @ApiProperty({
-    description: 'Password (minimum 6 characters)',
-    example: 'Password123!',
-    minLength: 6,
-  })
+  @ApiProperty({ minLength: 6 })
   @IsString()
   @MinLength(6)
   @IsNotEmpty()
   password: string;
 
   @ApiProperty({
-    description: 'User role (Super_Admin cannot self-register)',
+    description:
+      'One of the four system roles. Super_Admin cannot self-register.',
+    enum: ALL_SYSTEM_ROLES,
     example: 'Customer',
   })
   @IsString()
   @IsNotEmpty()
+  @IsIn(ALL_SYSTEM_ROLES as readonly string[])
   role: string;
 
-  @ApiProperty({
-    description: 'Business site slug. Required when role is Customer.',
-    example: 'my-awesome-salon',
-    required: false,
-  })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   businessSiteSlug?: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Business name when registering as Business_owner',
+  })
+  @IsOptional()
+  @IsString()
+  businessName?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  invitationToken?: string;
 }

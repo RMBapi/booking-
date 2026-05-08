@@ -1,10 +1,37 @@
-import { Controller, Post, Body, Logger } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Logger,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
+import type { Request, Response } from 'express';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { MeResponseDto } from './dto/me-response.dto';
 import { Public } from './decorators/public.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
+import {
+  REFRESH_COOKIE_NAME,
+  clearRefreshCookie,
+  readCookie,
+  setRefreshCookie,
+} from '../../common/cookies';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -14,98 +41,128 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 3 } })
   @Post('register')
-  @ApiOperation({
-    summary: 'Register a new user',
-    description:
-      'Register a new user account. This endpoint is public and does not require authentication.\n\n' +
-      '**Use Cases:** User registration forms, sign-up flows, account creation.\n\n' +
-      '**Available Roles:**\n' +
-      '• `Customer` - End users who can book services\n' +
-      '• `Service_Provider` - Staff members who provide services\n' +
-      '• `Business_owner` - Business owners who manage their business\n' +
-      '• `Super_Admin` - System administrators (use with caution)\n\n' +
-      '**Request Body:**\n' +
-      '• `firstName` (required) - User\'s first name\n' +
-      '• `lastName` (required) - User\'s last name\n' +
-      '• `email` (required) - User\'s email (must be unique)\n' +
-      '• `phone` (required) - User\'s phone number\n' +
-      '• `password` (required) - User\'s password (will be hashed)\n' +
-      '• `role` (required) - User role (Customer, Service_Provider, Business_owner, or Super_Admin)\n\n' +
-      '**Response:** Returns JWT access token and user information. Token expires in 7 days.',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'User successfully registered',
-    type: AuthResponseDto,
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Email already registered - User with this email already exists',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Invalid input data or missing required fields',
-  })
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    this.logger.log(`Registration request for: ${registerDto.email}`);
-    try {
-      const result = await this.authService.register(registerDto);
-      this.logger.log(`Registration successful for: ${registerDto.email}`);
-      return result;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      this.logger.error(
-        `Registration failed for ${registerDto.email}: ${errorMessage}`,
-        errorStack,
-      );
-      throw error;
-    }
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiResponse({ status: 201, type: AuthResponseDto })
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
+    const result = await this.authService.register(registerDto);
+    await this.attachRefreshCookie(req, res, result.user.id);
+    return result;
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
   @Post('login')
+  @ApiOperation({ summary: 'Login user' })
+  @ApiResponse({ status: 200, type: AuthResponseDto })
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
+    const result = await this.authService.login(loginDto);
+    await this.attachRefreshCookie(req, res, result.user.id);
+    return result;
+  }
+
+  @Get('me')
+  @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Login user',
-    description:
-      'Login with email and password to get a JWT access token. This endpoint is public and does not require authentication.\n\n' +
-      '**Use Cases:** User login forms, authentication flows, token generation for protected endpoints.\n\n' +
-      '**Request Body:**\n' +
-      '• `email` (required) - User\'s email\n' +
-      '• `password` (required) - User\'s password\n' +
-      '• `role` (optional) - User role context. Required for `Customer`; optional for other roles\n' +
-      '• `businessSiteSlug` (required when role is `Customer`) - Site scope for customer login\n\n' +
-      '**Response:** Returns JWT access token and user information. Token expires in 7 days.\n\n' +
-      '**Important Notes:**\n' +
-      '• User must be active (isActive === true)\n' +
-      '• User must not be soft-deleted\n' +
-      '• Password is verified against hashed password in database\n' +
-      '• If role is omitted, backend auto-selects a default non-customer role from assigned roles',
+    summary: 'Get current user, system role, and businesses with permissions',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'User successfully logged in',
-    type: AuthResponseDto,
+  @ApiResponse({ status: 200, type: MeResponseDto })
+  async getMe(@CurrentUser() user: { id: string }): Promise<MeResponseDto> {
+    return this.authService.getMe(user.id);
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 60_000, limit: 30 } })
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Rotate the refresh token and issue a new access token',
   })
-  @ApiResponse({
-    status: 401,
-    description: 'Unauthorized - Invalid email, password, role, or customer site scope',
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ accessToken: string }> {
+    const presented = readCookie(req, REFRESH_COOKIE_NAME);
+    if (!presented) throw new UnauthorizedException('Missing refresh token');
+    const pair = await this.authService.rotateRefreshToken(presented, {
+      userAgent: req.headers['user-agent'] ?? undefined,
+      ip: req.ip ?? undefined,
+    });
+    setRefreshCookie(res, pair.refreshToken, {
+      maxAgeSeconds: Math.floor(
+        (pair.refreshTokenExpiresAt.getTime() - Date.now()) / 1000,
+      ),
+    });
+    return { accessToken: pair.accessToken };
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 60_000, limit: 5 } })
+  @ApiOperation({
+    summary:
+      'Change the authenticated user password. Clears passwordChangeRequired and rotates refresh tokens.',
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Missing required fields',
-  })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    this.logger.log(`Login request for: ${loginDto.email}`);
-    try {
-      const result = await this.authService.login(loginDto);
-      this.logger.log(`Login successful for: ${loginDto.email}`);
-      return result;
-    } catch (error) {
-      this.logger.warn(`Login failed for ${loginDto.email}: ${error.message}`);
-      throw error;
-    }
+  async changePassword(
+    @CurrentUser() current: { id: string },
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.changePassword(current.id, dto, {
+      userAgent: req.headers['user-agent'] ?? undefined,
+      ip: req.ip ?? undefined,
+    });
+    setRefreshCookie(res, result.refreshToken, {
+      maxAgeSeconds: Math.floor(
+        (result.refreshTokenExpiresAt.getTime() - Date.now()) / 1000,
+      ),
+    });
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: 'Password updated successfully',
+      timestamp: new Date().toISOString(),
+      data: { accessToken: result.accessToken, user: result.user },
+    };
+  }
+
+  @Public()
+  @Post('logout')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<void> {
+    const presented = readCookie(req, REFRESH_COOKIE_NAME);
+    await this.authService.logoutByRefreshToken(presented);
+    clearRefreshCookie(res);
+  }
+
+  private async attachRefreshCookie(
+    req: Request,
+    res: Response,
+    userId: string,
+  ): Promise<void> {
+    const { token, expiresAt } = await this.authService.issueRefreshToken(
+      userId,
+      {
+        userAgent: req.headers['user-agent'] ?? undefined,
+        ip: req.ip ?? undefined,
+      },
+    );
+    setRefreshCookie(res, token, {
+      maxAgeSeconds: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
+    });
   }
 }

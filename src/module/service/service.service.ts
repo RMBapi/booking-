@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
@@ -41,43 +40,13 @@ export class ServiceService {
     };
   }
 
-  /**
-   * Verify that the user owns the business
-   */
-  private async verifyBusinessOwnership(
-    businessId: string,
-    userId: string,
-  ): Promise<void> {
-    const ownerLink = await this.prisma.userBusiness.findUnique({
-      where: {
-        userId_businessId: {
-          userId,
-          businessId,
-        },
-      },
-    });
-
-    if (!ownerLink) {
-      throw new ForbiddenException("You don't have access to this business");
-    }
-  }
-
   async create(
     createServiceDto: CreateServiceDto,
     businessId: string,
     userId: string,
   ) {
-    // Verify business exists
-    const business = await this.prisma.business.findFirst({
-      where: { id: businessId, deletedAt: null },
-    });
-
-    if (!business) {
-      throw new NotFoundException(`Business with ID ${businessId} not found`);
-    }
-
-    // Verify user owns the business
-    await this.verifyBusinessOwnership(businessId, userId);
+    // Business membership verified by FeatureGuard at controller level.
+    void userId;
 
     const service = await this.prisma.service.create({
       data: {
@@ -104,8 +73,7 @@ export class ServiceService {
   }
 
   async findOne(id: string, businessId: string, userId: string) {
-    // Verify user owns the business
-    await this.verifyBusinessOwnership(businessId, userId);
+    void userId; // FeatureGuard verified business membership at controller level.
 
     const businessService = await this.prisma.businessService.findFirst({
       where: {
@@ -205,8 +173,7 @@ export class ServiceService {
   }
 
   async findAll(queryDto: ServiceQueryDto, businessId: string, userId: string) {
-    // Verify user owns the business
-    await this.verifyBusinessOwnership(businessId, userId);
+    void userId; // FeatureGuard verified business membership at controller level.
 
     const paginationOptions =
       this.paginationService.buildPaginationOptions(queryDto);

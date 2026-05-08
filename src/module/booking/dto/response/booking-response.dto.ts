@@ -1,6 +1,75 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BookingStatus, ConfirmationMethod, BookingSource } from '../../../../types/enums';
+import {
+  BookingStatus,
+  ConfirmationMethod,
+  BookingSource,
+} from '../../../../types/enums';
+
+@Exclude()
+export class BookingUserBriefDto {
+  @Expose()
+  @ApiPropertyOptional({
+    description: 'Null when the booking was created for a guest customer.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
+  })
+  id: string | null;
+
+  @Expose()
+  @ApiProperty({ example: 'Jane', nullable: true })
+  firstName: string | null;
+
+  @Expose()
+  @ApiProperty({ example: 'Doe', nullable: true })
+  lastName: string | null;
+
+  @Expose()
+  @ApiProperty({ example: 'jane@example.com' })
+  email: string;
+
+  @Expose()
+  @ApiProperty({ example: '+1234567890', nullable: true })
+  phone: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    description:
+      'True when this customer is a guest (no User record). Absent / false for registered customers.',
+    example: false,
+  })
+  isGuest?: boolean;
+}
+
+@Exclude()
+export class BookingServiceBriefDto {
+  @Expose()
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @Expose()
+  @ApiProperty({ example: 'Haircut' })
+  name: string;
+
+  @Expose()
+  @ApiProperty({ example: 50 })
+  price: number;
+}
+
+@Exclude()
+export class BookingServiceProviderBriefDto {
+  @Expose()
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @Expose()
+  @ApiPropertyOptional({ example: 'John', nullable: true })
+  firstName: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({ example: 'Smith', nullable: true })
+  lastName: string | null;
+}
 
 @Exclude()
 export class BookingResponseDto {
@@ -19,11 +88,12 @@ export class BookingResponseDto {
   businessId: string;
 
   @Expose()
-  @ApiProperty({
-    description: 'The user ID',
+  @ApiPropertyOptional({
+    description: 'The user ID. Null for guest bookings.',
     example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
   })
-  userId: string;
+  userId: string | null;
 
   @Expose()
   @ApiProperty({
@@ -33,11 +103,27 @@ export class BookingResponseDto {
   serviceId: string;
 
   @Expose()
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'The service provider ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
+    nullable: true,
   })
-  serviceProviderId: string;
+  serviceProviderId: string | null;
+
+  @Expose()
+  @Type(() => BookingUserBriefDto)
+  @ApiPropertyOptional({ type: BookingUserBriefDto, nullable: true })
+  user: BookingUserBriefDto | null;
+
+  @Expose()
+  @Type(() => BookingServiceBriefDto)
+  @ApiProperty({ type: BookingServiceBriefDto })
+  service: BookingServiceBriefDto;
+
+  @Expose()
+  @Type(() => BookingServiceProviderBriefDto)
+  @ApiPropertyOptional({ type: BookingServiceProviderBriefDto, nullable: true })
+  serviceProvider: BookingServiceProviderBriefDto | null;
 
   @Expose()
   @ApiPropertyOptional({

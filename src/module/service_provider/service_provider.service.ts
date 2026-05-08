@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { PaginationService } from '../../common/services/pagination.service';
 import { CreateServiceProviderDto } from './dto/create-service_provider.dto';
@@ -20,7 +15,10 @@ export class ServiceProviderService {
     private readonly paginationService: PaginationService,
   ) {}
 
-  async create(createServiceProviderDto: CreateServiceProviderDto, businessId: string) {
+  async create(
+    createServiceProviderDto: CreateServiceProviderDto,
+    businessId: string,
+  ) {
     // Verify business exists
     const business = await this.prisma.business.findFirst({
       where: { id: businessId, deletedAt: null },
@@ -42,7 +40,9 @@ export class ServiceProviderService {
     });
 
     if (!businessService) {
-      throw new NotFoundException(`Service with ID ${createServiceProviderDto.serviceId} not found for this business`);
+      throw new NotFoundException(
+        `Service with ID ${createServiceProviderDto.serviceId} not found for this business`,
+      );
     }
 
     // Verify user exists
@@ -51,7 +51,9 @@ export class ServiceProviderService {
     });
 
     if (!user) {
-      throw new NotFoundException(`User with ID ${createServiceProviderDto.userId} not found`);
+      throw new NotFoundException(
+        `User with ID ${createServiceProviderDto.userId} not found`,
+      );
     }
 
     const serviceProvider = await this.prisma.serviceProvider.create({
@@ -74,16 +76,27 @@ export class ServiceProviderService {
         businessId,
         deletedAt: null,
       },
+      include: {
+        user: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
     });
 
     if (!serviceProvider) {
-      throw new NotFoundException(`Service provider with ID ${id} not found for this business`);
+      throw new NotFoundException(
+        `Service provider with ID ${id} not found for this business`,
+      );
     }
 
     return serviceProvider;
   }
 
-  async update(id: string, updateServiceProviderDto: UpdateServiceProviderDto, businessId: string) {
+  async update(
+    id: string,
+    updateServiceProviderDto: UpdateServiceProviderDto,
+    businessId: string,
+  ) {
     await this.findOne(id, businessId); // Check if service provider exists and belongs to business
 
     const updateData: Prisma.ServiceProviderUpdateInput = {
@@ -104,7 +117,9 @@ export class ServiceProviderService {
       });
 
       if (!businessService) {
-        throw new NotFoundException(`Service with ID ${updateServiceProviderDto.serviceId} not found for this business`);
+        throw new NotFoundException(
+          `Service with ID ${updateServiceProviderDto.serviceId} not found for this business`,
+        );
       }
 
       updateData.service = {
@@ -119,7 +134,9 @@ export class ServiceProviderService {
       });
 
       if (!user) {
-        throw new NotFoundException(`User with ID ${updateServiceProviderDto.userId} not found`);
+        throw new NotFoundException(
+          `User with ID ${updateServiceProviderDto.userId} not found`,
+        );
       }
 
       updateData.user = {
@@ -154,7 +171,8 @@ export class ServiceProviderService {
   }
 
   async findAll(queryDto: ServiceProviderQueryDto, businessId: string) {
-    const paginationOptions = this.paginationService.buildPaginationOptions(queryDto);
+    const paginationOptions =
+      this.paginationService.buildPaginationOptions(queryDto);
 
     const where: Prisma.ServiceProviderWhereInput = {
       businessId,
@@ -179,6 +197,11 @@ export class ServiceProviderService {
       this.prisma.serviceProvider.findMany({
         where,
         ...paginationOptions,
+        include: {
+          user: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+        },
       }),
       this.prisma.serviceProvider.count({ where }),
     ]);

@@ -1,113 +1,110 @@
 import {
+  Body,
   Controller,
   Get,
-  Patch,
-  Param,
-  Body,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
   UseGuards,
-  Logger,
 } from '@nestjs/common';
 import {
-  ApiTags,
+  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
+  ApiTags,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
 import { AdminService } from './admin.service';
-import { PermissionsGuard } from '../permissions/guards/permissions.guard';
-import { Permissions } from '../permissions/decorators/permissions.decorator';
-import { Permission } from '../permissions/permissions.constants';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateBusinessOwnerDto } from './dto/create-business-owner.dto';
+import { SetActivationDto } from './dto/set-activation.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
 @Controller('admin')
-@UseGuards(PermissionsGuard)
+@UseGuards(JwtAuthGuard, SuperAdminGuard)
 export class AdminController {
-  private readonly logger = new Logger(AdminController.name);
-
   constructor(private readonly adminService: AdminService) {}
 
   @Get('business-owners')
-  @Permissions(Permission.ADMIN_BUSINESS_OWNER_LIST)
   @ApiOperation({ summary: 'Get all business owners (Super Admin only)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Business owners fetched successfully',
-  })
   async getAllBusinessOwners() {
-    const businessOwners = await this.adminService.getAllBusinessOwners();
+    const data = await this.adminService.getAllBusinessOwners();
     return {
       success: true,
       statusCode: HttpStatus.OK,
       message: 'Business owners fetched successfully',
       timestamp: new Date().toISOString(),
-      data: businessOwners,
+      data,
     };
   }
 
   @Get('business-owner/:id')
-  @Permissions(Permission.ADMIN_BUSINESS_OWNER_READ)
   @ApiOperation({ summary: 'Get a business owner by ID (Super Admin only)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Business owner fetched successfully',
-  })
   async getBusinessOwnerById(@Param('id') id: string) {
-    const businessOwner = await this.adminService.getBusinessOwnerById(id);
+    const data = await this.adminService.getBusinessOwnerById(id);
     return {
       success: true,
       statusCode: HttpStatus.OK,
       message: 'Business owner fetched successfully',
       timestamp: new Date().toISOString(),
-      data: businessOwner,
+      data,
+    };
+  }
+
+  @Post('business-owners')
+  @ApiOperation({
+    summary:
+      'Create a Business_owner user (no business, no email). Stage 1 of owner onboarding.',
+    description:
+      'Creates an inactive User with the Super_Admin-supplied password. The Super_Admin shares the password out-of-band, then activates the account via PATCH /admin/business-owners/:id/activation. The owner creates their own Business via POST /business/onboarding after first login + password change.',
+  })
+  @ApiResponse({ status: 201 })
+  async createBusinessOwner(@Body() dto: CreateBusinessOwnerDto) {
+    const user = await this.adminService.createBusinessOwner(dto);
+    return {
+      success: true,
+      statusCode: HttpStatus.CREATED,
+      message:
+        'Business owner created. Share the password securely with the user.',
+      timestamp: new Date().toISOString(),
+      data: { user },
+    };
+  }
+
+  @Patch('business-owners/:id/activation')
+  @ApiOperation({ summary: 'Toggle Business_owner active status' })
+  async setBusinessOwnerActivation(
+    @Param('id') id: string,
+    @Body() dto: SetActivationDto,
+  ) {
+    const user = await this.adminService.setBusinessOwnerActivation(
+      id,
+      dto.isActive,
+    );
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: dto.isActive
+        ? 'Business owner activated'
+        : 'Business owner deactivated',
+      timestamp: new Date().toISOString(),
+      data: { user },
     };
   }
 
   @Patch('user/:id')
-  @Permissions(Permission.USER_UPDATE)
-  @ApiOperation({
-    summary: 'Update user details (Super Admin only)',
-    description: `Update any user's information including firstName, lastName, email, phone, isActive status, and roles.
-    
-**Use Cases:**
-- Activate/deactivate user accounts (toggle isActive)
-- Update user contact information
-- Modify user roles
-- Correct user profile data
-
-**Request Body (all fields optional):**
-- \`firstName\` - User's first name
-- \`lastName\` - User's last name
-- \`email\` - User's email (must be unique)
-- \`phone\` - User's phone number
-- \`isActive\` - Active status (true/false)
-- \`roles\` - Array of user roles
-
-**Response:**
-Returns updated user information.`,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'User updated successfully',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Email already in use',
-  })
-  async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const user = await this.adminService.updateUser(id, updateUserDto);
+  @ApiOperation({ summary: 'Update user details (Super Admin only)' })
+  async updateUser(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    const data = await this.adminService.updateUser(id, dto);
     return {
       success: true,
       statusCode: HttpStatus.OK,
       message: 'User updated successfully',
       timestamp: new Date().toISOString(),
-      data: user,
+      data,
     };
   }
 }

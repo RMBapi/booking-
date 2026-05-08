@@ -25,6 +25,7 @@ import { plainToInstance } from 'class-transformer';
 import { SchedulerResponseDto } from './dto/response/scheduler-response.dto';
 import { BusinessId } from '../../common/decorators/business.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { BusinessService } from '../business/business.service';
 
@@ -47,7 +48,7 @@ export class SchedulerController {
   async create(
     @Body() createSchedulerDto: CreateSchedulerDto,
     @BusinessId() businessId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtUser,
   ) {
     const scheduler = await this.schedulerService.create(
       createSchedulerDto,
@@ -76,7 +77,7 @@ export class SchedulerController {
   async findOne(
     @Param('serviceId') serviceId: string,
     @BusinessId() businessId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtUser,
   ) {
     const scheduler = await this.schedulerService.findOne(
       serviceId,
@@ -106,7 +107,7 @@ export class SchedulerController {
     @Param('serviceId') serviceId: string,
     @Body() updateSchedulerDto: UpdateSchedulerDto,
     @BusinessId() businessId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtUser,
   ) {
     const scheduler = await this.schedulerService.update(
       serviceId,
@@ -136,7 +137,7 @@ export class SchedulerController {
   async delete(
     @Param('serviceId') serviceId: string,
     @BusinessId() businessId: string,
-    @CurrentUser() user: any,
+    @CurrentUser() user: JwtUser,
   ) {
     return await this.schedulerService.delete(serviceId, businessId, user.id);
   }

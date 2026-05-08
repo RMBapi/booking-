@@ -35,7 +35,8 @@ export class BusinessResponseDto {
   @Expose()
   @ApiPropertyOptional({
     description: 'Business logo image URL',
-    example: '/uploads/abc123.png',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
     nullable: true,
   })
   logo: string | null;
@@ -43,7 +44,8 @@ export class BusinessResponseDto {
   @Expose()
   @ApiPropertyOptional({
     description: 'Business image URL',
-    example: '/uploads/abc123.png',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
     nullable: true,
   })
   image: string | null;

@@ -1,12 +1,22 @@
-import { Controller, Get, HttpStatus } from '@nestjs/common';
+import {
+  BadRequestException,
+  Controller,
+  Get,
+  HttpStatus,
+  NotFoundException,
+  Query,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../../database/prisma.service';
+import { RequireFeature } from '../../common/decorators/require-feature.decorator';
+import { FEATURES } from '../../common/constants/permissions';
 
 @ApiTags('User')
 @ApiBearerAuth('JWT-auth')
@@ -38,6 +48,98 @@ export class UserController {
     };
   }
 
+  @Get('lookup')
+  @RequireFeature(FEATURES.VIEW_BOOKINGS)
+  @ApiOperation({
+    summary:
+      'Look up a user by email. Used by the CRM to decide whether a booking goes through the registered-user path or the guest path.',
+  })
+  @ApiQuery({ name: 'email', required: true, type: String })
+  @ApiResponse({
+    status: 200,
+    description: 'User found',
+  })
+  @ApiResponse({ status: 404, description: 'No user with that email' })
+  async lookupByEmail(@Query('email') rawEmail?: string) {
+    const email = rawEmail?.trim().toLowerCase();
+    if (!email) {
+      throw new BadRequestException('email query parameter is required');
+    }
+
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' }, deletedAt: null },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        systemRole: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('No user with that email');
+    }
+
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: 'User found',
+      timestamp: new Date().toISOString(),
+      data: user,
+    };
+  }
+
+  @Get('search')
+  @RequireFeature(FEATURES.VIEW_BOOKINGS)
+  @ApiOperation({
+    summary:
+      'Autocomplete users by partial email or name. Returns up to 10 matches.',
+  })
+  @ApiQuery({ name: 'q', required: true, type: String })
+  async search(@Query('q') rawQuery?: string) {
+    const q = rawQuery?.trim();
+    if (!q || q.length < 2) {
+      return {
+        success: true,
+        statusCode: HttpStatus.OK,
+        message: 'Provide at least 2 characters',
+        timestamp: new Date().toISOString(),
+        data: [],
+      };
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        OR: [
+          { email: { contains: q, mode: 'insensitive' } },
+          { firstName: { contains: q, mode: 'insensitive' } },
+          { lastName: { contains: q, mode: 'insensitive' } },
+        ],
+      },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        systemRole: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+    });
+
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: 'Users fetched successfully',
+      timestamp: new Date().toISOString(),
+      data: users,
+    };
+  }
+
   @Get('my-bookings')
   @ApiOperation({ summary: 'Get current user bookings' })
   @ApiResponse({
@@ -55,6 +157,8 @@ export class UserController {
             id: true,
             name: true,
             slug: true,
+            logo: true,
+            image: true,
           },
         },
         service: {
@@ -62,11 +166,13 @@ export class UserController {
             id: true,
             name: true,
             price: true,
+            description: true,
           },
         },
         serviceProvider: {
           select: {
             id: true,
+            impUrl: true,
             user: {
               select: {
                 firstName: true,
@@ -75,18 +181,42 @@ export class UserController {
             },
           },
         },
+        review: {
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            deletedAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
+    const data = bookings.map((booking) => ({
+      ...booking,
+      review:
+        booking.review && !booking.review.deletedAt
+          ? {
+              id: booking.review.id,
+              rating: booking.review.rating,
+              comment: booking.review.comment,
+              createdAt: booking.review.createdAt,
+              updatedAt: booking.review.updatedAt,
+            }
+          : null,
+    }));
+
     return {
       success: true,
       statusCode: HttpStatus.OK,
       message: 'User bookings fetched successfully',
       timestamp: new Date().toISOString(),
-      data: bookings,
+      data,
     };
   }
 

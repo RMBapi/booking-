@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
@@ -9,7 +10,85 @@ import { PaginationService } from '../../common/services/pagination.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { BookingQueryDto } from './dto/booking-query.dto';
+import { BookingStatus } from '../../types/enums';
 import { Prisma } from '@prisma/client';
+
+const BOOKING_INCLUDE = {
+  user: {
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+    },
+  },
+  service: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+    },
+  },
+  serviceProvider: {
+    select: {
+      id: true,
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
+    },
+  },
+} satisfies Prisma.BookingInclude;
+
+function flattenBooking<
+  T extends {
+    service: any;
+    serviceProvider: any;
+    user?: any;
+    guestFirstName?: string | null;
+    guestLastName?: string | null;
+    guestEmail?: string | null;
+    guestPhone?: string | null;
+  },
+>(booking: T) {
+  const sp = booking.serviceProvider;
+  const svc = booking.service;
+  // Surface either the registered user or the guest snapshot under a single
+  // `user` key on the response so the FE can render one consistent shape.
+  const user = booking.user
+    ? booking.user
+    : booking.guestEmail
+      ? {
+          id: null,
+          firstName: booking.guestFirstName ?? null,
+          lastName: booking.guestLastName ?? null,
+          email: booking.guestEmail,
+          phone: booking.guestPhone ?? null,
+          isGuest: true,
+        }
+      : null;
+  return {
+    ...booking,
+    user,
+    service: svc
+      ? {
+          id: svc.id,
+          name: svc.name,
+          price: svc.price != null ? Number(svc.price) : null,
+        }
+      : null,
+    serviceProvider: sp
+      ? {
+          id: sp.id,
+          firstName: sp.user?.firstName ?? null,
+          lastName: sp.user?.lastName ?? null,
+        }
+      : null,
+  };
+}
 
 @Injectable()
 export class BookingService {
@@ -22,15 +101,19 @@ export class BookingService {
 
   async create(createBookingDto: CreateBookingDto, businessId: string) {
     this.logger.log(
-      `Creating booking for business: ${businessId}, user: ${createBookingDto.userId}`,
+      `Creating booking for business: ${businessId}, user: ${createBookingDto.userId ?? 'guest:' + createBookingDto.guest?.email}`,
     );
 
     try {
-      // Validate userId is provided
-      if (!createBookingDto.userId) {
-        this.logger.warn('User ID is required for booking creation');
+      // Booking must be tied to either a registered user OR a guest contact.
+      if (!createBookingDto.userId && !createBookingDto.guest) {
         throw new BadRequestException(
-          'User ID is required for booking creation',
+          'Either userId or guest details are required',
+        );
+      }
+      if (createBookingDto.userId && createBookingDto.guest) {
+        throw new BadRequestException(
+          'Provide either userId or guest, not both',
         );
       }
 
@@ -45,17 +128,39 @@ export class BookingService {
         throw new NotFoundException(`Business with ID ${businessId} not found`);
       }
 
-      // Verify user exists
-      this.logger.debug(`Verifying user exists: ${createBookingDto.userId}`);
-      const user = await this.prisma.user.findFirst({
-        where: { id: createBookingDto.userId, deletedAt: null },
-      });
+      // If a userId is provided, verify the user actually exists. For guest
+      // bookings we'll still attempt to match on email so a returning guest
+      // doesn't create duplicate identity rows down the line.
+      let resolvedUserId: string | null = createBookingDto.userId ?? null;
+      if (resolvedUserId) {
+        this.logger.debug(`Verifying user exists: ${resolvedUserId}`);
+        const user = await this.prisma.user.findFirst({
+          where: { id: resolvedUserId, deletedAt: null },
+        });
 
-      if (!user) {
-        this.logger.warn(`User not found: ${createBookingDto.userId}`);
-        throw new NotFoundException(
-          `User with ID ${createBookingDto.userId} not found`,
-        );
+        if (!user) {
+          this.logger.warn(`User not found: ${resolvedUserId}`);
+          throw new NotFoundException(
+            `User with ID ${resolvedUserId} not found`,
+          );
+        }
+      } else if (createBookingDto.guest) {
+        const existingByEmail = await this.prisma.user.findFirst({
+          where: {
+            email: {
+              equals: createBookingDto.guest.email,
+              mode: 'insensitive',
+            },
+            deletedAt: null,
+          },
+          select: { id: true },
+        });
+        if (existingByEmail) {
+          // A registered account exists for this email — link the booking to
+          // it instead of stamping the guest fields, so the customer sees the
+          // booking under "my bookings" if they ever log in.
+          resolvedUserId = existingByEmail.id;
+        }
       }
 
       // Verify service exists and belongs to business
@@ -119,92 +224,31 @@ export class BookingService {
         serviceProviderId = undefined;
       }
 
-      const bookingTime = this.parseBookingTime(createBookingDto.bookingTime);
-
-      const scheduler = await this.prisma.scheduler.findFirst({
-        where: {
-          serviceId: createBookingDto.serviceId,
-        },
+      const bookingTime = await this.validateBookingSlot({
+        serviceId: createBookingDto.serviceId,
+        serviceProviderId,
+        bookingTime: createBookingDto.bookingTime,
+        businessId,
+        scopedToProvider: showProvider,
       });
-
-      if (!scheduler) {
-        throw new BadRequestException(
-          'Scheduler is not configured for this service',
-        );
-      }
-
-      const config = scheduler.canScheduleTime as any;
-      const dayName = this.getDayName(bookingTime.start.getDay());
-      const daySchedule = config[dayName.toLowerCase()];
-
-      if (!daySchedule || daySchedule.isOff) {
-        throw new BadRequestException(
-          'Service is not available on selected date',
-        );
-      }
-
-      if (!config.timeSlotConfig?.allowUserSelection) {
-        throw new BadRequestException(
-          'Time slot selection is not enabled for this service',
-        );
-      }
-
-      const slots = this.generateTimeSlots(
-        daySchedule,
-        config.timeSlotConfig.intervalMinutes,
-        config.blockedTimes?.[dayName.toLowerCase()] || [],
-        bookingTime.start,
-      );
-
-      const matchedSlot = slots.find(
-        (slot) =>
-          slot.start.toISOString() === bookingTime.start.toISOString() &&
-          slot.end.toISOString() === bookingTime.end.toISOString(),
-      );
-
-      if (!matchedSlot) {
-        throw new BadRequestException(
-          'Selected booking time does not match configured service slots',
-        );
-      }
-
-      const existingBookings = await this.prisma.booking.findMany({
-        where: {
-          serviceId: createBookingDto.serviceId,
-          businessId,
-          ...(showProvider && serviceProviderId ? { serviceProviderId } : {}),
-          status: {
-            not: 'Cancelled',
-          },
-        },
-      });
-
-      const bookingsForDate = this.filterBookingsForDate(
-        existingBookings,
-        bookingTime.start.toISOString().split('T')[0],
-      );
-      const slotBookedCount = this.getSlotBookedCount(
-        matchedSlot,
-        bookingsForDate,
-      );
-      const capacity = Math.max(
-        1,
-        Number(config.timeSlotConfig.bookingsPerSlot || 1),
-      );
-
-      if (slotBookedCount >= capacity) {
-        throw new BadRequestException('Selected time slot is fully booked');
-      }
 
       this.logger.debug('Creating booking in database');
-      // At this point, userId is guaranteed to be defined due to validation above
-      // serviceProviderId is optional and can be null
+      const guestSnapshot =
+        !resolvedUserId && createBookingDto.guest
+          ? {
+              guestFirstName: createBookingDto.guest.firstName,
+              guestLastName: createBookingDto.guest.lastName,
+              guestEmail: createBookingDto.guest.email,
+              guestPhone: createBookingDto.guest.phone,
+            }
+          : {};
+
       const booking = await this.prisma.booking.create({
         data: {
           businessId,
-          userId: createBookingDto.userId!, // Non-null assertion: validated above
+          userId: resolvedUserId,
           serviceId: createBookingDto.serviceId,
-          serviceProviderId: serviceProviderId || null, // Optional - can be null
+          serviceProviderId: serviceProviderId || null,
           bookingTime: {
             start: bookingTime.start.toISOString(),
             end: bookingTime.end.toISOString(),
@@ -213,6 +257,7 @@ export class BookingService {
           confirmationMethod: createBookingDto.confirmationMethod,
           customerNotes: createBookingDto.customerNotes,
           bookingSource: createBookingDto.bookingSource,
+          ...guestSnapshot,
         },
       });
 
@@ -239,6 +284,7 @@ export class BookingService {
           id,
           businessId,
         },
+        include: BOOKING_INCLUDE,
       });
 
       if (!booking) {
@@ -251,7 +297,7 @@ export class BookingService {
       }
 
       this.logger.debug(`Booking found: ${id}`);
-      return booking;
+      return flattenBooking(booking);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -269,10 +315,21 @@ export class BookingService {
     updateBookingDto: UpdateBookingDto,
     businessId: string,
   ) {
-    await this.findOne(id, businessId); // Check if booking exists and belongs to business
+    if (updateBookingDto.status === BookingStatus.Cancelled) {
+      throw new BadRequestException(
+        'Cannot cancel a booking via PATCH. Use POST /booking/:id/cancel instead.',
+      );
+    }
+
+    const existing = await this.findOne(id, businessId);
+
+    if (existing.status === BookingStatus.Cancelled) {
+      throw new BadRequestException(
+        'Cannot edit a cancelled booking',
+      );
+    }
 
     const updateData: Prisma.BookingUpdateInput = {
-      bookingTime: updateBookingDto.bookingTime,
       status: updateBookingDto.status,
       confirmationMethod: updateBookingDto.confirmationMethod,
       customerNotes: updateBookingDto.customerNotes,
@@ -280,7 +337,6 @@ export class BookingService {
     };
 
     if (updateBookingDto.userId) {
-      // Verify user exists
       const user = await this.prisma.user.findFirst({
         where: { id: updateBookingDto.userId, deletedAt: null },
       });
@@ -296,8 +352,8 @@ export class BookingService {
       };
     }
 
+    let nextServiceId: string = existing.serviceId;
     if (updateBookingDto.serviceId) {
-      // Verify service exists and belongs to business
       const businessService = await this.prisma.businessService.findFirst({
         where: {
           businessId,
@@ -314,22 +370,23 @@ export class BookingService {
         );
       }
 
+      nextServiceId = updateBookingDto.serviceId;
       updateData.service = {
         connect: { id: updateBookingDto.serviceId },
       };
     }
 
+    let nextServiceProviderId: string | null = existing.serviceProviderId;
+    let providerExplicitlyCleared = false;
     if (updateBookingDto.serviceProviderId !== undefined) {
       if (
         updateBookingDto.serviceProviderId === null ||
         updateBookingDto.serviceProviderId === ''
       ) {
-        // Allow removing service provider assignment
-        updateData.serviceProvider = {
-          disconnect: true,
-        };
+        updateData.serviceProvider = { disconnect: true };
+        nextServiceProviderId = null;
+        providerExplicitlyCleared = true;
       } else {
-        // Verify service provider exists and belongs to business
         const serviceProvider = await this.prisma.serviceProvider.findFirst({
           where: {
             id: updateBookingDto.serviceProviderId,
@@ -344,10 +401,85 @@ export class BookingService {
           );
         }
 
+        nextServiceProviderId = updateBookingDto.serviceProviderId;
         updateData.serviceProvider = {
           connect: { id: updateBookingDto.serviceProviderId },
         };
       }
+    }
+
+    const serviceChanged = updateBookingDto.serviceId !== undefined;
+    const providerChanged = updateBookingDto.serviceProviderId !== undefined;
+    const timeChanged = updateBookingDto.bookingTime !== undefined;
+
+    if (serviceChanged || providerChanged || timeChanged) {
+      const service = await this.prisma.service.findFirst({
+        where: {
+          id: nextServiceId,
+          deletedAt: null,
+          businessServices: { some: { businessId } },
+        },
+        include: {
+          serviceProviders: {
+            where: { businessId, deletedAt: null },
+            select: { id: true },
+          },
+        },
+      });
+
+      if (!service) {
+        throw new NotFoundException(
+          `Service with ID ${nextServiceId} not found for this business`,
+        );
+      }
+
+      const providerIds = service.serviceProviders.map((p) => p.id);
+      const showProvider =
+        Boolean(service.allowCustomerChooseProvider) && providerIds.length > 0;
+
+      let providerForValidation: string | undefined;
+      if (showProvider) {
+        if (providerExplicitlyCleared) {
+          throw new BadRequestException(
+            'Provider selection is required for this service',
+          );
+        }
+        const candidate = nextServiceProviderId ?? undefined;
+        if (!candidate) {
+          throw new BadRequestException(
+            'Provider selection is required for this service',
+          );
+        }
+        if (!providerIds.includes(candidate)) {
+          throw new BadRequestException(
+            'Selected provider is not attached to this service',
+          );
+        }
+        providerForValidation = candidate;
+      } else {
+        providerForValidation = undefined;
+        if (nextServiceProviderId) {
+          updateData.serviceProvider = { disconnect: true };
+        }
+      }
+
+      const bookingTimeInput =
+        updateBookingDto.bookingTime ??
+        (existing.bookingTime as { start: string; end: string });
+
+      const validatedTime = await this.validateBookingSlot({
+        serviceId: nextServiceId,
+        serviceProviderId: providerForValidation,
+        bookingTime: bookingTimeInput,
+        businessId,
+        scopedToProvider: showProvider,
+        excludeBookingId: id,
+      });
+
+      updateData.bookingTime = {
+        start: validatedTime.start.toISOString(),
+        end: validatedTime.end.toISOString(),
+      };
     }
 
     const booking = await this.prisma.booking.update({
@@ -358,22 +490,47 @@ export class BookingService {
     return booking;
   }
 
-  async cancel(id: string, cancellationReason: string, businessId: string) {
+  async cancel(
+    id: string,
+    cancellationReason: string,
+    businessId: string,
+    options: { allowFromCompleted?: boolean } = {},
+  ) {
     this.logger.log(`Cancelling booking: ${id} for business: ${businessId}`);
 
     try {
       const booking = await this.findOne(id, businessId);
 
-      if (booking.status === 'Cancelled') {
+      if (booking.status === BookingStatus.Cancelled) {
         this.logger.warn(`Booking ${id} is already cancelled`);
         throw new BadRequestException('Booking is already cancelled');
+      }
+
+      if (
+        booking.status === BookingStatus.Completed &&
+        !options.allowFromCompleted
+      ) {
+        throw new BadRequestException(
+          'Completed bookings cannot be cancelled',
+        );
+      }
+
+      const startISO = (booking.bookingTime as { start?: string } | null)
+        ?.start;
+      if (startISO) {
+        const start = new Date(startISO);
+        if (!Number.isNaN(start.getTime()) && start.getTime() <= Date.now()) {
+          throw new BadRequestException(
+            'Cannot cancel a booking after its start time has passed',
+          );
+        }
       }
 
       this.logger.debug(`Updating booking ${id} status to Cancelled`);
       const cancelledBooking = await this.prisma.booking.update({
         where: { id },
         data: {
-          status: 'Cancelled',
+          status: BookingStatus.Cancelled,
           cancelledAt: new Date(),
           cancellationReason,
         },
@@ -438,6 +595,7 @@ export class BookingService {
         this.prisma.booking.findMany({
           where,
           ...paginationOptions,
+          include: BOOKING_INCLUDE,
         }),
         this.prisma.booking.count({ where }),
       ]);
@@ -449,7 +607,7 @@ export class BookingService {
       this.logger.log(
         `Found ${data.length} bookings (total: ${total}) for business: ${businessId}`,
       );
-      return { data, meta };
+      return { data: data.map(flattenBooking), meta };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -460,6 +618,100 @@ export class BookingService {
       );
       throw error;
     }
+  }
+
+  private async validateBookingSlot(params: {
+    serviceId: string;
+    serviceProviderId: string | undefined;
+    bookingTime: unknown;
+    businessId: string;
+    scopedToProvider: boolean;
+    excludeBookingId?: string;
+  }): Promise<{ start: Date; end: Date }> {
+    const {
+      serviceId,
+      serviceProviderId,
+      bookingTime: bookingTimeInput,
+      businessId,
+      scopedToProvider,
+      excludeBookingId,
+    } = params;
+
+    const bookingTime = this.parseBookingTime(bookingTimeInput);
+
+    const scheduler = await this.prisma.scheduler.findFirst({
+      where: { serviceId },
+    });
+
+    if (!scheduler) {
+      throw new BadRequestException(
+        'Scheduler is not configured for this service',
+      );
+    }
+
+    const config = scheduler.canScheduleTime as any;
+    const dayName = this.getDayName(bookingTime.start.getDay());
+    const daySchedule = config[dayName.toLowerCase()];
+
+    if (!daySchedule || daySchedule.isOff) {
+      throw new BadRequestException(
+        'Service is not available on selected date',
+      );
+    }
+
+    if (!config.timeSlotConfig?.allowUserSelection) {
+      throw new BadRequestException(
+        'Time slot selection is not enabled for this service',
+      );
+    }
+
+    const slots = this.generateTimeSlots(
+      daySchedule,
+      config.timeSlotConfig.intervalMinutes,
+      config.blockedTimes?.[dayName.toLowerCase()] || [],
+      bookingTime.start,
+    );
+
+    const matchedSlot = slots.find(
+      (slot) =>
+        slot.start.toISOString() === bookingTime.start.toISOString() &&
+        slot.end.toISOString() === bookingTime.end.toISOString(),
+    );
+
+    if (!matchedSlot) {
+      throw new BadRequestException(
+        'Selected booking time does not match configured service slots',
+      );
+    }
+
+    const existingBookings = await this.prisma.booking.findMany({
+      where: {
+        serviceId,
+        businessId,
+        ...(scopedToProvider && serviceProviderId ? { serviceProviderId } : {}),
+        status: { not: 'Cancelled' },
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      },
+    });
+
+    const bookingsForDate = this.filterBookingsForDate(
+      existingBookings,
+      bookingTime.start.toISOString().split('T')[0],
+    );
+    const slotBookedCount = this.getSlotBookedCount(
+      matchedSlot,
+      bookingsForDate,
+    );
+    const capacity = Math.max(
+      1,
+      Number(config.timeSlotConfig.bookingsPerSlot || 1),
+    );
+
+    if (slotBookedCount >= capacity) {
+      throw new ConflictException('Selected time slot is fully booked');
+    }
+
+    return bookingTime;
   }
 
   private parseBookingTime(bookingTime: any): { start: Date; end: Date } {
@@ -562,7 +814,7 @@ export class BookingService {
 
   private filterBookingsForDate(bookings: any[], targetDateStr: string): any[] {
     return bookings.filter((booking) => {
-      const existingBookingTime = booking.bookingTime as any;
+      const existingBookingTime = booking.bookingTime;
       if (!existingBookingTime?.start) return false;
       const bookingDate = new Date(existingBookingTime.start);
       return bookingDate.toISOString().split('T')[0] === targetDateStr;
@@ -574,7 +826,7 @@ export class BookingService {
     bookings: any[],
   ): number {
     return bookings.filter((booking) => {
-      const existingBookingTime = booking.bookingTime as any;
+      const existingBookingTime = booking.bookingTime;
       if (!existingBookingTime?.start) return false;
       const bookingStart = new Date(existingBookingTime.start);
       return (

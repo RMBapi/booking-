@@ -1,4 +1,4 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Exclude()
@@ -30,6 +30,47 @@ export class ServiceProviderResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   userId: string;
+
+  @Expose()
+  @Transform(({ obj }: { obj: any }) => obj.user?.firstName ?? null)
+  @ApiPropertyOptional({
+    description: 'The first name of the provider (from user)',
+    example: 'Jane',
+    nullable: true,
+  })
+  firstName: string | null;
+
+  @Expose()
+  @Transform(({ obj }: { obj: any }) => obj.user?.lastName ?? null)
+  @ApiPropertyOptional({
+    description: 'The last name of the provider (from user)',
+    example: 'Doe',
+    nullable: true,
+  })
+  lastName: string | null;
+
+  @Expose()
+  @Transform(({ obj }: { obj: any }) => {
+    const f = obj.user?.firstName ?? '';
+    const l = obj.user?.lastName ?? '';
+    const full = `${f} ${l}`.trim();
+    return full.length > 0 ? full : null;
+  })
+  @ApiPropertyOptional({
+    description: 'The full name of the provider (firstName + lastName)',
+    example: 'Jane Doe',
+    nullable: true,
+  })
+  name: string | null;
+
+  @Expose()
+  @Transform(({ obj }: { obj: any }) => obj.user?.email ?? null)
+  @ApiPropertyOptional({
+    description: 'The email of the provider (from user)',
+    example: 'jane.doe@example.com',
+    nullable: true,
+  })
+  email: string | null;
 
   @Expose()
   @ApiPropertyOptional({

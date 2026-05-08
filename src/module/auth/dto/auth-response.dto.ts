@@ -1,20 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class AuthResponseDto {
+export class AuthUserDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  firstName: string;
+
+  @ApiProperty()
+  lastName: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty({ example: 'Business_owner' })
+  systemRole: string;
+
   @ApiProperty({
-    description: 'JWT access token',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    description:
+      'When true, the frontend MUST redirect to the change-password flow before allowing any other action.',
   })
+  passwordChangeRequired: boolean;
+}
+
+export class AuthResponseDto {
+  @ApiProperty()
   accessToken: string;
 
-  @ApiProperty({ description: 'User information' })
-  user: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    roles: string[];
-    /** Role name string — same values as before (e.g. "Customer", "Super_Admin") */
-    activeRole: string;
-  };
+  @ApiProperty({ type: AuthUserDto })
+  user: AuthUserDto;
 }

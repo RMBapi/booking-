@@ -1,28 +1,35 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
+  BadRequestException,
   Body,
-  Param,
-  Query,
+  Controller,
+  Delete,
+  Get,
+  Headers,
   HttpCode,
   HttpStatus,
-  BadRequestException,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { ContactService } from './contact.service';
+import { BusinessService } from '../business/business.service';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { ContactQueryDto } from './dto/contact-query.dto';
 import { GetSingleContactDto } from './dto/response/get-single-contact.dto';
 import { GetAllContactDto } from './dto/response/get-all-contact.dto';
-import { plainToInstance } from 'class-transformer';
 import { ContactResponseDto } from './dto/response/contact-response.dto';
-import { BusinessId } from '../../common/decorators/business.decorator';
 import { Public } from '../auth/decorators/public.decorator';
-import { BusinessService } from '../business/business.service';
+import { RequireFeature } from '../../common/decorators/require-feature.decorator';
+import { FEATURES } from '../../common/constants/permissions';
 
 @ApiTags('Contact')
 @ApiBearerAuth('JWT-auth')
@@ -34,26 +41,17 @@ export class ContactController {
   ) {}
 
   @Get()
+  @RequireFeature(FEATURES.VIEW_CONTACTS)
   @ApiOperation({ summary: 'Get all contacts with pagination' })
-  @ApiResponse({
-    status: 200,
-    description: 'Contacts fetched successfully',
-    type: GetAllContactDto,
-  })
+  @ApiResponse({ status: 200, type: GetAllContactDto })
   async findAll(
     @Query() queryDto: ContactQueryDto,
-    @BusinessId() businessId: string,
+    @Headers('x-business-id') businessId: string,
   ) {
     const result = await this.contactService.findAll(queryDto, businessId);
-
-    const transformedData = plainToInstance(
-      ContactResponseDto,
-      result.data,
-      {
-        excludeExtraneousValues: true,
-      },
-    );
-
+    const transformedData = plainToInstance(ContactResponseDto, result.data, {
+      excludeExtraneousValues: true,
+    });
     return {
       success: true,
       statusCode: HttpStatus.OK,
@@ -66,42 +64,13 @@ export class ContactController {
 
   @Public()
   @Post()
-  @ApiOperation({
-    summary: 'Create a new contact (Public - for non-logged-in users)',
-    description:
-      'Create a contact/booking request for non-logged-in users. This endpoint is public and does not require authentication.\n\n' +
-      '**Authentication:** No authentication required (public endpoint).\n\n' +
-      '**Business Context:** Provide businessId via `x-business-id` header OR `businessSlug` query parameter.\n\n' +
-      '**Required Fields:**\n' +
-      '- `serviceId` - The service being requested\n' +
-      '- `firstName` - Customer\'s first name\n' +
-      '- `lastName` - Customer\'s last name\n' +
-      '- `email` - Customer\'s email\n' +
-      '- `phone` - Customer\'s phone number\n\n' +
-      '**Optional Fields:**\n' +
-      '- `bookingTime` - Preferred booking time (ISO 8601 format)\n' +
-      '- `notes` - Additional notes or requirements\n\n' +
-      '**Note:** Data is stored in the Contact table for business owners to review.',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Contact created successfully',
-    type: GetSingleContactDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Bad request - Missing required fields or invalid data',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Business or service not found',
-  })
+  @ApiOperation({ summary: 'Create a new contact (public, customer-facing)' })
+  @ApiResponse({ status: 201, type: GetSingleContactDto })
   async create(
-    @Body() createContactDto: CreateContactDto,
+    @Body() dto: CreateContactDto,
     @Query('businessSlug') businessSlug?: string,
-    @BusinessId() businessId?: string,
+    @Headers('x-business-id') businessId?: string,
   ) {
-    // Get businessId from slug if not provided via header
     let resolvedBusinessId = businessId;
     if (!resolvedBusinessId && businessSlug) {
       const business = await this.businessService.findOneBySlug(businessSlug);
@@ -111,8 +80,7 @@ export class ContactController {
         'Either businessId (via x-business-id header) or businessSlug (via query parameter) is required',
       );
     }
-
-    const contact = await this.contactService.create(createContactDto, resolvedBusinessId);
+    const contact = await this.contactService.create(dto, resolvedBusinessId);
     return {
       success: true,
       statusCode: HttpStatus.CREATED,
@@ -125,15 +93,12 @@ export class ContactController {
   }
 
   @Get(':id')
+  @RequireFeature(FEATURES.VIEW_CONTACTS)
   @ApiOperation({ summary: 'Get a single contact' })
-  @ApiResponse({
-    status: 200,
-    description: 'Contact fetched successfully',
-    type: GetSingleContactDto,
-  })
+  @ApiResponse({ status: 200, type: GetSingleContactDto })
   async findOne(
     @Param('id') id: string,
-    @BusinessId() businessId: string,
+    @Headers('x-business-id') businessId: string,
   ) {
     const contact = await this.contactService.findOne(id, businessId);
     return {
@@ -148,18 +113,15 @@ export class ContactController {
   }
 
   @Patch(':id')
+  @RequireFeature(FEATURES.MANAGE_CONTACTS)
   @ApiOperation({ summary: 'Update a contact' })
-  @ApiResponse({
-    status: 200,
-    description: 'Contact updated successfully',
-    type: GetSingleContactDto,
-  })
+  @ApiResponse({ status: 200, type: GetSingleContactDto })
   async update(
     @Param('id') id: string,
-    @Body() updateContactDto: UpdateContactDto,
-    @BusinessId() businessId: string,
+    @Body() dto: UpdateContactDto,
+    @Headers('x-business-id') businessId: string,
   ) {
-    const contact = await this.contactService.update(id, updateContactDto, businessId);
+    const contact = await this.contactService.update(id, dto, businessId);
     return {
       success: true,
       statusCode: HttpStatus.OK,
@@ -173,15 +135,12 @@ export class ContactController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @RequireFeature(FEATURES.MANAGE_CONTACTS)
   @ApiOperation({ summary: 'Delete a contact' })
-  @ApiResponse({
-    status: 200,
-    description: 'Contact deleted successfully',
-  })
   async delete(
     @Param('id') id: string,
-    @BusinessId() businessId: string,
+    @Headers('x-business-id') businessId: string,
   ) {
-    return await this.contactService.delete(id, businessId);
+    return this.contactService.delete(id, businessId);
   }
 }

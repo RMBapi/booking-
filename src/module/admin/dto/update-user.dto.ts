@@ -1,56 +1,42 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsEmail,
-  IsString,
-  IsOptional,
   IsBoolean,
-  IsArray,
-  ArrayUnique,
-  IsNotEmpty,
+  IsEmail,
+  IsIn,
+  IsOptional,
+  IsString,
 } from 'class-validator';
+import { ALL_SYSTEM_ROLES } from '../../../common/constants/permissions';
 
 export class UpdateUserDto {
-  @ApiProperty({ description: 'First name of the user', example: 'John', required: false })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   firstName?: string;
 
-  @ApiProperty({ description: 'Last name of the user', example: 'Doe', required: false })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   lastName?: string;
 
-  @ApiProperty({
-    description: 'Email address',
-    example: 'john.doe@example.com',
-    required: false,
-  })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsEmail()
   email?: string;
 
-  @ApiProperty({ description: 'Phone number', example: '+1234567890', required: false })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
   phone?: string;
 
-  @ApiProperty({ description: 'Active status of the user', example: true, required: false })
+  @ApiProperty({ required: false })
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
 
-  @ApiProperty({
-    description:
-      'Role names to assign (replaces all existing roles). ' +
-      'Use Role.name values e.g. ["Customer", "Business_owner"].',
-    type: [String],
-    example: ['Customer'],
-    required: false,
-  })
+  @ApiProperty({ required: false, enum: ALL_SYSTEM_ROLES })
   @IsOptional()
-  @IsArray()
-  @ArrayUnique()
-  @IsString({ each: true })
-  @IsNotEmpty({ each: true })
-  roles?: string[];
+  @IsString()
+  @IsIn(ALL_SYSTEM_ROLES as readonly string[])
+  systemRole?: string;
 }

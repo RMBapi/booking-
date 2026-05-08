@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class GetAvailableSlotsDto {
@@ -12,7 +17,8 @@ export class GetAvailableSlotsDto {
   serviceId: string;
 
   @ApiPropertyOptional({
-    description: 'The date to get available slots for (YYYY-MM-DD format). Defaults to today',
+    description:
+      'The date to get available slots for (YYYY-MM-DD format). Defaults to today',
     example: '2025-11-19',
   })
   @IsOptional()
@@ -34,4 +40,13 @@ export class GetAvailableSlotsDto {
   @IsOptional()
   @IsString()
   businessSlug?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Booking ID to exclude from the "taken" set. Use when rescheduling so the booking does not count itself as occupying its current slot.',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsString()
+  excludeBookingId?: string;
 }

@@ -1,16 +1,17 @@
 import {
   Injectable,
   BadRequestException,
+  InternalServerErrorException,
   Logger,
+  OnModuleInit,
 } from '@nestjs/common';
-import * as fs from 'fs';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import * as path from 'path';
 import * as crypto from 'crypto';
 
 @Injectable()
-export class UploadService {
+export class UploadService implements OnModuleInit {
   private readonly logger = new Logger(UploadService.name);
-  private readonly uploadDir: string;
   private readonly maxFileSize: number;
   private readonly allowedMimeTypes = [
     'image/jpeg',
@@ -20,15 +21,29 @@ export class UploadService {
     'image/svg+xml',
   ];
 
-  constructor() {
-    this.uploadDir = path.resolve(process.env.UPLOAD_DIR || './uploads');
-    this.maxFileSize = parseInt(process.env.UPLOAD_MAX_SIZE || '5242880', 10); // 5MB default
+  private supabase!: SupabaseClient;
+  private bucket!: string;
 
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-      this.logger.log(`Created upload directory: ${this.uploadDir}`);
+  constructor() {
+    this.maxFileSize = parseInt(process.env.UPLOAD_MAX_SIZE || '5242880', 10); // 5MB default
+  }
+
+  onModuleInit(): void {
+    const url = process.env.SUPABASE_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    this.bucket = process.env.SUPABASE_STORAGE_BUCKET || 'uploads';
+
+    if (!url || !serviceKey) {
+      throw new Error(
+        'SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set for uploads',
+      );
     }
+
+    this.supabase = createClient(url, serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    this.logger.log(`Supabase Storage ready (bucket: ${this.bucket})`);
   }
 
   validateFile(file: Express.Multer.File): void {
@@ -48,18 +63,55 @@ export class UploadService {
   async saveFile(file: Express.Multer.File): Promise<string> {
     this.validateFile(file);
 
-    // Generate a unique server-side filename (never use raw user paths)
     const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-    const uniqueName = `${crypto.randomUUID()}${ext}`;
-    const filePath = path.join(this.uploadDir, uniqueName);
+    const objectKey = `${crypto.randomUUID()}${ext}`;
 
-    // Write file to disk
-    fs.writeFileSync(filePath, file.buffer);
+    const { error } = await this.supabase.storage
+      .from(this.bucket)
+      .upload(objectKey, file.buffer, {
+        contentType: file.mimetype,
+        cacheControl: '31536000',
+        upsert: false,
+      });
+
+    if (error) {
+      this.logger.error(`Supabase upload failed: ${error.message}`);
+      throw new InternalServerErrorException('Failed to upload file');
+    }
+
+    const { data } = this.supabase.storage
+      .from(this.bucket)
+      .getPublicUrl(objectKey);
+
     this.logger.log(
-      `File saved: ${uniqueName} (${(file.size / 1024).toFixed(1)}KB, ${file.mimetype})`,
+      `File uploaded: ${objectKey} (${(file.size / 1024).toFixed(1)}KB, ${file.mimetype})`,
     );
 
-    // Return the relative URL path that will be served statically
-    return `/uploads/${uniqueName}`;
+    return data.publicUrl;
+  }
+
+  async deleteFile(publicUrl: string): Promise<void> {
+    const marker = `/storage/v1/object/public/${this.bucket}/`;
+    const idx = publicUrl.indexOf(marker);
+    if (idx === -1) {
+      this.logger.warn(
+        `Not a Supabase Storage URL, skipping delete: ${publicUrl}`,
+      );
+      return;
+    }
+
+    const objectKey = publicUrl.slice(idx + marker.length);
+    const { error } = await this.supabase.storage
+      .from(this.bucket)
+      .remove([objectKey]);
+
+    if (error) {
+      this.logger.error(
+        `Supabase delete failed for ${objectKey}: ${error.message}`,
+      );
+      return;
+    }
+
+    this.logger.log(`File deleted: ${objectKey}`);
   }
 }

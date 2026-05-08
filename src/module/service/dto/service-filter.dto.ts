@@ -1,11 +1,18 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsEnum, IsBoolean, ValidateIf } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+  ValidateIf,
+} from 'class-validator';
 import { ServiceStatus } from '../../../types/enums';
 
 export class ServiceFilterDto {
   @ApiPropertyOptional({
-    description: 'Filter by service status. Send empty string "" for all statuses, or "Active", "Inactive", "Archived"',
+    description:
+      'Filter by service status. Send empty string "" for all statuses, or "Active", "Inactive", "Archived"',
     enum: ServiceStatus,
     example: ServiceStatus.Active,
   })
@@ -17,12 +24,18 @@ export class ServiceFilterDto {
     }
     return value;
   })
-  @ValidateIf((o) => o.status !== undefined && o.status !== null && o.status !== '')
-  @IsEnum(ServiceStatus, { message: 'Status must be a valid ServiceStatus (Active, Inactive, Archived) or empty string for all' })
+  @ValidateIf(
+    (o) => o.status !== undefined && o.status !== null && o.status !== '',
+  )
+  @IsEnum(ServiceStatus, {
+    message:
+      'Status must be a valid ServiceStatus (Active, Inactive, Archived) or empty string for all',
+  })
   status?: ServiceStatus;
 
   @ApiPropertyOptional({
-    description: 'Filter by active toggle state. Omit parameter for all, or send true/false',
+    description:
+      'Filter by active toggle state. Omit parameter for all, or send true/false',
     example: true,
   })
   @IsBoolean({ message: 'isActive must be a boolean' })

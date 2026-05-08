@@ -23,4 +23,5 @@ export enum BookingSource {
   Phone = 'Phone',
   WalkIn = 'WalkIn',
   Mobile = 'Mobile',
+  CRM = 'CRM',
 }

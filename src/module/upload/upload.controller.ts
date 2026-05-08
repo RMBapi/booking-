@@ -16,7 +16,6 @@ import {
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { UploadService } from './upload.service';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Upload')
 @ApiBearerAuth('JWT-auth')
@@ -62,7 +61,11 @@ The returned \`url\` can then be used when creating or updating a business.`,
         data: {
           type: 'object',
           properties: {
-            url: { type: 'string', example: '/uploads/abc123.png' },
+            url: {
+              type: 'string',
+              example:
+                'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
+            },
           },
         },
       },
@@ -71,10 +74,7 @@ The returned \`url\` can then be used when creating or updating a business.`,
   @ApiResponse({ status: 400, description: 'Invalid file type or size' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @UseInterceptors(FileInterceptor('file', { storage: undefined }))
-  async uploadImage(
-    @UploadedFile() file: Express.Multer.File,
-    @CurrentUser() user: any,
-  ) {
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       throw new BadRequestException('No file provided');
     }

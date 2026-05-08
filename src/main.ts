@@ -4,7 +4,9 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe, Logger } from '@nestjs/common';
-import { LoggingMiddleware } from './common/middleware/logging.middleware';
+import type { Express } from 'express';
+import { json, urlencoded } from 'express';
+import helmet from 'helmet';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
@@ -22,13 +24,40 @@ async function bootstrap() {
         : ['error', 'warn', 'log', 'debug', 'verbose'],
     });
 
-    // Enable CORS if needed
-    app.enableCors();
+    // Trust the first reverse proxy (typical PaaS setup) so req.ip and
+    // protocol come from X-Forwarded-* headers. Necessary for `secure`
+    // cookies behind TLS-terminating proxies and accurate per-IP throttling.
+    const expressApp = app.getHttpAdapter().getInstance() as Express;
+    expressApp.set('trust proxy', 1);
 
-    // Apply logging middleware globally
-    app.use(new LoggingMiddleware().use.bind(new LoggingMiddleware()));
+    // Hardened HTTP headers (CSP, HSTS, X-Frame-Options, etc.).
+    app.use(helmet());
 
-    // Apply global exception filter for better error logging
+    // CORS — credentials must be true so the cb_rt refresh-token cookie is
+    // sent on cross-origin requests from the frontend. With credentials, the
+    // browser refuses wildcard origins; configure CORS_ORIGIN explicitly
+    // (comma-separated allow-list).
+    const corsOriginEnv = process.env.CORS_ORIGIN;
+    const origin = corsOriginEnv
+      ? corsOriginEnv
+          .split(',')
+          .map((o) => o.trim())
+          .filter(Boolean)
+      : true; // dev default — reflect request origin
+    app.enableCors({
+      origin,
+      credentials: true,
+    });
+
+    // Body size caps. Keep request payloads small to limit DoS surface;
+    // bump per-route if a future endpoint legitimately needs more.
+    const bodyLimit = process.env.BODY_LIMIT ?? '1mb';
+    app.use(json({ limit: bodyLimit }));
+    app.use(urlencoded({ extended: true, limit: bodyLimit }));
+
+    // Apply global exception filter for better error logging.
+    // (HTTP request/response logging is wired in AppModule via
+    // LoggingMiddleware; do not double-register here.)
     app.useGlobalFilters(new HttpExceptionFilter());
 
     // Enable validation pipes globally
@@ -133,6 +162,10 @@ async function bootstrap() {
         },
       });
     }
+
+    // Forward SIGTERM/SIGINT to NestJS so onModuleDestroy hooks (e.g.
+    // PrismaService.$disconnect()) run during graceful shutdown.
+    app.enableShutdownHooks();
 
     const port = process.env.PORT ?? 3000;
     await app.listen(port, '0.0.0.0');

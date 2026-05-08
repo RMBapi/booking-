@@ -42,7 +42,13 @@ export class LoggingMiddleware implements NestMiddleware {
   }
 
   private sanitizeBody(body: any): any {
-    const sensitiveFields = ['password', 'passwordHash', 'token', 'accessToken', 'refreshToken'];
+    const sensitiveFields = [
+      'password',
+      'passwordHash',
+      'token',
+      'accessToken',
+      'refreshToken',
+    ];
     const sanitized = { ...body };
 
     for (const field of sensitiveFields) {

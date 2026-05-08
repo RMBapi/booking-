@@ -4,7 +4,12 @@ type SortOrder = 'asc' | 'desc';
 
 @Injectable()
 export class PaginationService {
-  buildPaginationOptions(queryDto: { page?: number; limit?: number; sortBy?: string; sortOrder?: SortOrder }) {
+  buildPaginationOptions(queryDto: {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: SortOrder;
+  }) {
     const page = queryDto.page || 1;
     const limit = queryDto.limit || 10;
     const skip = (page - 1) * limit;

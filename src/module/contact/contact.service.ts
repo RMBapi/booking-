@@ -11,6 +11,30 @@ import { UpdateContactDto } from './dto/update-contact.dto';
 import { ContactQueryDto } from './dto/contact-query.dto';
 import { Prisma } from '@prisma/client';
 
+const CONTACT_INCLUDE = {
+  service: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+    },
+  },
+} satisfies Prisma.ContactInclude;
+
+function flattenContact<T extends { service: any }>(contact: T) {
+  const svc = contact.service;
+  return {
+    ...contact,
+    service: svc
+      ? {
+          id: svc.id,
+          name: svc.name,
+          price: svc.price != null ? Number(svc.price) : null,
+        }
+      : null,
+  };
+}
+
 @Injectable()
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
@@ -42,7 +66,9 @@ export class ContactService {
     });
 
     if (!businessService) {
-      throw new NotFoundException(`Service with ID ${createContactDto.serviceId} not found for this business`);
+      throw new NotFoundException(
+        `Service with ID ${createContactDto.serviceId} not found for this business`,
+      );
     }
 
     const contact = await this.prisma.contact.create({
@@ -68,16 +94,23 @@ export class ContactService {
         businessId,
         deletedAt: null,
       },
+      include: CONTACT_INCLUDE,
     });
 
     if (!contact) {
-      throw new NotFoundException(`Contact with ID ${id} not found for this business`);
+      throw new NotFoundException(
+        `Contact with ID ${id} not found for this business`,
+      );
     }
 
-    return contact;
+    return flattenContact(contact);
   }
 
-  async update(id: string, updateContactDto: UpdateContactDto, businessId: string) {
+  async update(
+    id: string,
+    updateContactDto: UpdateContactDto,
+    businessId: string,
+  ) {
     await this.findOne(id, businessId); // Check if contact exists and belongs to business
 
     const updateData: Prisma.ContactUpdateInput = {
@@ -102,7 +135,9 @@ export class ContactService {
       });
 
       if (!businessService) {
-        throw new NotFoundException(`Service with ID ${updateContactDto.serviceId} not found for this business`);
+        throw new NotFoundException(
+          `Service with ID ${updateContactDto.serviceId} not found for this business`,
+        );
       }
 
       updateData.service = {
@@ -137,7 +172,8 @@ export class ContactService {
   }
 
   async findAll(queryDto: ContactQueryDto, businessId: string) {
-    const paginationOptions = this.paginationService.buildPaginationOptions(queryDto);
+    const paginationOptions =
+      this.paginationService.buildPaginationOptions(queryDto);
 
     const where: Prisma.ContactWhereInput = {
       businessId,
@@ -174,6 +210,7 @@ export class ContactService {
       this.prisma.contact.findMany({
         where,
         ...paginationOptions,
+        include: CONTACT_INCLUDE,
       }),
       this.prisma.contact.count({ where }),
     ]);
@@ -182,6 +219,6 @@ export class ContactService {
     const limit = queryDto.limit || 10;
     const meta = this.paginationService.buildMeta(page, limit, total);
 
-    return { data, meta };
+    return { data: data.map(flattenContact), meta };
   }
 }

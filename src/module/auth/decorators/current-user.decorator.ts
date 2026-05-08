@@ -1,8 +1,22 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 
+/**
+ * Shape of `req.user` after JwtStrategy.validate(). Mirrors the projection
+ * in jwt.strategy.ts — keep them in sync.
+ */
+export interface JwtUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  isActive: boolean;
+  systemRole: string;
+}
+
 export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
+  (_data: unknown, ctx: ExecutionContext): JwtUser | undefined => {
+    const request = ctx.switchToHttp().getRequest<{ user?: JwtUser }>();
     return request.user;
   },
 );

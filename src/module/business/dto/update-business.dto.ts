@@ -37,8 +37,10 @@ export class UpdateBusinessDto {
   slug?: string;
 
   @ApiPropertyOptional({
-    description: 'Business logo image URL (upload via POST /upload/image or provide an external URL)',
-    example: '/uploads/abc123.png',
+    description:
+      'Business logo image URL (upload via POST /upload/image or provide an external URL)',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
   })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
@@ -48,8 +50,10 @@ export class UpdateBusinessDto {
   logo?: string;
 
   @ApiPropertyOptional({
-    description: 'Business image URL (upload via POST /upload/image or provide an external URL)',
-    example: '/uploads/abc123.png',
+    description:
+      'Business image URL (upload via POST /upload/image or provide an external URL)',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
   })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,

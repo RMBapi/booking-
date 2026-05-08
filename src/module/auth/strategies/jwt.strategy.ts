@@ -7,8 +7,7 @@ import { getJwtSecret } from '../../../config/jwt-secret';
 export interface JwtPayload {
   sub: string;
   email: string;
-  /** Role name string (e.g. "Customer", "Super_Admin") — unchanged externally */
-  activeRole: string;
+  systemRole: string;
 }
 
 @Injectable()
@@ -31,12 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         phone: true,
         isActive: true,
-        // Load roles via the dynamic UserRole join table
-        userRoles: {
-          select: {
-            role: { select: { name: true } },
-          },
-        },
+        systemRole: true,
       },
     });
 
@@ -44,14 +38,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('User not found or inactive');
     }
 
-    const roleNames = user.userRoles.map((ur) => ur.role.name);
-
-    // Verify the activeRole from the token still exists for this user
-    if (!roleNames.includes(payload.activeRole)) {
-      throw new UnauthorizedException('User no longer has the specified role');
-    }
-
-    // Return shape is the same as before; activeRole is still a plain string
     return {
       id: user.id,
       firstName: user.firstName,
@@ -59,8 +45,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       email: user.email,
       phone: user.phone,
       isActive: user.isActive,
-      roles: roleNames,           // string[] of all role names for this user
-      activeRole: payload.activeRole,
+      systemRole: user.systemRole,
     };
   }
 }

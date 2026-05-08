@@ -303,6 +303,9 @@ export class SchedulerService {
             status: {
               not: 'Cancelled',
             },
+            ...(getAvailableSlotsDto.excludeBookingId
+              ? { id: { not: getAvailableSlotsDto.excludeBookingId } }
+              : {}),
           },
         });
 
@@ -335,6 +338,9 @@ export class SchedulerService {
           status: {
             not: 'Cancelled',
           },
+          ...(getAvailableSlotsDto.excludeBookingId
+            ? { id: { not: getAvailableSlotsDto.excludeBookingId } }
+            : {}),
         },
       });
 
@@ -377,6 +383,9 @@ export class SchedulerService {
         status: {
           not: 'Cancelled',
         },
+        ...(getAvailableSlotsDto.excludeBookingId
+          ? { id: { not: getAvailableSlotsDto.excludeBookingId } }
+          : {}),
       },
     });
 
@@ -473,7 +482,7 @@ export class SchedulerService {
 
   private filterBookingsForDate(bookings: any[], targetDateStr: string): any[] {
     return bookings.filter((booking) => {
-      const bookingTime = booking.bookingTime as any;
+      const bookingTime = booking.bookingTime;
       if (!bookingTime?.start) return false;
       const bookingDate = new Date(bookingTime.start);
       return bookingDate.toISOString().split('T')[0] === targetDateStr;
@@ -487,7 +496,7 @@ export class SchedulerService {
   ): SlotAvailability[] {
     return slots.map((slot) => {
       const bookedCount = bookingsForDate.filter((booking) => {
-        const bookingTime = booking.bookingTime as any;
+        const bookingTime = booking.bookingTime;
         if (!bookingTime?.start) return false;
         const bookingStart = new Date(bookingTime.start);
         return (

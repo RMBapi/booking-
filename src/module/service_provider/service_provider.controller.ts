@@ -1,45 +1,53 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
   Body,
-  Param,
-  Query,
+  Controller,
+  Delete,
+  Get,
+  Headers,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { ServiceProviderService } from './service_provider.service';
 import { CreateServiceProviderDto } from './dto/create-service_provider.dto';
 import { UpdateServiceProviderDto } from './dto/update-service_provider.dto';
 import { ServiceProviderQueryDto } from './dto/service_provider-query.dto';
 import { GetSingleServiceProviderDto } from './dto/response/get-single-service_provider.dto';
 import { GetAllServiceProviderDto } from './dto/response/get-all-service_provider.dto';
-import { plainToInstance } from 'class-transformer';
 import { ServiceProviderResponseDto } from './dto/response/service_provider-response.dto';
-import { BusinessId } from '../../common/decorators/business.decorator';
+import { RequireFeature } from '../../common/decorators/require-feature.decorator';
+import { FEATURES } from '../../common/constants/permissions';
 
 @ApiTags('Service Provider')
 @ApiBearerAuth('JWT-auth')
 @Controller('service-provider')
 export class ServiceProviderController {
-  constructor(private readonly serviceProviderService: ServiceProviderService) {}
+  constructor(
+    private readonly serviceProviderService: ServiceProviderService,
+  ) {}
 
   @Get()
+  @RequireFeature(FEATURES.VIEW_PROVIDERS)
   @ApiOperation({ summary: 'Get all service providers with pagination' })
-  @ApiResponse({
-    status: 200,
-    description: 'Service providers fetched successfully',
-    type: GetAllServiceProviderDto,
-  })
+  @ApiResponse({ status: 200, type: GetAllServiceProviderDto })
   async findAll(
     @Query() queryDto: ServiceProviderQueryDto,
-    @BusinessId() businessId: string,
+    @Headers('x-business-id') businessId: string,
   ) {
-    const result = await this.serviceProviderService.findAll(queryDto, businessId);
-
+    const result = await this.serviceProviderService.findAll(
+      queryDto,
+      businessId,
+    );
     const transformedData = plainToInstance(
       ServiceProviderResponseDto,
       result.data,
@@ -47,7 +55,6 @@ export class ServiceProviderController {
         excludeExtraneousValues: true,
       },
     );
-
     return {
       success: true,
       statusCode: HttpStatus.OK,
@@ -59,77 +66,61 @@ export class ServiceProviderController {
   }
 
   @Post()
+  @RequireFeature(FEATURES.MANAGE_PROVIDERS)
   @ApiOperation({ summary: 'Create a new service provider' })
-  @ApiResponse({
-    status: 201,
-    description: 'Service provider created successfully',
-    type: GetSingleServiceProviderDto,
-  })
+  @ApiResponse({ status: 201, type: GetSingleServiceProviderDto })
   async create(
-    @Body() createServiceProviderDto: CreateServiceProviderDto,
-    @BusinessId() businessId: string,
+    @Body() dto: CreateServiceProviderDto,
+    @Headers('x-business-id') businessId: string,
   ) {
-    const serviceProvider = await this.serviceProviderService.create(
-      createServiceProviderDto,
-      businessId,
-    );
+    const sp = await this.serviceProviderService.create(dto, businessId);
     return {
       success: true,
       statusCode: HttpStatus.CREATED,
       message: 'Service provider created successfully',
       timestamp: new Date().toISOString(),
-      data: plainToInstance(ServiceProviderResponseDto, serviceProvider, {
+      data: plainToInstance(ServiceProviderResponseDto, sp, {
         excludeExtraneousValues: true,
       }),
     };
   }
 
   @Get(':id')
+  @RequireFeature(FEATURES.VIEW_PROVIDERS)
   @ApiOperation({ summary: 'Get a single service provider' })
-  @ApiResponse({
-    status: 200,
-    description: 'Service provider fetched successfully',
-    type: GetSingleServiceProviderDto,
-  })
+  @ApiResponse({ status: 200, type: GetSingleServiceProviderDto })
   async findOne(
     @Param('id') id: string,
-    @BusinessId() businessId: string,
+    @Headers('x-business-id') businessId: string,
   ) {
-    const serviceProvider = await this.serviceProviderService.findOne(id, businessId);
+    const sp = await this.serviceProviderService.findOne(id, businessId);
     return {
       success: true,
       statusCode: HttpStatus.OK,
       message: 'Service provider fetched successfully',
       timestamp: new Date().toISOString(),
-      data: plainToInstance(ServiceProviderResponseDto, serviceProvider, {
+      data: plainToInstance(ServiceProviderResponseDto, sp, {
         excludeExtraneousValues: true,
       }),
     };
   }
 
   @Patch(':id')
+  @RequireFeature(FEATURES.MANAGE_PROVIDERS)
   @ApiOperation({ summary: 'Update a service provider' })
-  @ApiResponse({
-    status: 200,
-    description: 'Service provider updated successfully',
-    type: GetSingleServiceProviderDto,
-  })
+  @ApiResponse({ status: 200, type: GetSingleServiceProviderDto })
   async update(
     @Param('id') id: string,
-    @Body() updateServiceProviderDto: UpdateServiceProviderDto,
-    @BusinessId() businessId: string,
+    @Body() dto: UpdateServiceProviderDto,
+    @Headers('x-business-id') businessId: string,
   ) {
-    const serviceProvider = await this.serviceProviderService.update(
-      id,
-      updateServiceProviderDto,
-      businessId,
-    );
+    const sp = await this.serviceProviderService.update(id, dto, businessId);
     return {
       success: true,
       statusCode: HttpStatus.OK,
       message: 'Service provider updated successfully',
       timestamp: new Date().toISOString(),
-      data: plainToInstance(ServiceProviderResponseDto, serviceProvider, {
+      data: plainToInstance(ServiceProviderResponseDto, sp, {
         excludeExtraneousValues: true,
       }),
     };
@@ -137,15 +128,12 @@ export class ServiceProviderController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
+  @RequireFeature(FEATURES.MANAGE_PROVIDERS)
   @ApiOperation({ summary: 'Delete a service provider' })
-  @ApiResponse({
-    status: 200,
-    description: 'Service provider deleted successfully',
-  })
   async delete(
     @Param('id') id: string,
-    @BusinessId() businessId: string,
+    @Headers('x-business-id') businessId: string,
   ) {
-    return await this.serviceProviderService.delete(id, businessId);
+    return this.serviceProviderService.delete(id, businessId);
   }
 }

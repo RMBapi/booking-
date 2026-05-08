@@ -1,5 +1,20 @@
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+@Exclude()
+export class ContactServiceBriefDto {
+  @Expose()
+  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  id: string;
+
+  @Expose()
+  @ApiProperty({ example: 'Haircut' })
+  name: string;
+
+  @Expose()
+  @ApiProperty({ example: 50 })
+  price: number;
+}
 
 @Exclude()
 export class ContactResponseDto {
@@ -23,6 +38,11 @@ export class ContactResponseDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   serviceId: string;
+
+  @Expose()
+  @Type(() => ContactServiceBriefDto)
+  @ApiProperty({ type: ContactServiceBriefDto })
+  service: ContactServiceBriefDto;
 
   @Expose()
   @ApiProperty({

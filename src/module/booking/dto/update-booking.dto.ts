@@ -1,7 +1,11 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { BookingStatus, ConfirmationMethod, BookingSource } from '../../../types/enums';
+import {
+  BookingStatus,
+  ConfirmationMethod,
+  BookingSource,
+} from '../../../types/enums';
 
 export class UpdateBookingDto {
   @ApiPropertyOptional({
@@ -36,7 +40,8 @@ export class UpdateBookingDto {
   bookingTime?: any;
 
   @ApiPropertyOptional({
-    description: 'The status of the booking',
+    description:
+      'The status of the booking. Cancelled is rejected on this endpoint — use POST /booking/:id/cancel instead.',
     enum: BookingStatus,
     example: BookingStatus.Confirmed,
   })
@@ -49,7 +54,9 @@ export class UpdateBookingDto {
     enum: ConfirmationMethod,
     example: ConfirmationMethod.Email,
   })
-  @IsEnum(ConfirmationMethod, { message: 'Confirmation method must be a valid ConfirmationMethod' })
+  @IsEnum(ConfirmationMethod, {
+    message: 'Confirmation method must be a valid ConfirmationMethod',
+  })
   @IsOptional()
   confirmationMethod?: ConfirmationMethod;
 
@@ -58,7 +65,9 @@ export class UpdateBookingDto {
     enum: BookingSource,
     example: BookingSource.Website,
   })
-  @IsEnum(BookingSource, { message: 'Booking source must be a valid BookingSource' })
+  @IsEnum(BookingSource, {
+    message: 'Booking source must be a valid BookingSource',
+  })
   @IsOptional()
   bookingSource?: BookingSource;
 

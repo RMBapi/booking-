@@ -5,29 +5,29 @@ import { Loader2 } from "lucide-react";
 import { cn } from "@/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 min-h-[40px]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
         default:
-          "bg-primary-600 text-white shadow-sm hover:bg-primary-700 hover:shadow-md active:bg-primary-800",
+          "bg-gradient-to-r from-primary-500 to-indigo-500 text-white shadow-[0_4px_14px_rgba(14,165,233,0.25)] hover:from-primary-600 hover:to-indigo-600 hover:shadow-[0_6px_18px_rgba(14,165,233,0.35)]",
         destructive:
-          "bg-red-600 text-white shadow-sm hover:bg-red-700 hover:shadow-md active:bg-red-800",
+          "bg-rose-600 text-white shadow-[0_4px_12px_rgba(225,29,72,0.2)] hover:bg-rose-700",
         success:
-          "bg-green-600 text-white shadow-sm hover:bg-green-700 hover:shadow-md active:bg-green-800",
+          "bg-emerald-600 text-white shadow-[0_4px_12px_rgba(5,150,105,0.2)] hover:bg-emerald-700",
         outline:
-          "border border-border bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400",
+          "border border-border-default bg-surface text-text-primary hover:bg-subtle hover:border-border-strong",
         secondary:
-          "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300",
+          "bg-subtle text-text-primary hover:bg-muted",
         ghost:
-          "hover:bg-gray-100 hover:text-gray-900 active:bg-gray-200",
+          "text-text-secondary hover:bg-subtle hover:text-text-primary",
         link:
           "text-primary-600 underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-5 py-2",
+        default: "h-10 px-4 py-2",
         sm: "h-9 px-3.5 py-1.5 text-xs",
-        lg: "h-11 px-7 py-2.5 text-sm",
+        lg: "h-11 px-6 py-2.5 text-sm",
         xl: "h-12 px-8 py-3 text-base",
         icon: "h-10 w-10 p-0",
       },

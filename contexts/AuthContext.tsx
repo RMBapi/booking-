@@ -1,77 +1,265 @@
 "use client";
 
-/**
- * Legacy AuthContext — compatibility layer.
- *
- * Derives its state from the role-based session system so that existing
- * consumers (`useAuth()`) keep working without modification.
- *
- * New code should use `useRoleAuth()` from `@/contexts/RoleAuthContext` or
- * the route-aware `useAuth()` from `@/hooks/useAuth` instead.
- */
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
+import {
+  getAccessToken,
+  setAccessToken,
+  getActiveBusinessId,
+  setActiveBusinessId as setActiveBusinessIdLS,
+  setSessionMarker,
+} from "@/lib/api/accessToken";
+import { refreshAccess } from "@/lib/api/refresh";
+import { getMe, logout as logoutApi } from "@/services/authService";
+import type { BusinessMembership, MeResponse } from "@/types";
 
-import React, { createContext, useContext, useMemo } from "react";
-import { User, UserRole } from "@/types";
-import { useRoleAuth } from "./RoleAuthContext";
+const STALE_AFTER_MS = 5 * 60 * 1000;
 
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  setUser: (user: User | null) => void;
-  setToken: (token: string | null) => void;
-  isAuthenticated: boolean;
+interface AuthContextValue {
+  me: MeResponse | null;
   isLoading: boolean;
-  logout: () => void;
+  activeBusinessId: string | null;
+  setActiveBusinessId: (id: string | null) => void;
+  activeMembership: BusinessMembership | null;
+  login: (accessToken: string) => Promise<MeResponse>;
+  logout: () => Promise<void>;
+  refetchMe: () => Promise<MeResponse | null>;
 }
 
-const ROLE_PRIORITY: UserRole[] = [
-  "Super_Admin",
-  "Business_owner",
-  "Customer",
-  "Service_Provider",
-];
+const AuthContext = createContext<AuthContextValue | null>(null);
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface StoredMe extends MeResponse {
+  fetchedAt: number;
+}
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const { getSession, activeRoles, isLoading, logoutAll } = useRoleAuth();
+/**
+ * Paths the password-change guard MUST NOT redirect away from.
+ * /change-password is the destination; /login lets the escape-hatch
+ * "Log out" round-trip cleanly.
+ */
+const CHANGE_PASSWORD_BYPASS = ["/change-password", "/login"];
 
-  const primaryRole = useMemo(
-    () => ROLE_PRIORITY.find((r) => activeRoles.includes(r)) ?? null,
-    [activeRoles],
+// The legacy hard onboarding guard was replaced with a soft onboarding modal
+// over the dashboard. Business_owners with no businesses now land on /app
+// directly; the only guard left is the deep-link bounce off the legacy
+// /onboarding/business URL — see the effect below.
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [me, setMe] = useState<StoredMe | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeBusinessIdState, setActiveBusinessIdState] = useState<
+    string | null
+  >(null);
+  const bootstrappedRef = useRef(false);
+
+  const updateActiveBusinessId = useCallback((id: string | null) => {
+    setActiveBusinessIdLS(id);
+    setActiveBusinessIdState(id);
+  }, []);
+
+  const fetchAndStoreMe = useCallback(async (): Promise<MeResponse> => {
+    const fresh = await getMe();
+    const stored: StoredMe = { ...fresh, fetchedAt: Date.now() };
+    setMe(stored);
+    if (fresh.businesses.length === 1) {
+      const onlyId = fresh.businesses[0].id;
+      const current = getActiveBusinessId();
+      if (current !== onlyId) updateActiveBusinessId(onlyId);
+    }
+    return fresh;
+  }, [updateActiveBusinessId]);
+
+  const login = useCallback(
+    async (accessToken: string): Promise<MeResponse> => {
+      setAccessToken(accessToken);
+      setSessionMarker(true);
+      const fresh = await fetchAndStoreMe();
+      return fresh;
+    },
+    [fetchAndStoreMe],
   );
 
-  const session = useMemo(
-    () => (primaryRole ? getSession(primaryRole) : null),
-    [primaryRole, getSession],
-  );
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi();
+    } catch {
+      // ignore — local state is the source of truth post-logout
+    }
+    setAccessToken(null);
+    updateActiveBusinessId(null);
+    setSessionMarker(false);
+    setMe(null);
+  }, [updateActiveBusinessId]);
 
-  const value = useMemo<AuthContextType>(
+  const refetchMe = useCallback(async (): Promise<MeResponse | null> => {
+    try {
+      return await fetchAndStoreMe();
+    } catch {
+      return null;
+    }
+  }, [fetchAndStoreMe]);
+
+  // ─── Bootstrap on mount ────────────────────────────────────────────────
+  useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        await refreshAccess();
+        const fresh = await getMe();
+        if (cancelled) return;
+        const stored: StoredMe = { ...fresh, fetchedAt: Date.now() };
+        setMe(stored);
+        setSessionMarker(true);
+        const lsId = getActiveBusinessId();
+        if (lsId && fresh.businesses.some((b) => b.id === lsId)) {
+          setActiveBusinessIdState(lsId);
+        } else if (fresh.businesses.length >= 1) {
+          updateActiveBusinessId(fresh.businesses[0].id);
+        }
+      } catch {
+        if (cancelled) return;
+        setAccessToken(null);
+        setSessionMarker(false);
+        setMe(null);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [updateActiveBusinessId]);
+
+  // ─── auth:unauthenticated → clear + redirect to /login ────────────────
+  useEffect(() => {
+    const onUnauth = () => {
+      setAccessToken(null);
+      updateActiveBusinessId(null);
+      setSessionMarker(false);
+      setMe(null);
+      if (typeof window !== "undefined") {
+        const onLogin = window.location.pathname.startsWith("/login");
+        if (!onLogin) window.location.assign("/login");
+      }
+    };
+    window.addEventListener("auth:unauthenticated", onUnauth);
+    return () => window.removeEventListener("auth:unauthenticated", onUnauth);
+  }, [updateActiveBusinessId]);
+
+  // ─── auth:forbidden → toast + refetch (perms may have changed) ────────
+  useEffect(() => {
+    const onForbidden = (event: Event) => {
+      const ce = event as CustomEvent<{ url: string; message: string }>;
+      toast.error(
+        ce.detail?.message ?? "You don't have permission to do this.",
+      );
+      void refetchMe();
+    };
+    window.addEventListener("auth:forbidden", onForbidden);
+    return () => window.removeEventListener("auth:forbidden", onForbidden);
+  }, [refetchMe]);
+
+  // ─── Refetch /auth/me on focus when stale ─────────────────────────────
+  useEffect(() => {
+    const onFocus = () => {
+      if (!me) return;
+      if (Date.now() - me.fetchedAt < STALE_AFTER_MS) return;
+      void refetchMe();
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [me, refetchMe]);
+
+  // ─── Password-change guard (Task 5) ────────────────────────────────────
+  // If the user MUST change their password, bounce them to
+  // /change-password from anywhere else. The page itself reads
+  // passwordChangeRequired but doesn't self-redirect — once the
+  // change-password handler updates `me` (passwordChangeRequired=false),
+  // it routes onwards explicitly.
+  useEffect(() => {
+    if (!me) return;
+    if (!me.user.passwordChangeRequired) return;
+    if (!pathname) return;
+    if (CHANGE_PASSWORD_BYPASS.some((p) => pathname.startsWith(p))) return;
+    router.replace("/change-password");
+  }, [me, pathname, router]);
+
+  // ─── Onboarding redirect ───────────────────────────────────────────────
+  // Business_owner without a business is now welcomed straight to /app —
+  // the dashboard renders and shows an onboarding modal on top. We DO NOT
+  // force them to /onboarding/business anymore; that route now only exists
+  // as a legacy deep-link target that bounces them onwards.
+  useEffect(() => {
+    if (!me) return;
+    if (me.user.passwordChangeRequired) return;
+    if (me.user.systemRole !== "Business_owner") return;
+    if (me.businesses.length > 0) return;
+    if (!pathname) return;
+    // Bounce off the legacy onboarding URL onto the dashboard.
+    if (pathname === "/onboarding/business") {
+      router.replace("/app");
+    }
+  }, [me, pathname, router]);
+
+  const activeMembership = useMemo<BusinessMembership | null>(() => {
+    if (!me) return null;
+    const byId = activeBusinessIdState
+      ? me.businesses.find((b) => b.id === activeBusinessIdState)
+      : null;
+    return byId ?? me.businesses[0] ?? null;
+  }, [me, activeBusinessIdState]);
+
+  const value = useMemo<AuthContextValue>(
     () => ({
-      user: session?.user ?? null,
-      token: session?.token ?? null,
-      isAuthenticated: !!(session?.token && session?.user),
+      me,
       isLoading,
-      setUser: () => {
-        /* no-op: use setSession on RoleAuthContext */
-      },
-      setToken: () => {
-        /* no-op: use setSession on RoleAuthContext */
-      },
-      logout: logoutAll,
+      activeBusinessId: activeBusinessIdState,
+      setActiveBusinessId: updateActiveBusinessId,
+      activeMembership,
+      login,
+      logout,
+      refetchMe,
     }),
-    [session, isLoading, logoutAll],
+    [
+      me,
+      isLoading,
+      activeBusinessIdState,
+      updateActiveBusinessId,
+      activeMembership,
+      login,
+      logout,
+      refetchMe,
+    ],
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
+}
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-};
+export function useAuth(): AuthContextValue {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within <AuthProvider>");
+  return ctx;
+}
+
+/** Hook helper for components that just need the access-token check. */
+export function useIsAuthenticated(): boolean {
+  return !!getAccessToken();
+}

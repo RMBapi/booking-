@@ -1,6 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check } from "lucide-react";
 import { cn } from "@/utils";
 
 interface DropdownContextType {
@@ -97,27 +99,31 @@ interface MenuProps {
 function DropdownMenu({ children, className, align = "left" }: MenuProps) {
   const { isOpen } = useContext(DropdownContext);
 
-  if (!isOpen) return null;
-
   const alignmentStyles = {
     left: "left-0",
     right: "right-0",
   };
 
   return (
-    <div
-      className={cn(
-        "absolute z-50 mt-2 min-w-[200px] rounded-xl bg-white dark:bg-gray-800",
-        "border border-gray-200 dark:border-gray-700",
-        "shadow-xl shadow-gray-900/10 dark:shadow-black/30",
-        "py-1",
-        "animate-in fade-in-0 zoom-in-95 duration-200",
-        alignmentStyles[align],
-        className
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -4, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -4, scale: 0.98 }}
+          transition={{ duration: 0.12 }}
+          className={cn(
+            "absolute z-50 mt-1.5 min-w-[200px] rounded-xl bg-surface/95 backdrop-blur-xl",
+            "border border-border-subtle shadow-lg shadow-black/5 p-1",
+            alignmentStyles[align],
+            className,
+          )}
+          role="menu"
+        >
+          {children}
+        </motion.div>
       )}
-    >
-      {children}
-    </div>
+    </AnimatePresence>
   );
 }
 
@@ -129,9 +135,20 @@ interface ItemProps {
   icon?: React.ReactNode;
   danger?: boolean;
   disabled?: boolean;
+  selected?: boolean;
+  shortcut?: string;
 }
 
-function DropdownItem({ children, onClick, className, icon, danger, disabled }: ItemProps) {
+function DropdownItem({
+  children,
+  onClick,
+  className,
+  icon,
+  danger,
+  disabled,
+  selected,
+  shortcut,
+}: ItemProps) {
   const { close } = useContext(DropdownContext);
 
   const handleClick = () => {
@@ -145,25 +162,39 @@ function DropdownItem({ children, onClick, className, icon, danger, disabled }: 
     <button
       onClick={handleClick}
       disabled={disabled}
+      role="menuitem"
       className={cn(
-        "w-full flex items-center gap-2 px-3 py-2 text-sm text-left",
-        "transition-colors duration-150",
+        "group relative w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-sm text-left",
+        "transition-colors duration-150 focus-visible:outline-none focus-visible:bg-primary-50/70",
         danger
-          ? "text-danger-600 dark:text-danger-400 hover:bg-danger-50 dark:hover:bg-danger-900/20"
-          : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700",
-        disabled && "opacity-50 cursor-not-allowed pointer-events-none",
-        className
+          ? "text-rose-600 hover:bg-rose-50/70"
+          : "text-text-secondary hover:text-text-primary hover:bg-subtle",
+        disabled && "opacity-40 cursor-not-allowed pointer-events-none",
+        className,
       )}
     >
-      {icon && <span className="shrink-0">{icon}</span>}
-      <span>{children}</span>
+      {icon && (
+        <span
+          className={cn(
+            "shrink-0 [&_svg]:h-4 [&_svg]:w-4",
+            danger ? "text-rose-500" : "text-text-tertiary group-hover:text-text-secondary",
+          )}
+        >
+          {icon}
+        </span>
+      )}
+      <span className="flex-1 font-medium">{children}</span>
+      {shortcut && (
+        <kbd className="text-[10px] font-mono text-text-quaternary tabular">{shortcut}</kbd>
+      )}
+      {selected && <Check className="h-3.5 w-3.5 text-primary-600 shrink-0" />}
     </button>
   );
 }
 
 // Divider component
 function DropdownDivider() {
-  return <div className="my-1 h-px bg-gray-200 dark:bg-gray-700" />;
+  return <div className="my-1 h-px bg-border-subtle" />;
 }
 
 // Label component
@@ -176,8 +207,8 @@ function DropdownLabel({ children, className }: LabelProps) {
   return (
     <div
       className={cn(
-        "px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider",
-        className
+        "px-2.5 pt-2 pb-1 text-[10px] font-semibold text-text-quaternary uppercase tracking-wider",
+        className,
       )}
     >
       {children}

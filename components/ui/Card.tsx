@@ -3,11 +3,11 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/utils";
 
 const cardVariants = cva(
-  "rounded-2xl border border-border bg-white text-gray-900 shadow-sm transition-all w-full",
+  "rounded-2xl border border-border-subtle bg-surface text-text-primary transition-all duration-200 w-full",
   {
     variants: {
       hover: {
-        true: "hover:shadow-md hover:border-gray-300",
+        true: "hover:border-primary-300/60 hover:ring-1 hover:ring-primary-200/50",
         false: "",
       },
     },
@@ -73,12 +73,12 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           >
             <div className="min-w-0 flex-1">
               {title && (
-                <h3 className="text-base font-medium text-gray-900">
+                <h3 className="text-base font-semibold text-text-primary tracking-tight">
                   {title}
                 </h3>
               )}
               {subtitle && (
-                <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+                <p className="text-sm text-text-tertiary mt-1">{subtitle}</p>
               )}
             </div>
             {headerAction && <div className="shrink-0">{headerAction}</div>}

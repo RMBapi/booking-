@@ -1,5 +1,11 @@
 import { http } from "@/lib";
-import { CreateBusinessPayload, UpdateBusinessPayload, PaginationParams } from "@/types";
+import {
+  Business,
+  CreateBusinessPayload,
+  CreateOwnBusinessDto,
+  UpdateBusinessPayload,
+  PaginationParams,
+} from "@/types";
 
 /**
  * Business Service
@@ -46,10 +52,30 @@ export const getBusinessOwners = async (businessId: string) => {
   return http.get(`/business/${businessId}/owners`);
 };
 
-export const addBusinessOwnerByEmail = async (businessId: string, email: string) => {
-  return http.post(`/business/${businessId}/owners/by-email`, { email });
-};
+// `POST /business/:id/owners/by-email` is deprecated server-side and no
+// longer called by the FE. New team additions go through the invitation
+// flow (services/invitationService.ts). The endpoint stays alive on the
+// backend for backwards compatibility — see docs/api-conventions.md.
 
 export const removeBusinessOwner = async (businessId: string, userId: string) => {
   return http.delete(`/business/${businessId}/owners/${userId}`);
+};
+
+/**
+ * POST /business/onboarding — Business_owner self-onboards their first
+ * business after the forced password change. Backend takes the slug
+ * literally; the frontend MUST normalise it (see /onboarding/business).
+ *
+ * Errors:
+ *   409  "already have a business" OR "slug taken" — disambiguate via
+ *        the message text
+ *   400  validation
+ *   403  not Business_owner (route guard should prevent this)
+ */
+export const onboardBusiness = async (
+  dto: CreateOwnBusinessDto,
+): Promise<Business> => {
+  const res = await http.post("/business/onboarding", dto);
+  const body = res.data?.data ?? res.data;
+  return body as Business;
 };

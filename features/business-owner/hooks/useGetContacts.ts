@@ -5,7 +5,8 @@ import { ApiSuccessResponse, Contact, ContactListQuery } from "@/types";
 
 export const useGetContacts = (
   businessId: string,
-  params?: ContactListQuery
+  params?: ContactListQuery,
+  options?: { enabled?: boolean }
 ) => {
   const {
     isLoading,
@@ -15,7 +16,7 @@ export const useGetContacts = (
   } = useQuery<AxiosResponse<ApiSuccessResponse<Contact[]>>>({
     queryKey: ["contacts", businessId, params],
     queryFn: () => getAllContacts(params, businessId),
-    enabled: !!businessId,
+    enabled: !!businessId && (options?.enabled ?? true),
   });
 
   const contacts = response?.data?.data || [];

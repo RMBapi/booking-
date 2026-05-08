@@ -1,3 +1,2 @@
-export { RouteGuard } from "./RouteGuard";
-export { PermissionGate } from "./PermissionGate";
+export { FeatureGate } from "./FeatureGate";
 export { AccessDenied } from "./AccessDenied";

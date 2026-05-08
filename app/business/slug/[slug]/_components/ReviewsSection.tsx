@@ -1,10 +1,7 @@
-"use client";
-
 import React from "react";
-import { motion } from "framer-motion";
 import { Star } from "lucide-react";
 import { BRAND } from "@/lib/publicBrand";
-import { fadeUp, staggerContainer, scaleUp, VP, MOCK_REVIEWS } from "../_constants";
+import { MOCK_REVIEWS } from "../_constants";
 
 export function ReviewsSection() {
   return (
@@ -14,44 +11,26 @@ export function ReviewsSection() {
       style={{ backgroundColor: BRAND.darker }}
     >
       <div className="max-w-6xl mx-auto">
-        <motion.div
-          variants={fadeUp}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VP}
-          className="mb-12"
-        >
-          <motion.p
-            variants={fadeUp}
-            custom={0}
+        <div className="mb-12">
+          <p
             className="text-xs font-bold uppercase tracking-[0.4em] mb-3"
             style={{ color: BRAND.accent }}
           >
             Client Reviews
-          </motion.p>
-          <motion.h2
-            variants={fadeUp}
-            custom={1}
+          </p>
+          <h2
             className="font-black uppercase text-white"
             style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", letterSpacing: "0.05em" }}
           >
             WHAT THEY SAY
-          </motion.h2>
-        </motion.div>
+          </h2>
+        </div>
 
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={VP}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {MOCK_REVIEWS.map((review) => (
-            <motion.div
+            <div
               key={review.name}
-              variants={scaleUp}
-              whileHover={{ y: -6, transition: { duration: 0.25 } }}
-              className="p-8 rounded"
+              className="p-8 rounded transition-transform duration-300 hover:-translate-y-1.5"
               style={{ backgroundColor: BRAND.card }}
             >
               <div className="flex mb-4">
@@ -71,9 +50,9 @@ export function ReviewsSection() {
                   {review.date}
                 </span>
               </div>
-            </motion.div>
+            </div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   );

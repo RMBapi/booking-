@@ -20,6 +20,8 @@ interface TimeStepProps {
   timeFormat: "12" | "24";
   slotsLoading: boolean;
   slotsError: string | null;
+  submitting?: boolean;
+  confirmLabel?: string;
   onSelectDate: (d: Date) => void;
   onSelectSlot: (slot: AvailableSlot) => void;
   onConfirm: () => void;
@@ -35,6 +37,8 @@ export const TimeStep = React.memo(function TimeStep({
   timeFormat,
   slotsLoading,
   slotsError,
+  submitting = false,
+  confirmLabel = "Confirm Time",
   onSelectDate,
   onSelectSlot,
   onConfirm,
@@ -45,7 +49,7 @@ export const TimeStep = React.memo(function TimeStep({
   const hasSlots = availableSlots.length > 0;
 
   return (
-    <motion.div {...STEP_TRANSITION} key="step-time">
+    <motion.div {...STEP_TRANSITION}>
       <h2
         className="font-black uppercase text-white mb-2 tracking-widest"
         style={{ fontSize: "clamp(1.3rem, 3vw, 1.8rem)" }}
@@ -184,14 +188,16 @@ export const TimeStep = React.memo(function TimeStep({
                 </div>
               ) : hasSlots ? (
                 <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2">
-                  {availableSlots.map((slot) => {
+                  {availableSlots.map((slot, idx) => {
                     const label = formatSlotTime(slot.start, timeFormat);
                     const isSel = selectedSlotStart === slot.start;
+                    const disabled = submitting;
                     return (
                       <button
-                        key={slot.start}
+                        key={`${slot.start}-${idx}`}
+                        disabled={disabled}
                         onClick={() => onSelectSlot(slot)}
-                        className="py-2 px-1 rounded border text-xs font-bold transition-all"
+                        className="py-2 px-1 rounded border text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                         style={{
                           backgroundColor: isSel ? B.accent : "transparent",
                           color: isSel ? B.dark : B.white,
@@ -222,25 +228,37 @@ export const TimeStep = React.memo(function TimeStep({
               <div className="mt-6">
                 <button
                   onClick={onConfirm}
-                  disabled={!selectedSlotStart}
-                  className="w-full py-4 rounded font-black text-sm uppercase tracking-widest transition-all"
+                  disabled={!selectedSlotStart || submitting}
+                  className="w-full py-4 rounded font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
                   style={{
                     backgroundColor: selectedSlotStart
                       ? B.cta
                       : "rgba(255,255,255,0.1)",
                     color: selectedSlotStart ? B.white : B.muted,
-                    cursor: selectedSlotStart ? "pointer" : "not-allowed",
                   }}
                   onMouseEnter={(e) => {
-                    if (selectedSlotStart)
+                    if (selectedSlotStart && !submitting)
                       e.currentTarget.style.backgroundColor = B.ctaHov;
                   }}
                   onMouseLeave={(e) => {
-                    if (selectedSlotStart)
+                    if (selectedSlotStart && !submitting)
                       e.currentTarget.style.backgroundColor = B.cta;
                   }}
                 >
-                  Confirm Time
+                  {submitting ? (
+                    <>
+                      <div
+                        className="w-4 h-4 border-2 rounded-full animate-spin"
+                        style={{
+                          borderColor: "rgba(255,255,255,0.3)",
+                          borderTopColor: B.white,
+                        }}
+                      />
+                      Confirming...
+                    </>
+                  ) : (
+                    confirmLabel
+                  )}
                 </button>
               </div>
             </motion.div>

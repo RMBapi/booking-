@@ -49,7 +49,7 @@ import {
 } from "@/services";
 import { useRoleAuth } from "@/contexts";
 import { useCloseModal } from "@/components/ui/Modal";
-import { useApiError, useApiSuccess } from "@/hooks";
+import { useApiError } from "@/hooks";
 import { extractApiErrorMessage } from "@/hooks/api-response";
 
 export const BookingForm: React.FC<BookingFormProps> = ({
@@ -62,7 +62,6 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 }) => {
   const { getSession, setSession } = useRoleAuth();
   const { handleError } = useApiError();
-  const { handleSuccess } = useApiSuccess();
   const customerSession = getSession("Customer");
   const isCustomerLoggedIn = !!(customerSession.token && customerSession.user);
   const closeModal = useCloseModal();
@@ -208,26 +207,20 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     [loadSlots, selectedProvider?.id],
   );
 
-  const handleSelectSlot = useCallback((slot: AvailableSlot) => {
-    setSelectedSlot(slot);
-  }, []);
-
-  const handleConfirmTime = useCallback(() => {
-    if (!selectedDate || !selectedSlot) return;
-    completeStep("time");
-    setStep("client");
-  }, [selectedDate, selectedSlot, completeStep]);
-
   const handleSubmit = useCallback(
-    async (mode: "login" | "guest" | "logged-in") => {
-      if (!selectedSlot || !selectedDate) return;
+    async (
+      mode: "login" | "guest" | "logged-in",
+      slotOverride?: AvailableSlot,
+    ) => {
+      const activeSlot = slotOverride ?? selectedSlot;
+      if (!activeSlot || !selectedDate) return;
       setSubmitting(true);
       setSubmitError(null);
 
       try {
         const bookingTime: BookingTime = {
-          start: selectedSlot.start,
-          end: selectedSlot.end,
+          start: activeSlot.start,
+          end: activeSlot.end,
         };
 
         if (mode === "guest") {
@@ -250,15 +243,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({
             notes: regNotes.trim() || undefined,
           };
 
-          const response = await createContact(
-            payload,
-            businessSlug,
-            businessId,
-          );
-          handleSuccess(response);
+          await createContact(payload, businessSlug, businessId);
           setShowSuccess(true);
           return;
         }
+
+        let activeUserId = customerSession.user?.id;
 
         if (!isCustomerLoggedIn && mode === "login") {
           if (!loginEmail.trim() || !loginPassword.trim()) {
@@ -282,6 +272,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           const additionalData: Record<string, string> = {};
           if (businessSlug) additionalData.businessSiteSlug = businessSlug;
           setSession("Customer", accessToken, user, additionalData);
+          activeUserId = user.id;
         }
 
         if (service.showProvider && !selectedProvider?.id) {
@@ -289,7 +280,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           return;
         }
 
+        if (!activeUserId) {
+          setSubmitError("You must be signed in to book.");
+          return;
+        }
+
         const bookingPayload: CreateBookingPayload = {
+          userId: activeUserId,
           serviceId: service.id,
           serviceProviderId: selectedProvider?.id || undefined,
           bookingTime,
@@ -299,12 +296,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           customerNotes: regNotes.trim() || undefined,
         };
 
-        const response = await createBooking(
-          bookingPayload,
-          businessSlug,
-          businessId,
-        );
-        handleSuccess(response);
+        await createBooking(bookingPayload, businessSlug, businessId);
         setShowSuccess(true);
       } catch (err) {
         setSubmitError(extractApiErrorMessage(err));
@@ -328,12 +320,36 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       businessSlug,
       businessId,
       isCustomerLoggedIn,
-      onClose,
+      customerSession.user?.id,
       handleError,
-      handleSuccess,
       setSession,
     ],
   );
+
+  const handleSelectSlot = useCallback(
+    (slot: AvailableSlot) => {
+      if (submitting) return;
+      setSelectedSlot(slot);
+    },
+    [submitting],
+  );
+
+  const handleConfirmTime = useCallback(() => {
+    if (!selectedDate || !selectedSlot || submitting) return;
+    completeStep("time");
+    if (isCustomerLoggedIn) {
+      handleSubmit("logged-in", selectedSlot);
+      return;
+    }
+    setStep("client");
+  }, [
+    selectedDate,
+    selectedSlot,
+    submitting,
+    completeStep,
+    isCustomerLoggedIn,
+    handleSubmit,
+  ]);
 
   const handleBack = useCallback(() => {
     if (step === "provider" || (step === "time" && !hasProviders)) {
@@ -467,6 +483,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               timeFormat={timeFormat}
               slotsLoading={slotsLoading}
               slotsError={slotsError}
+              submitting={submitting}
+              confirmLabel={isCustomerLoggedIn ? "Confirm Booking" : "Confirm Time"}
               onSelectDate={handleSelectDate}
               onSelectSlot={handleSelectSlot}
               onConfirm={handleConfirmTime}

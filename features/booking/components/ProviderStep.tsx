@@ -21,7 +21,7 @@ export const ProviderStep = React.memo(function ProviderStep({
   onSelect,
 }: ProviderStepProps) {
   return (
-    <motion.div {...STEP_TRANSITION} key="step-provider">
+    <motion.div {...STEP_TRANSITION}>
       <div>
         <h2
           className="font-black uppercase text-white mb-2 tracking-widest"

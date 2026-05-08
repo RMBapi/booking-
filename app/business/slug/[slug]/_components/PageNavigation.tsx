@@ -8,6 +8,7 @@ import { Business, Service, User } from "@/types";
 import { Modal, BookingForm } from "@/components";
 import { BRAND, getImageUrl } from "@/lib/publicBrand";
 import { EASE_OUT_QUART } from "../_constants";
+import { UserMenu } from "./UserMenu";
 
 interface PageNavigationProps {
   business: Business;
@@ -24,6 +25,7 @@ interface PageNavigationProps {
   onLogin: () => void;
   onSignup: () => void;
   onLogout: () => void;
+  onMyBookings: () => void;
 }
 
 export function PageNavigation({
@@ -41,6 +43,7 @@ export function PageNavigation({
   onLogin,
   onSignup,
   onLogout,
+  onMyBookings,
 }: PageNavigationProps) {
   const router = useRouter();
 
@@ -49,20 +52,20 @@ export function PageNavigation({
   return (
     <>
       <nav
-        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 lg:px-16"
+        className="fixed top-0 left-0 right-0 z-50 h-18 md:h-20 lg:h-22 flex items-center justify-between px-6 lg:px-16"
         style={{ backgroundColor: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)" }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4 py-2 pr-4 md:pr-8">
           {getImageUrl(business.logo) ? (
             <img
               src={getImageUrl(business.logo)!}
               alt={`${business.name} logo`}
-              className="h-10 w-auto object-contain"
+              className="h-10 sm:h-12 md:h-13 lg:h-14 w-auto object-contain transition-transform duration-200 hover:scale-105"
             />
           ) : (
             <span
-              className="font-black text-lg uppercase tracking-[0.12em]"
-              style={{ color: BRAND.dark, letterSpacing: "0.1em" }}
+              className="font-extrabold text-2xl sm:text-3xl md:text-[2rem] lg:text-[2.25rem] uppercase tracking-[0.08em] transition-opacity duration-200 hover:opacity-85"
+              style={{ color: BRAND.dark }}
             >
               {business.name}
             </span>
@@ -94,31 +97,6 @@ export function PageNavigation({
         </div>
 
         <div className="flex items-center gap-3">
-          {authValidated && isCustomerForThisSite && customerUser ? (
-            <>
-              <span className="hidden md:block text-xs font-semibold" style={{ color: BRAND.dark }}>
-                {customerUser.firstName} {customerUser.lastName}
-              </span>
-              <button
-                onClick={onLogout}
-                className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all"
-                style={{ borderColor: BRAND.dark, color: BRAND.dark }}
-                title="Logout"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </>
-          ) : (
-            <button
-              onClick={onLogin}
-              className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all"
-              style={{ borderColor: BRAND.dark, color: BRAND.dark }}
-              title="Login"
-            >
-              <UserIcon className="w-4 h-4" />
-            </button>
-          )}
-
           {featuredService ? (
             <Modal>
               <Modal.Open opens="nav-book-now">
@@ -153,6 +131,23 @@ export function PageNavigation({
             </button>
           )}
 
+          {authValidated && isCustomerForThisSite && customerUser ? (
+            <UserMenu
+              user={customerUser}
+              onLogout={onLogout}
+              onMyBookings={onMyBookings}
+            />
+          ) : (
+            <button
+              onClick={onLogin}
+              className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all"
+              style={{ borderColor: BRAND.dark, color: BRAND.dark }}
+              title="Login"
+            >
+              <UserIcon className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2"
@@ -170,7 +165,7 @@ export function PageNavigation({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: EASE_OUT_QUART }}
-            className="fixed top-16 left-0 right-0 z-40 flex flex-col gap-1 px-6 py-4 shadow-xl bg-white"
+            className="fixed top-18 md:top-20 left-0 right-0 z-40 flex flex-col gap-1 px-6 py-4 shadow-xl bg-white"
           >
             {[
               { key: "home", label: "Home", action: () => scrollToSection("home") },
@@ -188,13 +183,31 @@ export function PageNavigation({
               </button>
             ))}
             {authValidated && isCustomerForThisSite && customerUser ? (
-              <button
-                onClick={onLogout}
-                className="mt-3 py-3 rounded text-white text-sm font-bold uppercase tracking-widest"
-                style={{ backgroundColor: BRAND.card }}
-              >
-                Logout ({customerUser.firstName})
-              </button>
+              <>
+                <div
+                  className="mt-3 px-3 py-3 rounded text-xs"
+                  style={{ backgroundColor: "#f5f1ec", color: BRAND.dark }}
+                >
+                  <p className="font-bold truncate">
+                    {customerUser.firstName} {customerUser.lastName}
+                  </p>
+                  <p className="mt-0.5 truncate opacity-70">{customerUser.email}</p>
+                </div>
+                <button
+                  onClick={() => { onMyBookings(); setMobileMenuOpen(false); }}
+                  className="mt-2 py-3 rounded text-sm font-bold uppercase tracking-widest border"
+                  style={{ color: BRAND.dark, borderColor: BRAND.dark }}
+                >
+                  My Bookings
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="mt-2 py-3 rounded text-white text-sm font-bold uppercase tracking-widest"
+                  style={{ backgroundColor: BRAND.card }}
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <>
                 <button

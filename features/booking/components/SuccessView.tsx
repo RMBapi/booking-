@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { B } from "../constants";
 import type { Provider, ServiceInfo } from "../types";
@@ -14,6 +14,7 @@ interface SuccessViewProps {
   dateStr: string;
   selectedTime: string | null;
   onDismiss: () => void;
+  autoDismiss?: boolean;
 }
 
 export const SuccessView = React.memo(function SuccessView({
@@ -22,24 +23,23 @@ export const SuccessView = React.memo(function SuccessView({
   dateStr,
   selectedTime,
   onDismiss,
+  autoDismiss = true,
 }: SuccessViewProps) {
   const [remaining, setRemaining] = useState(DISMISS_SECONDS);
 
   const stableOnDismiss = useCallback(onDismiss, [onDismiss]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          stableOnDismiss();
-          return 0;
-        }
-        return prev - 1;
-      });
+    if (!autoDismiss) return;
+    if (remaining <= 0) {
+      stableOnDismiss();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRemaining((r) => r - 1);
     }, 1000);
-    return () => clearInterval(timer);
-  }, [stableOnDismiss]);
+    return () => clearTimeout(timer);
+  }, [autoDismiss, remaining, stableOnDismiss]);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -50,18 +50,38 @@ export const SuccessView = React.memo(function SuccessView({
         className="relative flex flex-col items-center gap-6 text-center px-10 py-12 rounded-2xl max-w-md mx-4 overflow-hidden"
         style={{ backgroundColor: B.card }}
       >
-        <div
-          className="absolute top-0 left-0 right-0 h-1"
-          style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+        <button
+          type="button"
+          onClick={stableOnDismiss}
+          className="absolute top-3 right-3 z-10 p-2 rounded-full transition-colors"
+          style={{ color: B.muted, backgroundColor: "rgba(255,255,255,0.04)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = B.white;
+            e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = B.muted;
+            e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)";
+          }}
+          aria-label="Close"
         >
-          <motion.div
-            initial={{ width: "100%" }}
-            animate={{ width: "0%" }}
-            transition={{ duration: DISMISS_SECONDS, ease: "linear" }}
-            className="h-full"
-            style={{ backgroundColor: B.cta }}
-          />
-        </div>
+          <X className="w-4 h-4" />
+        </button>
+
+        {autoDismiss && (
+          <div
+            className="absolute top-0 left-0 right-0 h-1"
+            style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+          >
+            <motion.div
+              initial={{ width: "100%" }}
+              animate={{ width: "0%" }}
+              transition={{ duration: DISMISS_SECONDS, ease: "linear" }}
+              className="h-full"
+              style={{ backgroundColor: B.cta }}
+            />
+          </div>
+        )}
 
         <motion.div
           initial={{ scale: 0 }}
@@ -102,9 +122,11 @@ export const SuccessView = React.memo(function SuccessView({
           confirmed.
         </p>
 
-        <p style={{ color: B.muted }} className="text-xs">
-          Closing in {remaining}s
-        </p>
+        {autoDismiss && (
+          <p style={{ color: B.muted }} className="text-xs">
+            Closing in {remaining}s
+          </p>
+        )}
       </motion.div>
     </div>
   );

@@ -1,6 +1,17 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "http", hostname: "localhost" },
+      {
+        protocol: "https",
+        hostname: "cbnhbwliowpepnrocvgl.supabase.co",
+        pathname: "/storage/v1/object/public/uploads/**",
+      },
+    ],
+  },
   async rewrites() {
     // Prefer explicit backend URL; fall back to localhost:3000
     const backendUrl =

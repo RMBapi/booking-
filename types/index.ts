@@ -105,6 +105,26 @@ export interface BookingTime {
   end: string;
 }
 
+export interface BookingServiceProvider {
+  id: string;
+  impUrl?: string | null;
+  user?: {
+    firstName?: string;
+    lastName?: string;
+  };
+}
+
+export interface BookingReview {
+  id: string;
+  bookingId?: string;
+  userId?: string;
+  businessId?: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Booking {
   id: string;
   customerId: string;
@@ -112,7 +132,7 @@ export interface Booking {
   serviceId: string;
   service?: Service;
   serviceProviderId: string;
-  serviceProvider?: User;
+  serviceProvider?: BookingServiceProvider;
   businessId: string;
   business?: Business;
   bookingTime: BookingTime;
@@ -121,6 +141,7 @@ export interface Booking {
   bookingSource: BookingSource;
   customerNotes?: string;
   cancellationReason?: string;
+  review?: BookingReview | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,6 +159,16 @@ export interface CreateBookingPayload {
 
 export interface CancelBookingPayload {
   cancellationReason: string;
+}
+
+export interface CreateReviewPayload {
+  rating: number;
+  comment?: string;
+}
+
+export interface UpdateReviewPayload {
+  rating?: number;
+  comment?: string;
 }
 
 /**

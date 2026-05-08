@@ -21,7 +21,6 @@ import {
 
 interface ServicesGridProps {
   services: Service[];
-  servicesLoading: boolean;
   business: Business;
   slug: string;
   heroImage: string;
@@ -29,7 +28,6 @@ interface ServicesGridProps {
 
 export function ServicesGrid({
   services,
-  servicesLoading,
   business,
   slug,
   heroImage,
@@ -58,17 +56,7 @@ export function ServicesGrid({
           </span>
         </motion.div>
 
-        {servicesLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(3)].map((_, i) => (
-              <div
-                key={`skel-${i}`}
-                className="h-[420px] animate-pulse rounded"
-                style={{ backgroundColor: BRAND.card }}
-              />
-            ))}
-          </div>
-        ) : services.length === 0 ? (
+        {services.length === 0 ? (
           <motion.div
             variants={fadeUp}
             initial="hidden"

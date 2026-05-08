@@ -218,16 +218,16 @@ export default function GalleryPage() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: BRAND.dark }}>
       {/* ── Navigation ── */}
       <nav
-        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 lg:px-16"
+        className="fixed top-0 left-0 right-0 z-50 h-18 md:h-20 lg:h-22 flex items-center justify-between px-6 lg:px-16"
         style={{
           backgroundColor: "rgba(255,255,255,0.97)",
           backdropFilter: "blur(12px)",
         }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4 py-2 pr-4 md:pr-8">
           <span
-            className="font-black text-lg uppercase tracking-[0.12em]"
-            style={{ color: BRAND.dark, letterSpacing: "0.1em" }}
+            className="font-extrabold text-2xl sm:text-3xl md:text-[2rem] lg:text-[2.25rem] uppercase tracking-[0.08em] transition-opacity duration-200 hover:opacity-85"
+            style={{ color: BRAND.dark }}
           >
             {businessName}
           </span>
@@ -292,7 +292,7 @@ export default function GalleryPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: EASE_OUT_QUART }}
-            className="fixed top-16 left-0 right-0 z-40 flex flex-col gap-1 px-6 py-4 shadow-xl bg-white"
+            className="fixed top-18 md:top-20 left-0 right-0 z-40 flex flex-col gap-1 px-6 py-4 shadow-xl bg-white"
           >
             {[
               { label: "Home", href: basePath, hash: null },

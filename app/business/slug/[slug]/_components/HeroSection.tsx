@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef } from "react";
+import Image from "next/image";
 import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { Business, Service } from "@/types";
 import { Modal, BookingForm } from "@/components";
@@ -51,10 +52,13 @@ export function HeroSection({
       className="relative h-[90vh] w-full flex items-end pb-20 px-8 lg:px-20 overflow-hidden"
     >
       <motion.div className="absolute inset-0 z-0" style={{ y: imgY }}>
-        <img
+        <Image
           src={heroImage}
           alt={`${business.name} hero`}
-          className="w-full h-full object-cover"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover"
           style={{ willChange: "transform" }}
         />
       </motion.div>

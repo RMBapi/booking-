@@ -1,11 +1,7 @@
-"use client";
-
 import React from "react";
-import { motion } from "framer-motion";
 import { Instagram, Facebook } from "lucide-react";
 import { Business } from "@/types";
 import { BRAND } from "@/lib/publicBrand";
-import { fadeUp, VP } from "../_constants";
 
 interface PageFooterProps {
   business: Business;
@@ -13,11 +9,7 @@ interface PageFooterProps {
 
 export function PageFooter({ business }: PageFooterProps) {
   return (
-    <motion.footer
-      variants={fadeUp}
-      initial="hidden"
-      whileInView="visible"
-      viewport={VP}
+    <footer
       className="border-t py-10 px-6 lg:px-16"
       style={{ backgroundColor: BRAND.darker, borderColor: "rgba(255,255,255,0.07)" }}
     >
@@ -59,6 +51,6 @@ export function PageFooter({ business }: PageFooterProps) {
           <a href="#" className="hover:text-white transition-colors">Terms</a>
         </div>
       </div>
-    </motion.footer>
+    </footer>
   );
 }

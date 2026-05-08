@@ -18,13 +18,12 @@ export const BRAND = {
 export type BrandTheme = typeof BRAND;
 
 /**
- * Resolve an image path from the API into a full URL.
- * - External URLs (http/https) are returned as-is.
- * - Local uploads (e.g. "/uploads/abc.png") are proxied through /api.
- * - Null/undefined returns null.
+ * Resolve an image URL from the API. The backend now returns full absolute
+ * URLs (e.g. Supabase public storage), so we pass them through unchanged.
+ * Legacy "/uploads/..." DB records are considered broken and will render
+ * as-is; they need to be re-uploaded.
  */
 export function getImageUrl(value: string | null | undefined): string | null {
   if (!value) return null;
-  if (value.startsWith("http://") || value.startsWith("https://")) return value;
-  return `/api${value}`;
+  return value;
 }

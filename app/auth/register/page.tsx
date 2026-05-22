@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   Eye,
   EyeOff,
+  Info,
   Lock,
   Mail,
   Phone,

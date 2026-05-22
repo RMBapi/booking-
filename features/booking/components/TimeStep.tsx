@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { B, DEFAULT_SERVICE_IMAGE, STEP_TRANSITION } from "../constants";
+import { B, STEP_TRANSITION } from "../constants";
 import type { Provider, ServiceInfo } from "../types";
 import type { AvailableSlot } from "@/types";
 import { formatSlotTime } from "../utils";
@@ -12,7 +12,6 @@ import { SafeImage } from "./SafeImage";
 
 interface TimeStepProps {
   service: ServiceInfo;
-  heroImageUrl?: string;
   selectedProvider: Provider | null;
   selectedDate: Date | null;
   selectedSlotStart: string | null;
@@ -25,11 +24,15 @@ interface TimeStepProps {
   onSelectDate: (d: Date) => void;
   onSelectSlot: (slot: AvailableSlot) => void;
   onConfirm: () => void;
+  canSwitchService?: boolean;
+  serviceIndex?: number;
+  serviceCount?: number;
+  onPrevService?: () => void;
+  onNextService?: () => void;
 }
 
 export const TimeStep = React.memo(function TimeStep({
   service,
-  heroImageUrl,
   selectedProvider,
   selectedDate,
   selectedSlotStart,
@@ -42,9 +45,15 @@ export const TimeStep = React.memo(function TimeStep({
   onSelectDate,
   onSelectSlot,
   onConfirm,
+  canSwitchService = false,
+  serviceIndex = 0,
+  serviceCount = 0,
+  onPrevService,
+  onNextService,
 }: TimeStepProps) {
-  const serviceImage =
-    heroImageUrl || service.imageUrl || DEFAULT_SERVICE_IMAGE;
+  const serviceImage = service.imageUrl?.trim();
+  const showSwitcher = canSwitchService && serviceCount > 1;
+  const servicePosition = `${serviceIndex + 1} / ${serviceCount}`;
 
   const hasSlots = availableSlots.length > 0;
 
@@ -76,23 +85,25 @@ export const TimeStep = React.memo(function TimeStep({
             className="rounded overflow-hidden border"
             style={{ backgroundColor: B.card, borderColor: B.border }}
           >
-            <div
-              className="relative overflow-hidden"
-              style={{ height: "160px" }}
-            >
-              <SafeImage
-                src={serviceImage}
-                alt={service.name}
-                className="w-full h-full object-cover"
-              />
+            {serviceImage && (
               <div
-                className="absolute inset-0"
-                style={{
-                  background:
-                    "linear-gradient(to top, rgba(44,8,0,0.8) 0%, transparent 50%)",
-                }}
-              />
-            </div>
+                className="relative overflow-hidden"
+                style={{ height: "160px" }}
+              >
+                <SafeImage
+                  src={serviceImage}
+                  alt={service.name}
+                  className="w-full h-full object-cover"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to top, rgba(44,8,0,0.8) 0%, transparent 50%)",
+                  }}
+                />
+              </div>
+            )}
 
             <div className="p-5">
               <h3 className="font-black text-white uppercase tracking-wider mb-2">
@@ -118,6 +129,51 @@ export const TimeStep = React.memo(function TimeStep({
               </div>
             </div>
           </div>
+
+          {showSwitcher && (
+            <div className="mt-4 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={onPrevService}
+                className="h-9 w-9 rounded-full border flex items-center justify-center transition-colors"
+                style={{ borderColor: B.border, color: B.white }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = B.white;
+                  e.currentTarget.style.color = B.dark;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = B.white;
+                }}
+                aria-label="Previous service"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: B.muted }}
+              >
+                {servicePosition}
+              </span>
+              <button
+                type="button"
+                onClick={onNextService}
+                className="h-9 w-9 rounded-full border flex items-center justify-center transition-colors"
+                style={{ borderColor: B.border, color: B.white }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = B.white;
+                  e.currentTarget.style.color = B.dark;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                  e.currentTarget.style.color = B.white;
+                }}
+                aria-label="Next service"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
 
           {selectedProvider && (
             <div

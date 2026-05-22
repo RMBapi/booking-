@@ -56,9 +56,6 @@ export const slideFromRight: Variants = {
 
 export const VP = { once: true, amount: 0.2 as const };
 
-export const HERO_FALLBACK =
-  "https://images.unsplash.com/photo-1723101917533-4fc9149c3684?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2000";
-
 export const SERVICE_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1606333259737-6da197890fa2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
   "https://images.unsplash.com/photo-1543697506-6729425f7265?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",

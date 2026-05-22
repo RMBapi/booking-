@@ -3,7 +3,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, User as UserIcon, X } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Business, Service, User } from "@/types";
 import { Modal, BookingForm } from "@/components";
 import { BRAND, getImageUrl } from "@/lib/publicBrand";
@@ -45,10 +44,6 @@ export function PageNavigation({
   onLogout,
   onMyBookings,
 }: PageNavigationProps) {
-  const router = useRouter();
-
-  const goToGallery = () => router.push(`/business/slug/${slug}/gallery`);
-
   return (
     <>
       <nav
@@ -60,7 +55,7 @@ export function PageNavigation({
             <img
               src={getImageUrl(business.logo)!}
               alt={`${business.name} logo`}
-              className="h-10 sm:h-12 md:h-13 lg:h-14 w-auto object-contain transition-transform duration-200 hover:scale-105"
+              className="h-[calc(var(--spacing)*21)] w-auto object-contain transition-transform duration-200 hover:scale-105"
             />
           ) : (
             <span
@@ -75,7 +70,6 @@ export function PageNavigation({
         <div className="hidden md:flex items-center gap-8">
           {[
             { key: "home", label: "Home", action: () => scrollToSection("home") },
-            { key: "gallery", label: "Gallery", action: goToGallery },
             { key: "reviews", label: "Reviews", action: () => scrollToSection("reviews") },
             { key: "bookings", label: "Contact", action: () => scrollToSection("bookings") },
           ].map((item) => (
@@ -101,13 +95,19 @@ export function PageNavigation({
             <Modal>
               <Modal.Open opens="nav-book-now">
                 <button
+                  type="button"
                   className="px-5 py-2 rounded text-white text-sm font-bold uppercase tracking-widest transition-all hidden md:block hover:brightness-110"
                   style={{ backgroundColor: BRAND.cta }}
                 >
                   Book Now
                 </button>
               </Modal.Open>
-              <Modal.Body name="nav-book-now" size="full" className="w-full max-w-6xl p-0">
+              <Modal.Body
+                name="nav-book-now"
+                size="full"
+                className="w-full max-w-6xl p-0"
+                hideDefaultClose
+              >
                 <BookingForm
                   service={featuredService}
                   businessSlug={slug}
@@ -121,6 +121,7 @@ export function PageNavigation({
             </Modal>
           ) : (
             <button
+              type="button"
               className="px-5 py-2 rounded text-white text-sm font-bold uppercase tracking-widest transition-all hidden md:block hover:brightness-110"
               style={{ backgroundColor: BRAND.cta }}
               onClick={() =>
@@ -139,16 +140,19 @@ export function PageNavigation({
             />
           ) : (
             <button
+              type="button"
               onClick={onLogin}
-              className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all"
+              className="hidden md:flex items-center justify-center w-9 h-9 rounded-full border-2 transition-all hover:shadow-md cursor-pointer"
               style={{ borderColor: BRAND.dark, color: BRAND.dark }}
               title="Login"
+              aria-label="Login"
             >
               <UserIcon className="w-4 h-4" />
             </button>
           )}
 
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden p-2"
             style={{ color: BRAND.dark }}
@@ -169,7 +173,6 @@ export function PageNavigation({
           >
             {[
               { key: "home", label: "Home", action: () => scrollToSection("home") },
-              { key: "gallery", label: "Gallery", action: goToGallery },
               { key: "reviews", label: "Reviews", action: () => scrollToSection("reviews") },
               { key: "bookings", label: "Contact", action: () => scrollToSection("bookings") },
             ].map((item) => (
@@ -194,6 +197,7 @@ export function PageNavigation({
                   <p className="mt-0.5 truncate opacity-70">{customerUser.email}</p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => { onMyBookings(); setMobileMenuOpen(false); }}
                   className="mt-2 py-3 rounded text-sm font-bold uppercase tracking-widest border"
                   style={{ color: BRAND.dark, borderColor: BRAND.dark }}
@@ -201,6 +205,7 @@ export function PageNavigation({
                   My Bookings
                 </button>
                 <button
+                  type="button"
                   onClick={onLogout}
                   className="mt-2 py-3 rounded text-white text-sm font-bold uppercase tracking-widest"
                   style={{ backgroundColor: BRAND.card }}
@@ -211,6 +216,7 @@ export function PageNavigation({
             ) : (
               <>
                 <button
+                  type="button"
                   onClick={() => { onLogin(); setMobileMenuOpen(false); }}
                   className="mt-3 py-3 rounded text-sm font-bold uppercase tracking-widest border"
                   style={{ color: BRAND.dark, borderColor: BRAND.dark }}
@@ -218,6 +224,7 @@ export function PageNavigation({
                   Login
                 </button>
                 <button
+                  type="button"
                   onClick={() => { onSignup(); setMobileMenuOpen(false); }}
                   className="mt-2 py-3 rounded text-white text-sm font-bold uppercase tracking-widest"
                   style={{ backgroundColor: BRAND.cta }}

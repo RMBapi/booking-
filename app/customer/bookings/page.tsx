@@ -25,6 +25,7 @@ import {
   cancelBooking,
   deleteReview,
   getMyBookings,
+  getPublicServicesByBusinessSlug,
   submitReview,
   updateReview,
 } from "@/services";
@@ -32,7 +33,7 @@ import { Booking, BookingStatus } from "@/types";
 import { ReviewModal, ReviewSubmitPayload } from "./_components/ReviewModal";
 import { CancelBookingModal } from "./_components/CancelBookingModal";
 
-type Filter = "all" | "upcoming" | "completed";
+type Filter = "all" | "upcoming" | "completed" | "cancelled";
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return "—";
@@ -121,6 +122,7 @@ export default function MyBookingsPage() {
   // Cancel modal state
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
+  const [serviceImagesById, setServiceImagesById] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!authLoading && !token) {
@@ -151,16 +153,48 @@ export default function MyBookingsPage() {
     typeof window !== "undefined"
       ? localStorage.getItem("customer_businessSiteSlug")
       : null;
+  const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || null;
+  const resolvedSlug = businessSlug || envSlug;
+
+  const fetchServiceImages = useCallback(async () => {
+    if (!resolvedSlug) return;
+    try {
+      const res = await getPublicServicesByBusinessSlug(resolvedSlug);
+      const list = Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.data?.data)
+          ? res.data.data
+          : [];
+      const imageMap: Record<string, string> = {};
+      list.forEach((service: { id?: string; image?: string | null }) => {
+        if (service?.id && service.image) {
+          imageMap[service.id] = service.image;
+        }
+      });
+      setServiceImagesById(imageMap);
+    } catch {
+      // Ignore image hydration failures; bookings still render without thumbnails.
+    }
+  }, [resolvedSlug]);
+
+  useEffect(() => {
+    if (resolvedSlug) fetchServiceImages();
+  }, [resolvedSlug, fetchServiceImages]);
 
   const handleBack = () => {
-    if (businessSlug) router.push(`/business/slug/${businessSlug}`);
+    if (resolvedSlug) router.push(`/business/slug/${resolvedSlug}#services-section`);
     else router.push("/");
   };
 
   const handleLogout = () => {
     logoutRole("Customer");
-    if (businessSlug) router.push(`/business/slug/${businessSlug}`);
-    else router.push("/auth/login/customer");
+    if (resolvedSlug) router.push(`/business/slug/${resolvedSlug}`);
+    else router.push("/");
+  };
+
+  const handleBrowseServices = () => {
+    if (resolvedSlug) router.push(`/business/slug/${resolvedSlug}#services-section`);
+    else router.push("/");
   };
 
   const openCancelModal = (booking: Booking) => {
@@ -177,13 +211,19 @@ export default function MyBookingsPage() {
   const handleConfirmCancel = async (reason: string) => {
     if (!cancelTarget) return;
     const trimmed = reason.trim() || "Cancelled by customer";
+    const cancelBusinessSlug = cancelTarget.business?.slug || resolvedSlug;
+
+    if (!cancelBusinessSlug) {
+      toast.error("Business slug is required to cancel this booking.");
+      return;
+    }
 
     try {
       setCancelingId(cancelTarget.id);
       await cancelBooking(
         cancelTarget.id,
         { cancellationReason: trimmed },
-        cancelTarget.businessId,
+        cancelBusinessSlug,
       );
       toast.success("Booking cancelled successfully!");
       setCancelModalOpen(false);
@@ -423,6 +463,7 @@ export default function MyBookingsPage() {
                   { key: "all" as Filter, label: "All" },
                   { key: "upcoming" as Filter, label: "Booked" },
                   { key: "completed" as Filter, label: "Completed" },
+                  { key: "cancelled" as Filter, label: "Cancelled" },
                 ].map(({ key, label }) => {
                   const active = filter === key;
                   return (
@@ -502,7 +543,7 @@ export default function MyBookingsPage() {
                 </p>
                 {!searchQuery && (
                   <button
-                    onClick={handleBack}
+                    onClick={handleBrowseServices}
                     className="px-6 py-3 rounded text-white text-sm font-bold uppercase tracking-widest transition-all"
                     style={{ backgroundColor: BRAND.cta }}
                     onMouseEnter={(e) =>
@@ -529,6 +570,7 @@ export default function MyBookingsPage() {
                     onCreateReview={openCreateReview}
                     onEditReview={openEditReview}
                     onDeleteReview={handleDeleteReview}
+                    serviceImagesById={serviceImagesById}
                   />
                 ))}
               </div>
@@ -572,6 +614,7 @@ interface BookingRowProps {
   index: number;
   canceling: boolean;
   deletingReview: boolean;
+  serviceImagesById: Record<string, string>;
   onCancel: (b: Booking) => void;
   onCreateReview: (b: Booking) => void;
   onEditReview: (b: Booking) => void;
@@ -583,6 +626,7 @@ function BookingRow({
   index,
   canceling,
   deletingReview,
+  serviceImagesById,
   onCancel,
   onCreateReview,
   onEditReview,
@@ -596,9 +640,11 @@ function BookingRow({
   const businessName = booking.business?.name;
 
   // Thumbnails
+  const bookingService = booking.service as { imageUrl?: string } | undefined;
   const thumbnailUrl =
-    getImageUrl(booking.business?.image) ??
-    getImageUrl(booking.business?.logo) ??
+    getImageUrl(booking.service?.image) ||
+    getImageUrl(bookingService?.imageUrl) ||
+    getImageUrl(serviceImagesById[booking.serviceId]) ||
     null;
   const providerAvatarUrl = getImageUrl(booking.serviceProvider?.impUrl ?? null);
 

@@ -33,14 +33,12 @@ export const getBookingById = async (id: string) => {
 export const cancelBooking = async (
   id: string,
   payload: CancelBookingPayload,
-  businessId?: string,
+  businessSlug?: string,
 ) => {
-  const headers = businessId ? { "x-business-id": businessId } : undefined;
-  return http.post(
-    `/booking/${id}/cancel`,
-    payload,
-    headers ? { headers } : undefined,
-  );
+  const query = businessSlug
+    ? `?businessSlug=${encodeURIComponent(businessSlug)}`
+    : "";
+  return http.post(`/booking/${id}/cancel/customer${query}`, payload);
 };
 
 /**

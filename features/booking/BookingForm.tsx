@@ -7,9 +7,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
-import { Service } from "@/types";
 import type {
   AvailableSlot,
   BookingTime,
@@ -53,19 +52,43 @@ import { useApiError } from "@/hooks";
 import { extractApiErrorMessage } from "@/hooks/api-response";
 
 export const BookingForm: React.FC<BookingFormProps> = ({
-  service,
+  service: initialService,
+  services,
   businessSlug,
   businessId,
   businessName,
   onClose,
-  heroImageUrl,
 }) => {
   const { getSession, setSession } = useRoleAuth();
   const { handleError } = useApiError();
   const customerSession = getSession("Customer");
   const isCustomerLoggedIn = !!(customerSession.token && customerSession.user);
   const closeModal = useCloseModal();
-  const showProviderStep = !!service.showProvider;
+
+  const serviceList = useMemo(
+    () => (services?.length ? services : [initialService]),
+    [services, initialService],
+  );
+  const [activeServiceId, setActiveServiceId] = useState(initialService.id);
+
+  useEffect(() => {
+    setActiveServiceId((prev) =>
+      prev === initialService.id ? prev : initialService.id,
+    );
+  }, [initialService.id]);
+
+  const activeService = useMemo(
+    () =>
+      serviceList.find((s) => s.id === activeServiceId) || serviceList[0],
+    [serviceList, activeServiceId],
+  );
+  const activeServiceIndex = useMemo(() => {
+    const idx = serviceList.findIndex((s) => s.id === activeServiceId);
+    return idx >= 0 ? idx : 0;
+  }, [serviceList, activeServiceId]);
+  const canSwitchService = serviceList.length > 1;
+
+  const showProviderStep = !!activeService.showProvider;
 
   const [providers, setProviders] = useState<Provider[]>([]);
   const [providersLoading, setProvidersLoading] = useState(showProviderStep);
@@ -76,16 +99,16 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     const fetchProviders = async () => {
       setProvidersLoading(true);
       try {
-        const data = await getServiceProviders(businessSlug, service.id);
+        const data = await getServiceProviders(businessSlug, activeService.id);
         const providerList = data?.data?.providers;
         if (data.success && Array.isArray(providerList)) {
           setProviders(providerList.map(mapServiceProviderToProvider));
-        } else if (service.providers?.length) {
-          setProviders(service.providers.map(mapServiceProviderToProvider));
+        } else if (activeService.providers?.length) {
+          setProviders(activeService.providers.map(mapServiceProviderToProvider));
         }
       } catch {
-        if (service.providers?.length) {
-          setProviders(service.providers.map(mapServiceProviderToProvider));
+        if (activeService.providers?.length) {
+          setProviders(activeService.providers.map(mapServiceProviderToProvider));
         }
       } finally {
         setProvidersLoading(false);
@@ -93,7 +116,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     };
 
     fetchProviders();
-  }, [showProviderStep, businessSlug, service.id, service.providers]);
+  }, [showProviderStep, businessSlug, activeService.id, activeService.providers]);
 
   const hasProviders = showProviderStep;
 
@@ -128,6 +151,31 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   const [showSuccess, setShowSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const handleServiceSwitch = useCallback(
+    (direction: "prev" | "next") => {
+      if (!canSwitchService) return;
+      const delta = direction === "next" ? 1 : -1;
+      const nextIndex =
+        (activeServiceIndex + delta + serviceList.length) %
+        serviceList.length;
+      const nextService = serviceList[nextIndex];
+      if (!nextService) return;
+
+      setActiveServiceId(nextService.id);
+      setSelectedProvider(null);
+      setSelectedDate(null);
+      setSelectedSlot(null);
+      setAvailableSlots([]);
+      setSlotsError(null);
+      setTimeFormat("12");
+      setCompletedSteps(nextService.showProvider ? [] : ["provider"]);
+      setStep(nextService.showProvider ? "provider" : "time");
+      setProviders([]);
+      setProvidersLoading(!!nextService.showProvider);
+    },
+    [activeServiceIndex, canSwitchService, serviceList],
+  );
+
   const topRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -141,13 +189,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 
   const serviceInfo = useMemo<ServiceInfo>(
     () => ({
-      name: service.name || "Service",
-      price: getServicePriceLabel(service),
-      duration: getServiceDuration(service),
-      description: serviceDescription(service),
-      imageUrl: (service as Service & { imageUrl?: string }).imageUrl,
+      name: activeService.name || "Service",
+      price: getServicePriceLabel(activeService),
+      duration: getServiceDuration(activeService),
+      description: serviceDescription(activeService),
+      imageUrl: activeService.image?.trim() || undefined,
     }),
-    [service],
+    [activeService],
   );
 
   const completeStep = useCallback(
@@ -174,7 +222,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       setSlotsError(null);
       try {
         const response = await getAvailableSlots({
-          serviceId: service.id,
+          serviceId: activeService.id,
           date: formatDateForApi(date),
           businessSlug,
           businessId,
@@ -194,7 +242,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         setSlotsLoading(false);
       }
     },
-    [service.id, businessSlug, businessId],
+    [activeService.id, businessSlug, businessId],
   );
 
   const handleSelectDate = useCallback(
@@ -234,7 +282,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           }
 
           const payload: CreateContactPayload = {
-            serviceId: service.id,
+            serviceId: activeService.id,
             firstName,
             lastName,
             email: regEmail.trim(),
@@ -259,7 +307,6 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           const loginResponse = await login({
             email: loginEmail.trim(),
             password: loginPassword,
-            role: "Customer",
             businessSiteSlug: businessSlug || undefined,
           });
 
@@ -275,7 +322,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           activeUserId = user.id;
         }
 
-        if (service.showProvider && !selectedProvider?.id) {
+        if (activeService.showProvider && !selectedProvider?.id) {
           setSubmitError("Please select a provider.");
           return;
         }
@@ -287,7 +334,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
 
         const bookingPayload: CreateBookingPayload = {
           userId: activeUserId,
-          serviceId: service.id,
+          serviceId: activeService.id,
           serviceProviderId: selectedProvider?.id || undefined,
           bookingTime,
           status: "Pending",
@@ -314,8 +361,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       regNotes,
       loginEmail,
       loginPassword,
-      service.id,
-      service.showProvider,
+      activeService.id,
+      activeService.showProvider,
       selectedProvider?.id,
       businessSlug,
       businessId,
@@ -361,6 +408,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       setStep("time");
     }
   }, [step, hasProviders, closeModal, onClose]);
+
+  const handleClose = useCallback(() => {
+    closeModal();
+    onClose();
+  }, [closeModal, onClose]);
 
   const handleStepClick = useCallback(
     (clickedStep: Step | "services") => {
@@ -428,10 +480,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   }, [selectedProvider?.id, selectedDate, loadSlots]);
 
   return (
-    <div
-      className="min-h-screen flex flex-col"
-      style={{ backgroundColor: B.dark }}
-    >
+    <div className="flex flex-col" style={{ backgroundColor: B.dark }}>
       <div ref={topRef}>
         <StepBar
           steps={stepsMeta}
@@ -454,10 +503,22 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         >
           <ChevronLeft className="w-4 h-4" /> Back
         </button>
-        <span className="text-xs" style={{ color: B.muted }}>
-          Our time:{" "}
-          <span style={{ color: B.white }}>{sydneyTime} Australia/Sydney</span>
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs" style={{ color: B.muted }}>
+            Our time:{" "}
+            <span style={{ color: B.white }}>{sydneyTime} Australia/Sydney</span>
+          </span>
+          <button
+            onClick={handleClose}
+            className="p-2 rounded border transition-colors"
+            style={{ borderColor: B.border, color: B.muted }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = B.white)}
+            onMouseLeave={(e) => (e.currentTarget.style.color = B.muted)}
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 max-w-5xl mx-auto w-full px-4 lg:px-8 py-10 overflow-hidden">
@@ -473,9 +534,8 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           )}
           {step === "time" && (
             <TimeStep
-              key="time"
+              key={`time-${activeService.id}`}
               service={serviceInfo}
-              heroImageUrl={heroImageUrl}
               selectedProvider={selectedProvider}
               selectedDate={selectedDate}
               selectedSlotStart={selectedSlot?.start || null}
@@ -488,6 +548,11 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               onSelectDate={handleSelectDate}
               onSelectSlot={handleSelectSlot}
               onConfirm={handleConfirmTime}
+              canSwitchService={canSwitchService}
+              serviceIndex={activeServiceIndex}
+              serviceCount={serviceList.length}
+              onPrevService={() => handleServiceSwitch("prev")}
+              onNextService={() => handleServiceSwitch("next")}
             />
           )}
           {step === "client" && (

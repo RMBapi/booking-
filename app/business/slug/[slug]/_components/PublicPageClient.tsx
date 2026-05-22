@@ -83,16 +83,28 @@ export function PublicPageClient({
   const displayEmail = business.email || "Email not available";
   const returnUrl = `/business/slug/${slug}`;
   const featuredService = services[0];
+  const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || null;
+  const logoutTarget = `/business/slug/${envSlug || slug}`;
+  const loginUrl = `/auth/login/customer?businessSiteSlug=${encodeURIComponent(
+    slug,
+  )}&returnUrl=${encodeURIComponent(returnUrl)}`;
+  const signupUrl = `/auth/register?businessSiteSlug=${encodeURIComponent(
+    slug,
+  )}&returnUrl=${encodeURIComponent(returnUrl)}`;
 
   const goCustomerLogin = () => {
-    router.push(
-      `/auth/login/customer?businessSiteSlug=${encodeURIComponent(slug)}&returnUrl=${encodeURIComponent(returnUrl)}`,
-    );
+    if (typeof window !== "undefined") {
+      window.location.assign(loginUrl);
+      return;
+    }
+    router.push(loginUrl);
   };
   const goCustomerSignup = () => {
-    router.push(
-      `/auth/register?businessSiteSlug=${encodeURIComponent(slug)}&returnUrl=${encodeURIComponent(returnUrl)}`,
-    );
+    if (typeof window !== "undefined") {
+      window.location.assign(signupUrl);
+      return;
+    }
+    router.push(signupUrl);
   };
 
   return (
@@ -113,7 +125,7 @@ export function PublicPageClient({
         onSignup={goCustomerSignup}
         onLogout={() => {
           logoutRole("Customer");
-          window.location.reload();
+          window.location.assign(logoutTarget);
         }}
         onMyBookings={() => router.push("/customer/bookings")}
       />

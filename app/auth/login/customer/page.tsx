@@ -3,7 +3,6 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  AlertCircle,
   ArrowRight,
   ChevronLeft,
   Eye,
@@ -14,11 +13,9 @@ import {
 import { useRoleAuth } from "@/contexts";
 import { PageLoader } from "@/components";
 import { useLogin } from "@/features/authentication/hooks";
+import { useBusinessHeroImage } from "@/hooks";
 import { motion } from "framer-motion";
 import { BRAND } from "@/lib/publicBrand";
-
-const VISUAL_IMAGE =
-  "https://images.unsplash.com/photo-1723101917533-4fc9149c3684?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200";
 
 const formatBusinessName = (slug: string | null) => {
   if (!slug) return "";
@@ -34,6 +31,7 @@ function CustomerLoginContent() {
   const searchParams = useSearchParams();
   const { getSession, isLoading: authLoading } = useRoleAuth();
   const { login, isLogging, errorMessage, clearError } = useLogin();
+  const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || null;
 
   const [businessSiteSlug, setBusinessSiteSlug] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -41,12 +39,16 @@ function CustomerLoginContent() {
   const [formData, setFormData] = useState({ email: "", password: "" });
 
   const returnUrl = searchParams.get("returnUrl");
-  const businessName = formatBusinessName(businessSiteSlug);
+  const resolvedSlug = businessSiteSlug || envSlug;
+  const { heroImage, businessName: fetchedBusinessName, loading: heroLoading } =
+    useBusinessHeroImage(resolvedSlug);
+  const businessName =
+    fetchedBusinessName || formatBusinessName(resolvedSlug);
 
   useEffect(() => {
-    const slug = searchParams.get("businessSiteSlug") || searchParams.get("slug");
+    const slug = searchParams.get("businessSiteSlug") || searchParams.get("slug") || envSlug;
     setBusinessSiteSlug(slug);
-  }, [searchParams]);
+  }, [searchParams, envSlug]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -59,46 +61,17 @@ function CustomerLoginContent() {
 
   if (authLoading) return <PageLoader />;
 
-  if (!businessSiteSlug) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ backgroundColor: BRAND.dark }}
-      >
-        <div className="text-center max-w-md" style={{ backgroundColor: BRAND.card }}>
-          <div className="p-10 rounded-lg">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-              style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-            >
-              <AlertCircle className="h-8 w-8" style={{ color: BRAND.accent }} />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-4">Business Site Required</h1>
-            <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.6)" }}>
-              Customer login requires a business site. Please access this page from a business
-              site or include the business site slug in the URL.
-            </p>
-            <button
-              onClick={() => router.push("/auth/login")}
-              className="px-6 py-3 rounded text-white text-sm font-bold uppercase tracking-widest"
-              style={{ backgroundColor: BRAND.cta }}
-            >
-              Go to Login Portal
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
     clearError();
+    if (!resolvedSlug) {
+      setFormError("Business site slug is missing.");
+      return;
+    }
     login({
       ...formData,
-      role: "Customer",
-      businessSiteSlug: businessSiteSlug!,
+      businessSiteSlug: resolvedSlug,
     });
   };
 
@@ -107,18 +80,18 @@ function CustomerLoginContent() {
       router.push(returnUrl);
       return;
     }
-    if (businessSiteSlug) {
-      router.push(`/business/slug/${businessSiteSlug}`);
+    if (resolvedSlug) {
+      router.push(`/business/slug/${resolvedSlug}`);
       return;
     }
     router.push("/auth/login");
   };
 
   const handleSignUp = () => {
-    if (businessSiteSlug) {
+    if (resolvedSlug) {
       const next = returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : "";
       router.push(
-        `/auth/register?businessSiteSlug=${encodeURIComponent(businessSiteSlug)}${next}`
+        `/auth/register?businessSiteSlug=${encodeURIComponent(resolvedSlug)}${next}`
       );
       return;
     }
@@ -137,11 +110,15 @@ function CustomerLoginContent() {
       {/* Left visual panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
         <div className="absolute inset-0">
-          <img
-            src={VISUAL_IMAGE}
-            alt="Business visual"
-            className="w-full h-full object-cover"
-          />
+          {heroImage && !heroLoading ? (
+            <img
+              src={heroImage}
+              alt={businessName ? `${businessName} background` : "Business background"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full" style={{ backgroundColor: BRAND.darker }} />
+          )}
           <div
             className="absolute inset-0"
             style={{

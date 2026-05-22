@@ -35,10 +35,10 @@ export const useLogin = () => {
         return;
       }
 
-      const loginRole = variables.role;
+      const loginRole = "Customer" as const;
       const additionalData: Record<string, string> = {};
 
-      if (loginRole === "Customer" && variables.businessSiteSlug) {
+      if (variables.businessSiteSlug) {
         additionalData.businessSiteSlug = variables.businessSiteSlug;
       }
 

@@ -1,3 +1,5 @@
+import type { Business } from "@/types";
+
 /**
  * Brand palette for public business pages.
  *
@@ -26,4 +28,21 @@ export type BrandTheme = typeof BRAND;
 export function getImageUrl(value: string | null | undefined): string | null {
   if (!value) return null;
   return value;
+}
+
+/** Fallback when a business has no image or logo configured. */
+export const HERO_FALLBACK =
+  "https://images.unsplash.com/photo-1723101917533-4fc9149c3684?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2000";
+
+/** Resolve the hero/background image for a business (same order as the public site). */
+export function resolveBusinessHeroImage(
+  business: Pick<Business, "image" | "logoUrl" | "logo"> | null | undefined,
+): string {
+  if (!business) return HERO_FALLBACK;
+  return (
+    getImageUrl(business.image) ||
+    getImageUrl(business.logoUrl) ||
+    getImageUrl(business.logo) ||
+    HERO_FALLBACK
+  );
 }

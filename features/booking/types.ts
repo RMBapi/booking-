@@ -25,6 +25,7 @@ export interface StepMeta {
 
 export interface BookingFormProps {
   service: Service;
+  services?: Service[];
   businessSlug: string;
   businessId: string;
   onClose: () => void;

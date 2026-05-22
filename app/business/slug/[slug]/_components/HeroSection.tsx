@@ -79,7 +79,7 @@ export function HeroSection({
             variants={heroChild}
             className="font-black uppercase text-white mb-8 leading-none"
             style={{
-              fontSize: "clamp(3rem, 8vw, 7rem)",
+              fontSize: "clamp(3rem, 4vw, 7rem)",
               letterSpacing: "0.04em",
               textShadow: "0 4px 30px rgba(0,0,0,0.5)",
             }}
@@ -122,7 +122,12 @@ export function HeroSection({
                     Book Now
                   </button>
                 </Modal.Open>
-                <Modal.Body name="hero-book-now" size="full" className="w-full max-w-6xl p-0">
+                <Modal.Body
+                  name="hero-book-now"
+                  size="full"
+                  className="w-full max-w-6xl p-0"
+                  hideDefaultClose
+                >
                   <BookingForm
                     service={featuredService}
                     businessSlug={slug}
@@ -139,7 +144,9 @@ export function HeroSection({
                 className="px-8 py-3 rounded text-white text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110"
                 style={{ backgroundColor: BRAND.cta }}
                 onClick={() =>
-                  document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" })
+                  document
+                    .getElementById("services-section")
+                    ?.scrollIntoView({ behavior: "smooth" })
                 }
               >
                 Book Now

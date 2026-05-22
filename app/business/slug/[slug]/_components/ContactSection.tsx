@@ -125,7 +125,12 @@ export function ContactSection({
                       <ArrowRight className="w-4 h-4" />
                     </button>
                   </Modal.Open>
-                  <Modal.Body name="contact-book-now" size="full" className="w-full max-w-6xl p-0">
+                  <Modal.Body
+                    name="contact-book-now"
+                    size="full"
+                    className="w-full max-w-6xl p-0"
+                    hideDefaultClose
+                  >
                     <BookingForm
                       service={featuredService}
                       businessSlug={slug}

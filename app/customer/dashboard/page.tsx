@@ -35,19 +35,21 @@ export default function CustomerDashboard() {
     typeof window !== "undefined"
       ? localStorage.getItem("customer_businessSiteSlug")
       : null;
+  const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || null;
+  const resolvedSlug = businessSlug || envSlug;
 
   const handleLogout = () => {
     logoutRole("Customer");
-    if (businessSlug) {
-      router.push(`/business/slug/${businessSlug}`);
+    if (resolvedSlug) {
+      router.push(`/business/slug/${resolvedSlug}`);
     } else {
-      router.push("/auth/login/customer");
+      router.push("/");
     }
   };
 
   const handleBack = () => {
-    if (businessSlug) {
-      router.push(`/business/slug/${businessSlug}`);
+    if (resolvedSlug) {
+      router.push(`/business/slug/${resolvedSlug}`);
     } else {
       router.push("/");
     }
@@ -60,7 +62,9 @@ export default function CustomerDashboard() {
       description: "Explore services and book your next appointment online.",
       buttonLabel: "Browse Now",
       onClick: () => {
-        if (businessSlug) router.push(`/business/slug/${businessSlug}`);
+        if (resolvedSlug) {
+          router.push(`/business/slug/${resolvedSlug}#services-section`);
+        }
       },
     },
     {

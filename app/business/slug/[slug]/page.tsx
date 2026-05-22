@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getImageUrl } from "@/lib/publicBrand";
-import { HERO_FALLBACK } from "./_constants";
+import { getImageUrl, resolveBusinessHeroImage } from "@/lib/publicBrand";
 import { fetchBusiness, fetchServices } from "./_data";
 import { PublicPageClient } from "./_components/PublicPageClient";
 import { ReviewsSection } from "./_components/ReviewsSection";
@@ -49,10 +48,7 @@ export default async function PublicBusinessPage({ params }: PageProps) {
 
   if (!business) notFound();
 
-  const heroImage =
-    getImageUrl(business.image) ||
-    getImageUrl(business.logoUrl) ||
-    HERO_FALLBACK;
+  const heroImage = resolveBusinessHeroImage(business);
 
   return (
     <div className="min-h-screen text-white bg-brand-dark">

@@ -34,7 +34,15 @@ export async function fetchServices(slug: string): Promise<Service[]> {
     if (!res.ok) return [];
     const json: ApiResponse<Service[]> = await res.json();
     if (!json.success || !Array.isArray(json.data)) return [];
-    return json.data.filter((s) => s.status === "Active" && s.isActive);
+    const activeServices = json.data.filter(
+      (s) => s.status === "Active" && s.isActive,
+    );
+    if (process.env.NODE_ENV !== "production") {
+      console.info(
+        `[public services] ${slug}: ${json.data.length} returned, ${activeServices.length} active`,
+      );
+    }
+    return activeServices;
   } catch {
     return [];
   }

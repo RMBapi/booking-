@@ -23,7 +23,6 @@ export interface User {
 export interface LoginPayload {
   email: string;
   password: string;
-  role: UserRole;
   businessSiteSlug?: string;
 }
 
@@ -68,6 +67,7 @@ export type ServiceStatus = "Active" | "Inactive" | "Archived";
 export interface Service {
   id: string;
   name: string;
+  image?: string | null;
   description?: string;
   price: number;
   status: ServiceStatus;

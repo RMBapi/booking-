@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   Eye,
   EyeOff,
-  Info,
   Lock,
   Mail,
   Phone,
@@ -16,10 +15,8 @@ import {
 import { motion } from "framer-motion";
 import { PageLoader } from "@/components";
 import { useRegister } from "@/features/authentication/hooks";
+import { useBusinessHeroImage } from "@/hooks";
 import { BRAND } from "@/lib/publicBrand";
-
-const VISUAL_IMAGE =
-  "https://images.unsplash.com/photo-1723101917533-4fc9149c3684?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200";
 
 const formatBusinessName = (slug: string | null) => {
   if (!slug) return "";
@@ -34,6 +31,7 @@ function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { register, isRegistering } = useRegister();
+  const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || null;
 
   const [showPassword, setShowPassword] = useState(false);
   const [businessSiteSlug, setBusinessSiteSlug] = useState<string | null>(null);
@@ -47,18 +45,24 @@ function RegisterContent() {
   });
 
   const returnUrl = searchParams.get("returnUrl");
-  const businessName = useMemo(() => formatBusinessName(businessSiteSlug), [businessSiteSlug]);
+  const resolvedSlug = businessSiteSlug || envSlug;
+  const { heroImage, businessName: fetchedBusinessName, loading: heroLoading } =
+    useBusinessHeroImage(resolvedSlug);
+  const businessName = useMemo(
+    () => fetchedBusinessName || formatBusinessName(resolvedSlug),
+    [fetchedBusinessName, resolvedSlug],
+  );
 
   useEffect(() => {
-    const slug = searchParams.get("businessSiteSlug") || searchParams.get("slug");
+    const slug = searchParams.get("businessSiteSlug") || searchParams.get("slug") || envSlug;
     setBusinessSiteSlug(slug);
-  }, [searchParams]);
+  }, [searchParams, envSlug]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    if (!businessSiteSlug) {
+    if (!resolvedSlug) {
       setFormError(
         "Customer registration requires a business site. Please access this page from a business site."
       );
@@ -68,7 +72,7 @@ function RegisterContent() {
     register({
       ...formData,
       role: "Customer",
-      businessSiteSlug,
+      businessSiteSlug: resolvedSlug,
     });
   };
 
@@ -77,18 +81,18 @@ function RegisterContent() {
       router.push(returnUrl);
       return;
     }
-    if (businessSiteSlug) {
-      router.push(`/business/slug/${businessSiteSlug}`);
+    if (resolvedSlug) {
+      router.push(`/business/slug/${resolvedSlug}`);
       return;
     }
     router.push("/auth/login");
   };
 
   const handleSignIn = () => {
-    if (businessSiteSlug) {
+    if (resolvedSlug) {
       const next = returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : "";
       router.push(
-        `/auth/login/customer?businessSiteSlug=${encodeURIComponent(businessSiteSlug)}${next}`
+        `/auth/login/customer?businessSiteSlug=${encodeURIComponent(resolvedSlug)}${next}`
       );
       return;
     }
@@ -100,36 +104,6 @@ function RegisterContent() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({ ...prev, [field]: e.target.value }));
     };
-
-  if (!businessSiteSlug) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ backgroundColor: BRAND.dark }}
-      >
-        <div className="text-center max-w-md rounded-lg p-10" style={{ backgroundColor: BRAND.card }}>
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6"
-            style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-          >
-            <Info className="h-8 w-8" style={{ color: BRAND.accent }} />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-4">Business Site Required</h1>
-          <p className="text-sm mb-6" style={{ color: "rgba(255,255,255,0.6)" }}>
-            Registration requires a business site. Please access this page from a business
-            site to create your customer account.
-          </p>
-          <button
-            onClick={() => router.push("/")}
-            className="px-6 py-3 rounded text-white text-sm font-bold uppercase tracking-widest"
-            style={{ backgroundColor: BRAND.cta }}
-          >
-            Go Home
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const inputClass =
     "w-full pl-12 pr-6 py-4 rounded-lg text-white font-medium border outline-none transition-all focus:ring-2";
@@ -147,7 +121,15 @@ function RegisterContent() {
       {/* Left visual panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
         <div className="absolute inset-0">
-          <img src={VISUAL_IMAGE} alt="Visual" className="w-full h-full object-cover" />
+          {heroImage && !heroLoading ? (
+            <img
+              src={heroImage}
+              alt={businessName ? `${businessName} background` : "Business background"}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full" style={{ backgroundColor: BRAND.darker }} />
+          )}
           <div
             className="absolute inset-0"
             style={{

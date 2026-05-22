@@ -10,7 +10,6 @@ import {
   staggerContainer,
   scaleUp,
   VP,
-  SERVICE_FALLBACK_IMAGES,
 } from "../_constants";
 import {
   formatPrice,
@@ -80,12 +79,10 @@ export function ServicesGrid({
             viewport={VP}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {services.map((service, idx) => {
+            {services.map((service) => {
               const price = Number(service.price);
               const desc = serviceDescription(service);
-              const fallbackImg = SERVICE_FALLBACK_IMAGES[idx % SERVICE_FALLBACK_IMAGES.length];
-              const serviceImg =
-                (service as Service & { imageUrl?: string }).imageUrl || fallbackImg;
+              const serviceImg = service.image?.trim();
 
               return (
                 <motion.div
@@ -94,13 +91,15 @@ export function ServicesGrid({
                   className="flex flex-col rounded overflow-hidden"
                   style={{ backgroundColor: BRAND.card }}
                 >
-                  <div className="relative h-48 overflow-hidden">
-                    <img
-                      src={serviceImg}
-                      alt={service.name}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                  </div>
+                  {serviceImg && (
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={serviceImg}
+                        alt={service.name}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+                  )}
 
                   <div className="flex flex-col flex-1 p-5">
                     <h3 className="font-bold text-white mb-2" style={{ fontSize: "1rem" }}>
@@ -147,9 +146,11 @@ export function ServicesGrid({
                         name={`booking-${service.id}`}
                         size="full"
                         className="w-full max-w-6xl p-0"
+                        hideDefaultClose
                       >
                         <BookingForm
                           service={service}
+                          services={services}
                           businessSlug={slug}
                           businessId={business.id}
                           heroImageUrl={heroImage}

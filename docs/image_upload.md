@@ -18,6 +18,15 @@ Both fields support **two ways** to set an image:
 1. **Upload a file** via `POST /upload/image` → get back a URL → use that URL in business create/update.
 2. **Provide an external URL** directly (e.g. `"https://example.com/photo.jpg"`).
 
+There is one image field on a Service:
+
+| Field   | Purpose                         |
+|---------|---------------------------------|
+| `image` | Service image (card / cover)    |
+
+It supports the same two ways as Business: upload via `POST /upload/image` or
+provide an external URL directly.
+
 ---
 
 ## Full Journey: Upload to Display
@@ -52,9 +61,9 @@ Both fields support **two ways** to set an image:
 1. User picks a file in the browser.
 2. Frontend sends the file to `POST /upload/image` as `multipart/form-data`.
 3. Server validates the file (type, size), saves it with a unique name, and returns the URL.
-4. Frontend takes the returned URL and includes it in the `POST /business` or `PATCH /business/:id` request body as `logo` or `image`.
+4. Frontend takes the returned URL and includes it in the `POST /business` or `PATCH /business/:id` request body as `logo` or `image`, or in the `POST /service` or `PATCH /service/:id` body as `image`.
 5. Server saves the URL string in the database.
-6. When displaying, frontend fetches the business data via `GET /business/:id` and uses the `logo` / `image` fields as `<img src="...">`.
+6. When displaying, frontend fetches the business or service data and uses the image fields as `<img src="...">`.
 
 ---
 
@@ -198,6 +207,48 @@ console.log(data.data.url); // "/uploads/a1b2c3d4-e5f6-7890-abcd-ef1234567890.pn
 > - Omitted entirely (both are optional)
 
 #### Response — Success (201)
+
+---
+
+### 3. Create a Service (with image)
+
+**Endpoint:** `POST /service`
+
+**Authentication:** Required (JWT Bearer token)
+
+**Content-Type:** `application/json`
+
+#### Request Body
+
+```json
+{
+  "name": "Haircut",
+  "description": "Professional haircut service",
+  "price": 50,
+  "status": "Active",
+  "image": "/uploads/a1b2c3d4-e5f6-7890-abcd-ef1234567890.png",
+  "priceDisplayMode": false,
+  "isActive": true,
+  "allowCustomerChooseProvider": false
+}
+```
+
+> **Note:** `image` can be:
+> - A path returned from `POST /upload/image` (e.g. `"/uploads/abc123.png"`)
+> - An external URL (e.g. `"https://example.com/service.png"`)
+> - Omitted entirely (optional)
+
+---
+
+### 4. Display Service Image on Public Site
+
+**Endpoint:** `GET /business/slug/:slug/services`
+
+Each service item includes an `image` field. Use it directly in your UI:
+
+```html
+<img src="https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png" alt="Service image" />
+```
 
 ```json
 {

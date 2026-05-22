@@ -33,6 +33,19 @@ export class UpdateServiceDto {
   description?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Service image URL (upload via POST /upload/image or provide an external URL)',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'Image must be a string' })
+  @IsOptional()
+  image?: string;
+
+  @ApiPropertyOptional({
     description: 'The price of the service',
     example: 50.0,
   })

@@ -11,6 +11,7 @@ import {
   Patch,
   Post,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -225,6 +226,49 @@ export class BookingController {
       cancelBookingDto.cancellationReason,
       businessId,
     );
+    return {
+      success: true,
+      statusCode: HttpStatus.OK,
+      message: 'Booking cancelled successfully',
+      timestamp: new Date().toISOString(),
+      data: plainToInstance(BookingResponseDto, booking, {
+        excludeExtraneousValues: true,
+      }),
+    };
+  }
+
+  @Post(':id/cancel/customer')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Cancel a booking (customer-facing)' })
+  @ApiResponse({ status: 200, type: GetSingleBookingDto })
+  async cancelAsCustomer(
+    @Param('id') id: string,
+    @Body() cancelBookingDto: CancelBookingDto,
+    @CurrentUser() user: JwtUser,
+    @Query('businessSlug') businessSlug?: string,
+    @Headers('x-business-id') businessId?: string,
+  ) {
+    if (!user?.id) {
+      throw new ForbiddenException('Authentication required');
+    }
+
+    let resolvedBusinessId = businessId;
+    if (!resolvedBusinessId && businessSlug) {
+      const business = await this.businessService.findOneBySlug(businessSlug);
+      resolvedBusinessId = business.id;
+    } else if (!resolvedBusinessId) {
+      throw new BadRequestException(
+        'Either businessId (via x-business-id header) or businessSlug (via query parameter) is required',
+      );
+    }
+
+    const booking = await this.bookingService.cancelAsCustomer(
+      id,
+      cancelBookingDto.cancellationReason,
+      resolvedBusinessId,
+      user.id,
+    );
+
     return {
       success: true,
       statusCode: HttpStatus.OK,

@@ -137,6 +137,29 @@ curl -X POST "http://localhost:3000/contact?businessSlug=<BUSINESS_SLUG>" \
 
 ---
 
+## 2.1) Cancel a booking (logged-in customer)
+
+- **Method:** `POST`
+- **Path:** `/booking/:id/cancel/customer`
+- **Auth:** `Authorization: Bearer <token>`
+- **Business context:**
+  - `x-business-id: <BUSINESS_ID>` header **or**
+  - `businessSlug=<slug>` query param
+
+**Request body:**
+
+```json
+{
+  "cancellationReason": "Schedule conflict"
+}
+```
+
+**Notes:**
+- Only the booking owner can cancel.
+- Guest bookings (no user account) cannot use this endpoint.
+
+---
+
 ## 3) Data the frontend must send and will receive
 
 ### 3.1 Logged-in booking request body
@@ -232,6 +255,51 @@ type CreateContactRequest = {
 
 ---
 
+## Customer login & register (public site)
+
+Use these when the booking UI offers sign-in or sign-up on a business site
+(e.g. `eleganzahairsalon`). Always send `credentials: 'include'` so the `cb_rt`
+refresh cookie is stored.
+
+### Login (existing customer)
+
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "email": "custom@gmail.com",
+  "password": "password",
+  "businessSiteSlug": "eleganzahairsalon"
+}
+```
+
+- **`businessSiteSlug`** — required for customers; must match the public site
+  slug the user is on. The API checks that this user is registered for that site.
+- **Do not send `role`** — login does not accept it. Sending
+  `"role": "Customer"` causes `400` / `"property role should not exist"`.
+  The server already knows the role from the user record.
+
+### Register (new customer on this site)
+
+```http
+POST /auth/register
+
+{
+  "firstName": "...",
+  "lastName": "...",
+  "email": "...",
+  "phone": "...",
+  "password": "...",
+  "role": "Customer",
+  "businessSiteSlug": "eleganzahairsalon"
+}
+```
+
+`role` is **only** for register, not login.
+
+---
+
 ## Common errors to handle
 
 - `400 Bad Request`:
@@ -240,6 +308,12 @@ type CreateContactRequest = {
   - provider required but not provided
 - `401 Unauthorized`:
   - missing/invalid JWT for `/booking`
+  - customer login: wrong password, unknown email, or user not linked to
+    `businessSiteSlug` (all surfaced as `"Invalid credentials"`)
+- `403 Forbidden`:
+  - customer cancel: not the booking owner or booking was created as guest
+- Login `400` with `"property role should not exist"`:
+  - remove `role` from the login request body (register-only field)
 - `404 Not Found`:
   - service or business not found
 

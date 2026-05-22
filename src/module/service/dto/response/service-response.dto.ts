@@ -67,6 +67,15 @@ export class ServiceResponseDto {
   description: string | null;
 
   @Expose()
+  @ApiPropertyOptional({
+    description: 'Service image URL',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
+    nullable: true,
+  })
+  image: string | null;
+
+  @Expose()
   @ApiProperty({
     description: 'The price of the service',
     example: 50.0,

@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
@@ -548,6 +549,31 @@ export class BookingService {
       );
       throw error;
     }
+  }
+
+  async cancelAsCustomer(
+    id: string,
+    cancellationReason: string,
+    businessId: string,
+    userId: string,
+  ) {
+    this.logger.log(
+      `Customer cancelling booking: ${id} for business: ${businessId}, user: ${userId}`,
+    );
+
+    const booking = await this.findOne(id, businessId);
+
+    if (!booking.userId) {
+      throw new ForbiddenException(
+        'Only registered customers can cancel this booking',
+      );
+    }
+
+    if (booking.userId !== userId) {
+      throw new ForbiddenException('You are not allowed to cancel this booking');
+    }
+
+    return this.cancel(id, cancellationReason, businessId);
   }
 
   async findAll(queryDto: BookingQueryDto, businessId: string) {

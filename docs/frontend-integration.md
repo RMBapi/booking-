@@ -28,6 +28,10 @@ Content-Type: application/json
 { "email": "...", "password": "...", "businessSiteSlug": "acme" }
 ```
 
+**Do not send `role` on login.** The role field exists only on `POST /auth/register`.
+Login bodies are whitelisted to `email`, `password`, and optional `businessSiteSlug`;
+extra properties (including `role`) return `400` with `"property role should not exist"`.
+
 `businessSiteSlug` is required only when the user is a `Customer`. Response:
 
 ```json

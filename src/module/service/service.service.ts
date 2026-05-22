@@ -52,6 +52,7 @@ export class ServiceService {
       data: {
         name: createServiceDto.name,
         description: createServiceDto.description,
+        image: createServiceDto.image,
         price: createServiceDto.price,
         status: createServiceDto.status,
         priceDisplayMode: createServiceDto.priceDisplayMode ?? false,
@@ -127,6 +128,7 @@ export class ServiceService {
       data: {
         name: updateServiceDto.name,
         description: updateServiceDto.description,
+        image: updateServiceDto.image,
         price: updateServiceDto.price,
         status: updateServiceDto.status,
         priceDisplayMode: updateServiceDto.priceDisplayMode,

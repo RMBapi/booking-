@@ -1,6 +1,19 @@
 import type { Metadata } from "next";
+import { Inter, Marcellus } from "next/font/google";
 import { Providers } from "./providers";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+const marcellus = Marcellus({
+  subsets: ["latin"],
+  variable: "--font-marcellus",
+  weight: "400",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Book Your Appointment | Cuebites",
@@ -25,7 +38,7 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body
-        className="antialiased bg-[#faf9f6] font-sans text-stone-700"
+        className={`${inter.variable} ${marcellus.variable} antialiased bg-[#fafafa] font-sans text-[#222222]`}
         suppressHydrationWarning
       >
         <Providers>{children}</Providers>

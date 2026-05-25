@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 
 export default function MissingBusinessSlugPage() {
   const router = useRouter();
@@ -19,22 +19,30 @@ export default function MissingBusinessSlugPage() {
   return (
     <main
       className="min-h-screen flex items-center justify-center px-4"
-      style={{ backgroundColor: BRAND.dark }}
+      style={{ backgroundColor: ELEGANZA.background }}
     >
       <section
-        className="w-full max-w-lg rounded-xl border p-8 md:p-10"
+        className="w-full max-w-lg rounded border p-8 md:p-10"
         style={{
-          backgroundColor: BRAND.card,
-          borderColor: "rgba(255,255,255,0.12)",
+          backgroundColor: ELEGANZA.surface,
+          borderColor: ELEGANZA.border,
         }}
       >
-        <h1 className="text-2xl md:text-3xl font-extrabold text-white uppercase tracking-wide">
+        <h1
+          className="text-2xl md:text-3xl uppercase tracking-[0.2em]"
+          style={{ color: ELEGANZA.ink }}
+        >
           Missing Business Slug
         </h1>
-        <p className="mt-3 text-sm md:text-base" style={{ color: "rgba(255,255,255,0.72)" }}>
+        <p
+          className="mt-3 text-sm md:text-base"
+          style={{ color: ELEGANZA.inkMuted }}
+        >
           Enter a slug to load a business website. Example URL format:
           <br />
-          <span className="font-semibold text-white">/business/slug/my-business</span>
+          <span className="font-semibold" style={{ color: ELEGANZA.ink }}>
+            /business/slug/my-business
+          </span>
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
@@ -45,17 +53,26 @@ export default function MissingBusinessSlugPage() {
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder="my-business"
-            className="w-full rounded-lg border px-4 py-3 text-white outline-none focus:ring-2"
+            className="w-full rounded border px-4 py-3 outline-none focus:ring-2"
             style={{
-              borderColor: "rgba(255,255,255,0.2)",
-              backgroundColor: "rgba(255,255,255,0.04)",
+              borderColor: ELEGANZA.border,
+              backgroundColor: ELEGANZA.surface,
+              color: ELEGANZA.ink,
             }}
           />
           <button
             type="submit"
             disabled={!normalizedSlug}
-            className="w-full rounded-lg px-4 py-3 font-bold uppercase tracking-wider text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ backgroundColor: BRAND.cta }}
+            className="w-full rounded px-4 py-3 font-semibold uppercase tracking-[0.2em] text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: ELEGANZA.cta }}
+            onMouseEnter={(e) => {
+              if (!normalizedSlug) return;
+              e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
+            }}
+            onMouseLeave={(e) => {
+              if (!normalizedSlug) return;
+              e.currentTarget.style.backgroundColor = ELEGANZA.cta;
+            }}
           >
             Load Business Site
           </button>

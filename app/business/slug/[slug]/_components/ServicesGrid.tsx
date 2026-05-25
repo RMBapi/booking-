@@ -4,13 +4,8 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Service, Business } from "@/types";
 import { Modal, BookingForm } from "@/components";
-import { BRAND } from "@/lib/publicBrand";
-import {
-  fadeUp,
-  staggerContainer,
-  scaleUp,
-  VP,
-} from "../_constants";
+import { ELEGANZA } from "@/lib/publicBrand";
+import { fadeUp, staggerContainer, scaleUp, VP } from "../_constants";
 import {
   formatPrice,
   getServiceDuration,
@@ -37,7 +32,10 @@ export function ServicesGrid({
     <section
       id="services-section"
       className="py-16 px-6 lg:px-16"
-      style={{ backgroundColor: BRAND.dark }}
+      style={{
+        backgroundColor: ELEGANZA.background,
+        backgroundImage: "linear-gradient(180deg, #fafafa 0%, #efefef 100%)",
+      }}
     >
       <div className="max-w-6xl mx-auto">
         <motion.div
@@ -48,10 +46,11 @@ export function ServicesGrid({
           className="flex justify-end mb-8"
         >
           <span
-            className="text-xs font-bold uppercase tracking-widest"
-            style={{ color: "rgba(255,255,255,0.5)" }}
+            className="text-xs font-semibold uppercase tracking-[0.2em]"
+            style={{ color: ELEGANZA.inkMuted }}
           >
-            {services.length} service{services.length !== 1 ? "s" : ""} available
+            {services.length} service{services.length !== 1 ? "s" : ""}{" "}
+            available
           </span>
         </motion.div>
 
@@ -62,12 +61,18 @@ export function ServicesGrid({
             whileInView="visible"
             viewport={VP}
             className="rounded p-12 text-center"
-            style={{ backgroundColor: BRAND.card }}
+            style={{
+              backgroundColor: ELEGANZA.surface,
+              border: `1px solid ${ELEGANZA.border}`,
+            }}
           >
-            <p className="text-xl font-bold text-white">
+            <p
+              className="text-xl font-semibold"
+              style={{ color: ELEGANZA.ink }}
+            >
               No active services available right now.
             </p>
-            <p className="mt-2" style={{ color: "rgba(255,255,255,0.5)" }}>
+            <p className="mt-2" style={{ color: ELEGANZA.inkMuted }}>
               Please check back soon.
             </p>
           </motion.div>
@@ -89,7 +94,10 @@ export function ServicesGrid({
                   key={service.id}
                   variants={scaleUp}
                   className="flex flex-col rounded overflow-hidden"
-                  style={{ backgroundColor: BRAND.card }}
+                  style={{
+                    backgroundColor: ELEGANZA.surface,
+                    border: `1px solid ${ELEGANZA.border}`,
+                  }}
                 >
                   {serviceImg && (
                     <div className="relative h-48 overflow-hidden">
@@ -102,12 +110,15 @@ export function ServicesGrid({
                   )}
 
                   <div className="flex flex-col flex-1 p-5">
-                    <h3 className="font-bold text-white mb-2" style={{ fontSize: "1rem" }}>
+                    <h3
+                      className="font-semibold mb-2"
+                      style={{ fontSize: "1rem", color: ELEGANZA.ink }}
+                    >
                       {titleCase(service.name)}
                     </h3>
                     <p
                       className="text-sm leading-relaxed mb-1"
-                      style={{ color: "rgba(255,255,255,0.55)" }}
+                      style={{ color: ELEGANZA.inkMuted }}
                     >
                       {expandedService === service.id
                         ? desc
@@ -118,27 +129,55 @@ export function ServicesGrid({
                     {desc.length > 90 && (
                       <button
                         onClick={() =>
-                          setExpandedService(expandedService === service.id ? null : service.id)
+                          setExpandedService(
+                            expandedService === service.id ? null : service.id,
+                          )
                         }
-                        className="text-xs font-bold text-left mb-3 transition-colors"
-                        style={{ color: BRAND.accent }}
+                        className="text-xs font-semibold text-left mb-3 transition-colors underline"
+                        style={{ color: ELEGANZA.ink }}
                       >
-                        {expandedService === service.id ? "Read less" : "Read more"}
+                        {expandedService === service.id
+                          ? "Read less"
+                          : "Read more"}
                       </button>
                     )}
 
                     <div className="flex items-center justify-between mt-auto pt-3 mb-4">
-                      <span className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+                      <span
+                        className="text-sm"
+                        style={{ color: ELEGANZA.inkMuted }}
+                      >
                         {getServiceDuration(service)}
                       </span>
-                      <span className="font-bold text-white">
-                        {service.priceDisplayMode ? formatPrice(price) : "Custom"}
+                      <span
+                        className="font-semibold"
+                        style={{ color: ELEGANZA.ink }}
+                      >
+                        {service.priceDisplayMode
+                          ? formatPrice(price)
+                          : "Custom"}
                       </span>
                     </div>
 
                     <Modal>
                       <Modal.Open opens={`booking-${service.id}`}>
-                        <button className="w-full py-3 rounded text-sm font-bold uppercase tracking-widest border border-white/40 text-white bg-transparent transition-all hover:bg-white hover:text-brand-dark hover:border-white">
+                        <button
+                          className="w-full py-3 rounded text-sm font-semibold uppercase tracking-[0.2em] border transition-colors"
+                          style={{
+                            borderColor: ELEGANZA.ink,
+                            color: ELEGANZA.ink,
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              ELEGANZA.ink;
+                            e.currentTarget.style.color = ELEGANZA.surface;
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor =
+                              "transparent";
+                            e.currentTarget.style.color = ELEGANZA.ink;
+                          }}
+                        >
                           Select
                         </button>
                       </Modal.Open>

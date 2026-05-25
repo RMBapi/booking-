@@ -1,32 +1,62 @@
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 
 export const B = {
-  dark: BRAND.dark,
-  darker: BRAND.darker,
-  card: BRAND.card,
-  cardHov: BRAND.card,
-  border: "rgba(255,255,255,0.10)",
-  muted: "rgba(255,255,255,0.45)",
-  accent: BRAND.accent,
-  cta: BRAND.cta,
-  ctaHov: BRAND.ctaHover,
+  dark: ELEGANZA.ink,
+  darker: ELEGANZA.darker,
+  card: ELEGANZA.surface,
+  cardHov: ELEGANZA.surfaceMuted,
+  border: ELEGANZA.border,
+  muted: ELEGANZA.inkMuted,
+  accent: ELEGANZA.accent,
+  cta: ELEGANZA.cta,
+  ctaHov: ELEGANZA.ctaHover,
   white: "#FFFFFF",
+  ink: ELEGANZA.ink,
+  inkSoft: ELEGANZA.inkSoft,
+  paper: ELEGANZA.background,
+  surfaceMuted: ELEGANZA.surfaceMuted,
 } as const;
 
 export const TIME_SLOTS = [
-  "7:00 AM",  "7:30 AM",  "8:00 AM",  "8:30 AM",
-  "9:00 AM",  "9:30 AM",  "10:00 AM", "10:30 AM",
-  "11:00 AM", "11:30 AM", "12:00 PM",  "12:30 PM",
-  "1:00 PM",  "1:30 PM",  "2:00 PM",  "2:30 PM",
-  "3:00 PM",  "3:30 PM",  "4:00 PM",  "4:30 PM",
-  "5:00 PM",  "5:30 PM",
+  "7:00 AM",
+  "7:30 AM",
+  "8:00 AM",
+  "8:30 AM",
+  "9:00 AM",
+  "9:30 AM",
+  "10:00 AM",
+  "10:30 AM",
+  "11:00 AM",
+  "11:30 AM",
+  "12:00 PM",
+  "12:30 PM",
+  "1:00 PM",
+  "1:30 PM",
+  "2:00 PM",
+  "2:30 PM",
+  "3:00 PM",
+  "3:30 PM",
+  "4:00 PM",
+  "4:30 PM",
+  "5:00 PM",
+  "5:30 PM",
 ];
 
 export const DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 
 export const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export const DEFAULT_SERVICE_IMAGE =

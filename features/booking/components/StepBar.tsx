@@ -30,13 +30,13 @@ export const StepBar = React.memo(function StepBar({
         >
           <span
             className="text-xs font-black uppercase tracking-widest"
-            style={{ color: B.accent }}
+            style={{ color: B.ink }}
           >
             SERVICES
           </span>
           <span
             className="absolute bottom-0 left-0 right-0 h-[3px]"
-            style={{ backgroundColor: B.accent }}
+            style={{ backgroundColor: B.ink }}
           />
         </div>
 
@@ -60,11 +60,7 @@ export const StepBar = React.memo(function StepBar({
               <span
                 className="text-xs font-black uppercase tracking-widest"
                 style={{
-                  color: isActive
-                    ? B.accent
-                    : isDone
-                      ? "rgba(255,255,255,0.75)"
-                      : B.muted,
+                  color: isActive ? B.ink : isDone ? B.inkSoft : B.muted,
                 }}
               >
                 {s.label}
@@ -72,7 +68,7 @@ export const StepBar = React.memo(function StepBar({
               {s.sub && (
                 <span
                   className="text-[10px] mt-0.5 truncate max-w-full px-1 text-center"
-                  style={{ color: isActive ? B.accent : B.muted }}
+                  style={{ color: isActive ? B.ink : B.muted }}
                 >
                   {s.sub}
                 </span>
@@ -80,7 +76,7 @@ export const StepBar = React.memo(function StepBar({
               {isActive && (
                 <span
                   className="absolute bottom-0 left-0 right-0 h-[3px]"
-                  style={{ backgroundColor: B.accent }}
+                  style={{ backgroundColor: B.ink }}
                 />
               )}
             </div>

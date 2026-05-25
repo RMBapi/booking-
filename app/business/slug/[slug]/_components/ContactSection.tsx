@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Phone, Mail } from "lucide-react";
 import { Business, Service } from "@/types";
 import { Modal, BookingForm } from "@/components";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 import {
   fadeUp,
   fadeIn,
@@ -39,7 +39,10 @@ export function ContactSection({
     <section
       id="bookings"
       className="py-20 px-6 lg:px-16"
-      style={{ backgroundColor: BRAND.dark }}
+      style={{
+        backgroundColor: ELEGANZA.background,
+        backgroundImage: "linear-gradient(180deg, #efefef 0%, #fafafa 100%)",
+      }}
     >
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -57,8 +60,8 @@ export function ContactSection({
                 initial="hidden"
                 whileInView="visible"
                 viewport={VP}
-                className="text-xs font-bold uppercase tracking-[0.4em] mb-3"
-                style={{ color: BRAND.accent }}
+                className="text-xs font-semibold uppercase tracking-[0.4em] mb-3"
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 Find Us
               </motion.p>
@@ -68,8 +71,12 @@ export function ContactSection({
                 whileInView="visible"
                 custom={1}
                 viewport={VP}
-                className="font-black uppercase text-white"
-                style={{ fontSize: "clamp(1.8rem, 4vw, 3rem)", letterSpacing: "0.05em" }}
+                className="uppercase"
+                style={{
+                  fontSize: "clamp(1.8rem, 4vw, 3rem)",
+                  letterSpacing: "0.08em",
+                  color: ELEGANZA.ink,
+                }}
               >
                 VISIT US
               </motion.h2>
@@ -87,21 +94,33 @@ export function ContactSection({
                 { icon: Phone, label: "Phone", value: displayPhone },
                 { icon: Mail, label: "Email", value: displayEmail },
               ].map(({ icon: Icon, label, value }) => (
-                <motion.div key={label} variants={fadeUp} className="flex items-center gap-5">
+                <motion.div
+                  key={label}
+                  variants={fadeUp}
+                  className="flex items-center gap-5"
+                >
                   <div
                     className="w-12 h-12 rounded flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: BRAND.card }}
+                    style={{
+                      backgroundColor: ELEGANZA.surface,
+                      border: `1px solid ${ELEGANZA.border}`,
+                    }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: BRAND.accent }} />
+                    <Icon className="w-5 h-5" style={{ color: ELEGANZA.ink }} />
                   </div>
                   <div>
                     <p
-                      className="text-[10px] font-bold uppercase tracking-widest mb-0.5"
-                      style={{ color: "rgba(255,255,255,0.4)" }}
+                      className="text-[10px] font-semibold uppercase tracking-[0.2em] mb-0.5"
+                      style={{ color: ELEGANZA.inkMuted }}
                     >
                       {label}
                     </p>
-                    <p className="text-white font-medium text-sm">{value}</p>
+                    <p
+                      className="font-medium text-sm"
+                      style={{ color: ELEGANZA.ink }}
+                    >
+                      {value}
+                    </p>
                   </div>
                 </motion.div>
               ))}
@@ -118,8 +137,15 @@ export function ContactSection({
                 <Modal>
                   <Modal.Open opens="contact-book-now">
                     <button
-                      className="flex items-center gap-3 px-8 py-4 rounded text-white font-bold text-sm uppercase tracking-widest transition-all hover:brightness-110"
-                      style={{ backgroundColor: BRAND.cta }}
+                      className="flex items-center gap-3 px-8 py-4 rounded text-white font-semibold text-sm uppercase tracking-[0.2em] transition-colors"
+                      style={{ backgroundColor: ELEGANZA.cta }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor =
+                          ELEGANZA.ctaHover;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = ELEGANZA.cta;
+                      }}
                     >
                       Book Your Appointment
                       <ArrowRight className="w-4 h-4" />
@@ -144,10 +170,18 @@ export function ContactSection({
                 </Modal>
               ) : (
                 <button
-                  className="flex items-center gap-3 px-8 py-4 rounded text-white font-bold text-sm uppercase tracking-widest transition-all hover:brightness-110"
-                  style={{ backgroundColor: BRAND.cta }}
+                  className="flex items-center gap-3 px-8 py-4 rounded text-white font-semibold text-sm uppercase tracking-[0.2em] transition-colors"
+                  style={{ backgroundColor: ELEGANZA.cta }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = ELEGANZA.cta;
+                  }}
                   onClick={() =>
-                    document.getElementById("services-section")?.scrollIntoView({ behavior: "smooth" })
+                    document
+                      .getElementById("services-section")
+                      ?.scrollIntoView({ behavior: "smooth" })
                   }
                 >
                   Browse Services
@@ -164,15 +198,18 @@ export function ContactSection({
             whileInView="visible"
             viewport={VP}
             className="rounded p-8"
-            style={{ backgroundColor: BRAND.card }}
+            style={{
+              backgroundColor: ELEGANZA.surface,
+              border: `1px solid ${ELEGANZA.border}`,
+            }}
           >
             <motion.h3
               variants={fadeUp}
               initial="hidden"
               whileInView="visible"
               viewport={VP}
-              className="font-black uppercase text-white mb-8 tracking-widest"
-              style={{ fontSize: "1.25rem" }}
+              className="uppercase mb-8 tracking-[0.2em]"
+              style={{ fontSize: "1.25rem", color: ELEGANZA.ink }}
             >
               OPENING HOURS
             </motion.h3>
@@ -188,18 +225,21 @@ export function ContactSection({
                   key={item.day}
                   variants={fadeIn}
                   className="flex justify-between items-center py-4 border-b last:border-0"
-                  style={{ borderColor: "rgba(255,255,255,0.07)" }}
+                  style={{ borderColor: ELEGANZA.border }}
                 >
                   <span
-                    className="text-sm font-bold uppercase tracking-widest"
-                    style={{ color: "rgba(255,255,255,0.5)" }}
+                    className="text-sm font-semibold uppercase tracking-[0.2em]"
+                    style={{ color: ELEGANZA.inkMuted }}
                   >
                     {item.day}
                   </span>
                   <span
                     className="text-sm font-medium"
                     style={{
-                      color: item.hours === "Closed" ? "rgba(255,255,255,0.3)" : "white",
+                      color:
+                        item.hours === "Closed"
+                          ? ELEGANZA.inkMuted
+                          : ELEGANZA.ink,
                     }}
                   >
                     {item.hours}

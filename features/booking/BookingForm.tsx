@@ -78,8 +78,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   }, [initialService.id]);
 
   const activeService = useMemo(
-    () =>
-      serviceList.find((s) => s.id === activeServiceId) || serviceList[0],
+    () => serviceList.find((s) => s.id === activeServiceId) || serviceList[0],
     [serviceList, activeServiceId],
   );
   const activeServiceIndex = useMemo(() => {
@@ -104,11 +103,15 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         if (data.success && Array.isArray(providerList)) {
           setProviders(providerList.map(mapServiceProviderToProvider));
         } else if (activeService.providers?.length) {
-          setProviders(activeService.providers.map(mapServiceProviderToProvider));
+          setProviders(
+            activeService.providers.map(mapServiceProviderToProvider),
+          );
         }
       } catch {
         if (activeService.providers?.length) {
-          setProviders(activeService.providers.map(mapServiceProviderToProvider));
+          setProviders(
+            activeService.providers.map(mapServiceProviderToProvider),
+          );
         }
       } finally {
         setProvidersLoading(false);
@@ -116,7 +119,12 @@ export const BookingForm: React.FC<BookingFormProps> = ({
     };
 
     fetchProviders();
-  }, [showProviderStep, businessSlug, activeService.id, activeService.providers]);
+  }, [
+    showProviderStep,
+    businessSlug,
+    activeService.id,
+    activeService.providers,
+  ]);
 
   const hasProviders = showProviderStep;
 
@@ -156,8 +164,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       if (!canSwitchService) return;
       const delta = direction === "next" ? 1 : -1;
       const nextIndex =
-        (activeServiceIndex + delta + serviceList.length) %
-        serviceList.length;
+        (activeServiceIndex + delta + serviceList.length) % serviceList.length;
       const nextService = serviceList[nextIndex];
       if (!nextService) return;
 
@@ -480,7 +487,10 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   }, [selectedProvider?.id, selectedDate, loadSlots]);
 
   return (
-    <div className="flex flex-col" style={{ backgroundColor: B.dark }}>
+    <div
+      className="flex flex-col"
+      style={{ backgroundColor: B.paper, color: B.ink }}
+    >
       <div ref={topRef}>
         <StepBar
           steps={stepsMeta}
@@ -498,7 +508,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
           onClick={handleBack}
           className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors"
           style={{ color: B.muted }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = B.white)}
+          onMouseEnter={(e) => (e.currentTarget.style.color = B.ink)}
           onMouseLeave={(e) => (e.currentTarget.style.color = B.muted)}
         >
           <ChevronLeft className="w-4 h-4" /> Back
@@ -506,13 +516,13 @@ export const BookingForm: React.FC<BookingFormProps> = ({
         <div className="flex items-center gap-3">
           <span className="text-xs" style={{ color: B.muted }}>
             Our time:{" "}
-            <span style={{ color: B.white }}>{sydneyTime} Australia/Sydney</span>
+            <span style={{ color: B.ink }}>{sydneyTime} Australia/Sydney</span>
           </span>
           <button
             onClick={handleClose}
             className="p-2 rounded border transition-colors"
             style={{ borderColor: B.border, color: B.muted }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = B.white)}
+            onMouseEnter={(e) => (e.currentTarget.style.color = B.ink)}
             onMouseLeave={(e) => (e.currentTarget.style.color = B.muted)}
             aria-label="Close"
           >
@@ -544,7 +554,9 @@ export const BookingForm: React.FC<BookingFormProps> = ({
               slotsLoading={slotsLoading}
               slotsError={slotsError}
               submitting={submitting}
-              confirmLabel={isCustomerLoggedIn ? "Confirm Booking" : "Confirm Time"}
+              confirmLabel={
+                isCustomerLoggedIn ? "Confirm Booking" : "Confirm Time"
+              }
               onSelectDate={handleSelectDate}
               onSelectSlot={handleSelectSlot}
               onConfirm={handleConfirmTime}

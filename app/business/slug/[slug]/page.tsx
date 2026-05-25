@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getImageUrl, resolveBusinessHeroImage } from "@/lib/publicBrand";
+import {
+  ELEGANZA,
+  getImageUrl,
+  resolveBusinessHeroImage,
+} from "@/lib/publicBrand";
 import { fetchBusiness, fetchServices } from "./_data";
 import { PublicPageClient } from "./_components/PublicPageClient";
 import { ReviewsSection } from "./_components/ReviewsSection";
@@ -12,7 +16,9 @@ interface PageProps {
 
 /* ── Dynamic SEO metadata ─────────────────────────────────────────────── */
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const business = await fetchBusiness(slug);
   if (!business) return { title: "Business Not Found" };
@@ -29,7 +35,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         `Browse services and book your next appointment with ${business.name}.`,
       type: "website",
       ...(business.image || business.logo
-        ? { images: [{ url: getImageUrl(business.image || business.logo) || "" }] }
+        ? {
+            images: [
+              { url: getImageUrl(business.image || business.logo) || "" },
+            ],
+          }
         : {}),
     },
   };
@@ -51,7 +61,14 @@ export default async function PublicBusinessPage({ params }: PageProps) {
   const heroImage = resolveBusinessHeroImage(business);
 
   return (
-    <div className="min-h-screen text-white bg-brand-dark">
+    <div
+      className="min-h-screen text-[#222222]"
+      style={{
+        backgroundColor: ELEGANZA.background,
+        backgroundImage:
+          "radial-gradient(circle at 12% 8%, rgba(221,211,207,0.45), transparent 55%), radial-gradient(circle at 88% 0%, rgba(239,239,239,0.7), transparent 45%)",
+      }}
+    >
       {/*
         PublicPageClient handles all interactive state (auth, scroll, mobile menu)
         and renders the client-only sections (nav, hero, services, contact).

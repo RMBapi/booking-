@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Business, Service, User } from "@/types";
 import { useRoleAuth } from "@/contexts";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 import { PageNavigation } from "./PageNavigation";
 import { HeroSection } from "./HeroSection";
 import { ServicesGrid } from "./ServicesGrid";
@@ -24,12 +24,18 @@ export function PublicPageClient({
   heroImage,
 }: PublicPageClientProps) {
   const router = useRouter();
-  const { getSession, logout: logoutRole, isLoading: authLoading } = useRoleAuth();
+  const {
+    getSession,
+    logout: logoutRole,
+    isLoading: authLoading,
+  } = useRoleAuth();
 
   const [authValidated, setAuthValidated] = useState(false);
   const [isCustomerForThisSite, setIsCustomerForThisSite] = useState(false);
   const [customerUser, setCustomerUser] = useState<User | null>(null);
-  const [activeSection, setActiveSection] = useState<"home" | "reviews" | "bookings">("home");
+  const [activeSection, setActiveSection] = useState<
+    "home" | "reviews" | "bookings"
+  >("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const customerSession = getSession("Customer");
@@ -141,25 +147,31 @@ export function PublicPageClient({
 
         {/* Booking step bar */}
         <div
-          className="w-full border-b bg-brand-card"
-          style={{ borderColor: "rgba(255,255,255,0.08)" }}
+          className="w-full border-b"
+          style={{
+            backgroundColor: ELEGANZA.surface,
+            borderColor: ELEGANZA.border,
+          }}
         >
           <div className="max-w-5xl mx-auto flex items-center">
             {["SERVICES", "PROVIDER", "TIME", "CLIENT"].map((step, i) => (
               <div
                 key={step}
-                className="flex-1 text-center py-5 text-sm font-bold uppercase tracking-widest relative cursor-pointer transition-colors"
-                style={{ color: i === 0 ? BRAND.accent : "rgba(255,255,255,0.45)" }}
+                className="flex-1 text-center py-5 text-sm font-semibold uppercase tracking-widest relative cursor-pointer transition-colors"
+                style={{ color: i === 0 ? ELEGANZA.ink : ELEGANZA.inkMuted }}
               >
                 {step}
                 {i === 0 && (
                   <span
                     className="absolute bottom-0 left-0 right-0 h-[3px]"
-                    style={{ backgroundColor: BRAND.accent }}
+                    style={{ backgroundColor: ELEGANZA.ink }}
                   />
                 )}
                 {i < 3 && (
-                  <span className="absolute right-0 top-1/2 -translate-y-1/2 text-xs text-white/20">
+                  <span
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-xs"
+                    style={{ color: ELEGANZA.border }}
+                  >
                     |
                   </span>
                 )}

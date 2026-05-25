@@ -42,26 +42,26 @@ export const SuccessView = React.memo(function SuccessView({
   }, [autoDismiss, remaining, stableOnDismiss]);
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.7, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
-        className="relative flex flex-col items-center gap-6 text-center px-10 py-12 rounded-2xl max-w-md mx-4 overflow-hidden"
-        style={{ backgroundColor: B.card }}
+        className="relative flex flex-col items-center gap-6 text-center px-10 py-12 rounded max-w-md mx-4 overflow-hidden"
+        style={{ backgroundColor: B.card, border: `1px solid ${B.border}` }}
       >
         <button
           type="button"
           onClick={stableOnDismiss}
           className="absolute top-3 right-3 z-10 p-2 rounded-full transition-colors"
-          style={{ color: B.muted, backgroundColor: "rgba(255,255,255,0.04)" }}
+          style={{ color: B.muted, backgroundColor: B.surfaceMuted }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.color = B.white;
-            e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.1)";
+            e.currentTarget.style.color = B.ink;
+            e.currentTarget.style.backgroundColor = B.cardHov;
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.color = B.muted;
-            e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.backgroundColor = B.surfaceMuted;
           }}
           aria-label="Close"
         >
@@ -99,8 +99,8 @@ export const SuccessView = React.memo(function SuccessView({
         </motion.div>
 
         <h2
-          className="font-black uppercase text-white tracking-widest"
-          style={{ fontSize: "1.6rem" }}
+          className="uppercase tracking-[0.2em]"
+          style={{ fontSize: "1.6rem", color: B.ink }}
         >
           BOOKING CONFIRMED
         </h2>
@@ -111,14 +111,14 @@ export const SuccessView = React.memo(function SuccessView({
             <>
               {" "}
               with{" "}
-              <strong style={{ color: B.white }}>
+              <strong style={{ color: B.ink }}>
                 {selectedProvider.name}
               </strong>
             </>
           )}{" "}
-          for <strong style={{ color: B.white }}>{service.name}</strong> on
-          <strong style={{ color: B.white }}> {dateStr}</strong> at
-          <strong style={{ color: B.white }}> {selectedTime}</strong> is
+          for <strong style={{ color: B.ink }}>{service.name}</strong> on
+          <strong style={{ color: B.ink }}> {dateStr}</strong> at
+          <strong style={{ color: B.ink }}> {selectedTime}</strong> is
           confirmed.
         </p>
 

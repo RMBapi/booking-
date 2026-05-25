@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { Business, Service } from "@/types";
 import { Modal, BookingForm } from "@/components";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 import { EASE_OUT_QUART } from "../_constants";
 
 interface HeroSectionProps {
@@ -49,7 +49,7 @@ export function HeroSection({
     <section
       ref={heroRef}
       id="home"
-      className="relative h-[90vh] w-full flex items-end pb-20 px-8 lg:px-20 overflow-hidden"
+      className="relative min-h-[85vh] w-full flex items-end pb-24 px-6 md:px-12 lg:px-20 overflow-hidden"
     >
       <motion.div className="absolute inset-0 z-0" style={{ y: imgY }}>
         <Image
@@ -65,23 +65,30 @@ export function HeroSection({
       <div
         className="absolute inset-0 z-[1]"
         style={{
-          background: `linear-gradient(to top, ${BRAND.darker}EE 0%, ${BRAND.dark}99 40%, transparent 70%)`,
+          background:
+            "linear-gradient(to top, rgba(34,34,34,0.8) 0%, rgba(34,34,34,0.55) 45%, rgba(34,34,34,0.1) 75%)",
         }}
       />
       <motion.div
         className="absolute inset-0 z-[1]"
-        style={{ backgroundColor: "rgba(44,8,0,1)", opacity: overlayOpacity }}
+        style={{ backgroundColor: "rgba(34,34,34,1)", opacity: overlayOpacity }}
+      />
+      <div
+        className="absolute inset-0 z-[2]"
+        style={{
+          background:
+            "radial-gradient(circle at 15% 20%, rgba(221,211,207,0.35), transparent 55%)",
+        }}
       />
 
       <div className="relative z-10 w-full">
         <motion.div variants={heroStagger} initial="hidden" animate="visible">
           <motion.h1
             variants={heroChild}
-            className="font-black uppercase text-white mb-8 leading-none"
+            className="font-[var(--font-display)] uppercase text-white mb-8 leading-none"
             style={{
               fontSize: "clamp(3rem, 4vw, 7rem)",
-              letterSpacing: "0.04em",
-              textShadow: "0 4px 30px rgba(0,0,0,0.5)",
+              letterSpacing: "0.06em",
             }}
           >
             {business.name.split(" ").map((word, i) => (
@@ -96,7 +103,7 @@ export function HeroSection({
             <motion.p
               variants={heroChild}
               className="max-w-xl text-lg font-medium leading-relaxed mb-8"
-              style={{ color: "rgba(255,255,255,0.8)" }}
+              style={{ color: "rgba(255,255,255,0.78)" }}
             >
               {business.description}
             </motion.p>
@@ -107,7 +114,7 @@ export function HeroSection({
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || business.name)}`}
               target="_blank"
               rel="noreferrer"
-              className="px-8 py-3 rounded text-sm font-bold uppercase tracking-widest border-2 border-white text-white bg-transparent transition-all hover:bg-white hover:text-brand-dark"
+              className="px-8 py-3 rounded text-sm font-semibold uppercase tracking-[0.2em] border border-white/70 text-white bg-transparent transition-colors hover:bg-white hover:text-[#222222]"
             >
               Show on Map
             </a>
@@ -116,8 +123,14 @@ export function HeroSection({
               <Modal>
                 <Modal.Open opens="hero-book-now">
                   <button
-                    className="px-8 py-3 rounded text-white text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                    style={{ backgroundColor: BRAND.cta }}
+                    className="px-8 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+                    style={{ backgroundColor: ELEGANZA.cta }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = ELEGANZA.cta;
+                    }}
                   >
                     Book Now
                   </button>
@@ -141,8 +154,14 @@ export function HeroSection({
               </Modal>
             ) : (
               <button
-                className="px-8 py-3 rounded text-white text-sm font-bold uppercase tracking-widest transition-all hover:brightness-110"
-                style={{ backgroundColor: BRAND.cta }}
+                className="px-8 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+                style={{ backgroundColor: ELEGANZA.cta }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = ELEGANZA.cta;
+                }}
                 onClick={() =>
                   document
                     .getElementById("services-section")

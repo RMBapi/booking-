@@ -4,13 +4,10 @@
    DESIGN TOKENS - Premium SaaS Design System
    ========================================================================== */
 
-
-
-   @source "../app/**/*.{ts,tsx,js,jsx,mdx}";
-   @source "../features/**/*.{ts,tsx,js,jsx,mdx}";
-   @source "../components/**/*.{ts,tsx,js,jsx,mdx}";
-   @source "../src/**/*.{ts,tsx,js,jsx,mdx}";
-
+@source "../app/**/*.{ts,tsx,js,jsx,mdx}";
+@source "../features/**/*.{ts,tsx,js,jsx,mdx}";
+@source "../components/**/*.{ts,tsx,js,jsx,mdx}";
+@source "../src/**/*.{ts,tsx,js,jsx,mdx}";
 
 @theme {
   /* Colors - Refined neutral palette with vibrant primary */
@@ -60,9 +57,14 @@
   --color-gray-900: #171717;
   --color-gray-950: #0a0a0a;
 
-  /* Font Family - Modern SaaS stack */
-  --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  /* Font Family - Editorial pairing */
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-display: var(--font-marcellus), "Times New Roman", serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
 
   /* Font Sizes - Refined scale */
   --font-size-xs: 0.75rem;
@@ -97,8 +99,10 @@
   --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-lg:
+    0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl:
+    0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
   /* Transitions */
@@ -107,19 +111,19 @@
   --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Accent - Warm gold/bronze (redesign) */
-  --color-accent-gold: #D4A574;
-  --color-accent-gold-dark: #C4956A;
+  --color-accent-gold: #d4a574;
+  --color-accent-gold-dark: #c4956a;
 
   /* Sage green (redesign) */
   --color-sage-50: #f4f6f5;
   --color-sage-100: #e6ebe8;
-  --color-sage-500: #8BA88E;
-  --color-sage-600: #7A967D;
+  --color-sage-500: #8ba88e;
+  --color-sage-600: #7a967d;
 
   /* Brand palette — public business pages */
-  --color-brand-dark: #2C0800;
-  --color-brand-darker: #1A0500;
-  --color-brand-card: #3D0C02;
+  --color-brand-dark: #2c0800;
+  --color-brand-darker: #1a0500;
+  --color-brand-card: #3d0c02;
   --color-brand-accent: #c9966d;
   --color-brand-cta: #c9966d;
   --color-brand-cta-hover: #b6865f;
@@ -160,9 +164,10 @@
     font-family: theme(fontFamily.sans);
     font-size: theme(fontSize.base);
     line-height: theme(lineHeight.normal);
-    transition: background-color var(--transition-base), color var(--transition-base);
+    transition:
+      background-color var(--transition-base),
+      color var(--transition-base);
   }
-
 
   :where(a) {
     color: inherit;
@@ -179,16 +184,15 @@
      ========================================================================== */
 
   :where(h1, h2, h3, h4, h5, h6) {
-    font-weight: 600;
+    font-family: var(--font-display);
+    font-weight: 400;
     line-height: theme(lineHeight.tight);
-    letter-spacing: -0.02em;
-    color: theme(colors.gray.900);
+    letter-spacing: 0.02em;
+    color: #222222;
   }
-
 
   :where(h1) {
     font-size: theme(fontSize.4xl);
-    font-weight: 700;
   }
 
   :where(h2) {
@@ -255,7 +259,6 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: theme(colors.gray.400);
 }
-
 
 /* Force light scrollbar style for light-design modals even in dark mode/OS themes */
 .modal-light-scrollbar {
@@ -325,7 +328,6 @@
 .panel-edge-right {
   padding-right: 1.5rem;
 }
-
 
 @media (max-width: 768px) {
   .app-shell,

@@ -8,6 +8,22 @@ import type { Business } from "@/types";
  * work out-of-the-box. This object is kept for inline-style use cases
  * (e.g. dynamic gradients where Tailwind classes aren't practical).
  */
+export const ELEGANZA = {
+  ink: "#222222",
+  inkSoft: "#2a2924",
+  inkMuted: "#767676",
+  background: "#fafafa",
+  surface: "#ffffff",
+  surfaceMuted: "#efefef",
+  border: "#ddd3cf",
+  accent: "#817b64",
+  cta: "#817b64",
+  ctaHover: "#6f6a55",
+  dark: "#222222",
+  darker: "#000000",
+  card: "#ffffff",
+} as const;
+
 export const BRAND = {
   dark: "#2C0800",
   darker: "#1A0500",

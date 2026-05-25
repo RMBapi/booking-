@@ -60,8 +60,8 @@ export const TimeStep = React.memo(function TimeStep({
   return (
     <motion.div {...STEP_TRANSITION}>
       <h2
-        className="font-black uppercase text-white mb-2 tracking-widest"
-        style={{ fontSize: "clamp(1.3rem, 3vw, 1.8rem)" }}
+        className="uppercase mb-2 tracking-[0.2em]"
+        style={{ fontSize: "clamp(1.3rem, 3vw, 1.8rem)", color: B.ink }}
       >
         CHOOSE DATE AND TIME
       </h2>
@@ -69,8 +69,7 @@ export const TimeStep = React.memo(function TimeStep({
         {selectedProvider ? (
           <>
             Booking with{" "}
-            <span style={{ color: B.accent }}>{selectedProvider.name}</span>{" "}
-            -{" "}
+            <span style={{ color: B.ink }}>{selectedProvider.name}</span> -{" "}
           </>
         ) : (
           <>Booking </>
@@ -99,14 +98,17 @@ export const TimeStep = React.memo(function TimeStep({
                   className="absolute inset-0"
                   style={{
                     background:
-                      "linear-gradient(to top, rgba(44,8,0,0.8) 0%, transparent 50%)",
+                      "linear-gradient(to top, rgba(34,34,34,0.5) 0%, transparent 55%)",
                   }}
                 />
               </div>
             )}
 
             <div className="p-5">
-              <h3 className="font-black text-white uppercase tracking-wider mb-2">
+              <h3
+                className="font-semibold uppercase tracking-[0.12em] mb-2"
+                style={{ color: B.ink }}
+              >
                 {service.name}
               </h3>
               <p
@@ -125,7 +127,9 @@ export const TimeStep = React.memo(function TimeStep({
                 >
                   {service.duration}
                 </span>
-                <span className="font-black text-white">{service.price}</span>
+                <span className="font-semibold" style={{ color: B.ink }}>
+                  {service.price}
+                </span>
               </div>
             </div>
           </div>
@@ -136,14 +140,14 @@ export const TimeStep = React.memo(function TimeStep({
                 type="button"
                 onClick={onPrevService}
                 className="h-9 w-9 rounded-full border flex items-center justify-center transition-colors"
-                style={{ borderColor: B.border, color: B.white }}
+                style={{ borderColor: B.border, color: B.ink }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = B.white;
-                  e.currentTarget.style.color = B.dark;
+                  e.currentTarget.style.backgroundColor = B.ink;
+                  e.currentTarget.style.color = B.white;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = B.white;
+                  e.currentTarget.style.color = B.ink;
                 }}
                 aria-label="Previous service"
               >
@@ -159,14 +163,14 @@ export const TimeStep = React.memo(function TimeStep({
                 type="button"
                 onClick={onNextService}
                 className="h-9 w-9 rounded-full border flex items-center justify-center transition-colors"
-                style={{ borderColor: B.border, color: B.white }}
+                style={{ borderColor: B.border, color: B.ink }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = B.white;
-                  e.currentTarget.style.color = B.dark;
+                  e.currentTarget.style.backgroundColor = B.ink;
+                  e.currentTarget.style.color = B.white;
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.backgroundColor = "transparent";
-                  e.currentTarget.style.color = B.white;
+                  e.currentTarget.style.color = B.ink;
                 }}
                 aria-label="Next service"
               >
@@ -182,7 +186,7 @@ export const TimeStep = React.memo(function TimeStep({
             >
               <div
                 className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: "#330A00" }}
+                style={{ backgroundColor: B.surfaceMuted }}
               >
                 <SafeImage
                   src={selectedProvider.imageUrl}
@@ -191,10 +195,10 @@ export const TimeStep = React.memo(function TimeStep({
                 />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">
+                <p className="text-xs font-semibold" style={{ color: B.ink }}>
                   {selectedProvider.name}
                 </p>
-                <p className="text-[10px]" style={{ color: B.accent }}>
+                <p className="text-[10px]" style={{ color: B.muted }}>
                   {selectedProvider.title}
                 </p>
               </div>
@@ -213,7 +217,10 @@ export const TimeStep = React.memo(function TimeStep({
               transition={{ duration: 0.25, ease: "easeOut" }}
             >
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-black text-white uppercase tracking-widest text-sm">
+                <h3
+                  className="font-semibold uppercase tracking-[0.2em] text-sm"
+                  style={{ color: B.ink }}
+                >
                   Available Start Times
                 </h3>
                 <div
@@ -222,7 +229,7 @@ export const TimeStep = React.memo(function TimeStep({
                 >
                   <span
                     className="inline-block w-2.5 h-2.5 rounded-full"
-                    style={{ backgroundColor: B.white, opacity: 0.5 }}
+                    style={{ backgroundColor: B.ink, opacity: 0.3 }}
                   />
                   Available
                 </div>
@@ -256,10 +263,8 @@ export const TimeStep = React.memo(function TimeStep({
                         className="py-2 px-1 rounded border text-xs font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                         style={{
                           backgroundColor: isSel ? B.accent : "transparent",
-                          color: isSel ? B.dark : B.white,
-                          borderColor: isSel
-                            ? B.accent
-                            : "rgba(255,255,255,0.25)",
+                          color: isSel ? B.white : B.ink,
+                          borderColor: isSel ? B.accent : B.border,
                         }}
                         title={
                           typeof slot.capacity === "number"
@@ -285,11 +290,9 @@ export const TimeStep = React.memo(function TimeStep({
                 <button
                   onClick={onConfirm}
                   disabled={!selectedSlotStart || submitting}
-                  className="w-full py-4 rounded font-black text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+                  className="w-full py-4 rounded font-semibold text-sm uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: selectedSlotStart
-                      ? B.cta
-                      : "rgba(255,255,255,0.1)",
+                    backgroundColor: selectedSlotStart ? B.cta : B.surfaceMuted,
                     color: selectedSlotStart ? B.white : B.muted,
                   }}
                   onMouseEnter={(e) => {
@@ -306,7 +309,7 @@ export const TimeStep = React.memo(function TimeStep({
                       <div
                         className="w-4 h-4 border-2 rounded-full animate-spin"
                         style={{
-                          borderColor: "rgba(255,255,255,0.3)",
+                          borderColor: "rgba(34,34,34,0.2)",
                           borderTopColor: B.white,
                         }}
                       />

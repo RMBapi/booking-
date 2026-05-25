@@ -27,7 +27,8 @@ export const MiniCalendar = React.memo(function MiniCalendar({
     while (cells.length % 7 !== 0) cells.push(null);
 
     const result: (number | null)[][] = [];
-    for (let i = 0; i < cells.length; i += 7) result.push(cells.slice(i, i + 7));
+    for (let i = 0; i < cells.length; i += 7)
+      result.push(cells.slice(i, i + 7));
     return result;
   }, [viewYear, viewMonth]);
 
@@ -74,7 +75,10 @@ export const MiniCalendar = React.memo(function MiniCalendar({
   );
 
   return (
-    <div className="w-full rounded" style={{ backgroundColor: B.card }}>
+    <div
+      className="w-full rounded"
+      style={{ backgroundColor: B.card, border: `1px solid ${B.border}` }}
+    >
       <div className="flex items-center justify-between px-5 py-4">
         <button
           onClick={prevMonth}
@@ -85,7 +89,7 @@ export const MiniCalendar = React.memo(function MiniCalendar({
         </button>
         <span
           className="text-sm font-black uppercase tracking-widest"
-          style={{ color: B.white }}
+          style={{ color: B.ink }}
         >
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
@@ -104,7 +108,9 @@ export const MiniCalendar = React.memo(function MiniCalendar({
             <div
               key={d}
               className="text-center text-[10px] font-black uppercase tracking-widest py-1"
-              style={{ color: d === "SAT" || d === "SUN" ? B.accent : B.muted }}
+              style={{
+                color: d === "SAT" || d === "SUN" ? B.inkSoft : B.muted,
+              }}
             >
               {d}
             </div>
@@ -128,10 +134,10 @@ export const MiniCalendar = React.memo(function MiniCalendar({
                       style={{
                         backgroundColor: sel ? B.accent : "transparent",
                         color: sel
-                          ? B.dark
+                          ? B.white
                           : past
-                            ? "rgba(255,255,255,0.2)"
-                            : B.white,
+                            ? "rgba(34,34,34,0.25)"
+                            : B.ink,
                         fontWeight: sel ? 900 : 600,
                         cursor: past ? "not-allowed" : "pointer",
                       }}

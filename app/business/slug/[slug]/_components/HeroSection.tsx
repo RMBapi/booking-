@@ -58,8 +58,14 @@ export function HeroSection({
           fill
           priority
           sizes="100vw"
-          className="object-cover"
-          style={{ willChange: "transform" }}
+          className="object-cover focus-subject"
+          style={{
+            willChange: "transform",
+            "--focus-x": "20%",
+            "--focus-y": "32%",
+            "--focus-x-mobile": "14%",
+            "--focus-y-mobile": "28%",
+          } as React.CSSProperties}
         />
       </motion.div>
       <div

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Calendar, Clock, X } from "lucide-react";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 
 const REASON_PRESETS = [
   "Schedule conflict",
@@ -102,7 +102,7 @@ export function CancelBookingModal({
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           style={{
-            backgroundColor: "rgba(0,0,0,0.6)",
+            backgroundColor: "rgba(0,0,0,0.45)",
             backdropFilter: "blur(4px)",
           }}
           onClick={handleBackdropClick}
@@ -112,10 +112,10 @@ export function CancelBookingModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.18 }}
-            className="relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+            className="relative w-full max-w-lg rounded-2xl overflow-hidden"
             style={{
-              backgroundColor: BRAND.card,
-              border: "1px solid rgba(255,255,255,0.08)",
+              backgroundColor: ELEGANZA.surface,
+              border: `1px solid ${ELEGANZA.border}`,
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -124,34 +124,40 @@ export function CancelBookingModal({
               onClick={onClose}
               disabled={submitting}
               className="absolute top-4 right-4 p-1.5 rounded-lg transition-colors z-10 disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{ color: "rgba(255,255,255,0.6)" }}
+              style={{ color: ELEGANZA.inkMuted }}
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="px-6 pt-6 pb-5" style={{ backgroundColor: BRAND.darker }}>
+            <div
+              className="px-6 pt-6 pb-5"
+              style={{ backgroundColor: ELEGANZA.surfaceMuted }}
+            >
               <div className="flex items-start gap-3">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: "rgba(239, 68, 68, 0.15)" }}
+                  style={{ backgroundColor: "rgba(185, 28, 28, 0.12)" }}
                 >
-                  <AlertTriangle className="w-5 h-5" style={{ color: "#FCA5A5" }} />
+                  <AlertTriangle className="w-5 h-5" style={{ color: "#B91C1C" }} />
                 </div>
                 <div className="min-w-0 pr-6">
                   <p
                     className="text-[10px] font-bold uppercase tracking-[0.4em]"
-                    style={{ color: "#FCA5A5" }}
+                    style={{ color: "#B91C1C" }}
                   >
                     Cancel Booking
                   </p>
-                  <h2 className="mt-1.5 text-lg font-bold text-white truncate">
+                  <h2
+                    className="mt-1.5 text-lg font-bold truncate"
+                    style={{ color: ELEGANZA.ink }}
+                  >
                     {serviceName}
                   </h2>
                   {providerName && (
                     <p
                       className="mt-0.5 text-xs truncate"
-                      style={{ color: "rgba(255,255,255,0.6)" }}
+                      style={{ color: ELEGANZA.inkMuted }}
                     >
                       with <span className="font-semibold">{providerName}</span>
                     </p>
@@ -161,7 +167,7 @@ export function CancelBookingModal({
                       {dateLabel && (
                         <div
                           className="flex items-center gap-1.5 text-[11px]"
-                          style={{ color: "rgba(255,255,255,0.55)" }}
+                          style={{ color: ELEGANZA.inkMuted }}
                         >
                           <Calendar className="w-3 h-3" />
                           <span>{dateLabel}</span>
@@ -170,7 +176,7 @@ export function CancelBookingModal({
                       {timeLabel && (
                         <div
                           className="flex items-center gap-1.5 text-[11px]"
-                          style={{ color: "rgba(255,255,255,0.55)" }}
+                          style={{ color: ELEGANZA.inkMuted }}
                         >
                           <Clock className="w-3 h-3" />
                           <span>{timeLabel}</span>
@@ -185,16 +191,16 @@ export function CancelBookingModal({
             <form onSubmit={handleSubmit} className="px-6 py-6">
               <p
                 className="text-sm mb-5"
-                style={{ color: "rgba(255,255,255,0.7)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 This will cancel your booking. Please tell us why so we can improve the experience.
               </p>
 
               <label
                 className="block text-[10px] font-bold uppercase tracking-widest mb-3"
-                style={{ color: "rgba(255,255,255,0.55)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
-                Reason <span style={{ color: BRAND.accent }}>*</span>
+                Reason <span style={{ color: ELEGANZA.accent }}>*</span>
               </label>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-5">
@@ -212,10 +218,10 @@ export function CancelBookingModal({
                       className="px-4 py-3 rounded-lg text-xs font-semibold text-left transition-all border disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
                         backgroundColor: active
-                          ? "rgba(201, 150, 109, 0.16)"
-                          : "rgba(255,255,255,0.04)",
-                        borderColor: active ? BRAND.accent : "rgba(255,255,255,0.1)",
-                        color: active ? BRAND.accent : "rgba(255,255,255,0.8)",
+                          ? "rgba(129, 123, 100, 0.12)"
+                          : ELEGANZA.surface,
+                        borderColor: active ? ELEGANZA.accent : ELEGANZA.border,
+                        color: active ? ELEGANZA.accent : ELEGANZA.ink,
                       }}
                     >
                       {preset}
@@ -229,7 +235,7 @@ export function CancelBookingModal({
                   <label
                     htmlFor="cancel-reason-other"
                     className="block text-[10px] font-bold uppercase tracking-widest mb-2"
-                    style={{ color: "rgba(255,255,255,0.55)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   >
                     Please describe
                   </label>
@@ -247,14 +253,14 @@ export function CancelBookingModal({
                     autoFocus
                     className="w-full rounded-lg px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 disabled:opacity-50"
                     style={{
-                      backgroundColor: "rgba(255,255,255,0.06)",
-                      color: "white",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      backgroundColor: ELEGANZA.surface,
+                      color: ELEGANZA.ink,
+                      border: `1px solid ${ELEGANZA.border}`,
                     }}
                   />
                   <p
                     className="mt-1.5 text-[10px] text-right"
-                    style={{ color: "rgba(255,255,255,0.4)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   >
                     {customReason.length}/500
                   </p>
@@ -265,9 +271,9 @@ export function CancelBookingModal({
                 <div
                   className="mb-5 rounded-lg px-4 py-3 text-xs"
                   style={{
-                    backgroundColor: "rgba(239, 68, 68, 0.1)",
-                    border: "1px solid rgba(239, 68, 68, 0.25)",
-                    color: "#FCA5A5",
+                    backgroundColor: "rgba(185, 28, 28, 0.08)",
+                    border: "1px solid rgba(185, 28, 28, 0.25)",
+                    color: "#B91C1C",
                   }}
                 >
                   {error}
@@ -281,13 +287,13 @@ export function CancelBookingModal({
                   disabled={submitting}
                   className="px-5 py-2.5 rounded text-xs font-bold uppercase tracking-widest border transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
-                    borderColor: "rgba(255,255,255,0.25)",
-                    color: "white",
+                    borderColor: ELEGANZA.border,
+                    color: ELEGANZA.ink,
                     backgroundColor: "transparent",
                   }}
                   onMouseEnter={(e) => {
                     if (!submitting)
-                      e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.05)";
+                      e.currentTarget.style.backgroundColor = ELEGANZA.surfaceMuted;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -299,12 +305,12 @@ export function CancelBookingModal({
                   type="submit"
                   disabled={!canSubmit}
                   className="px-5 py-2.5 rounded text-white text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                  style={{ backgroundColor: "#DC2626" }}
+                  style={{ backgroundColor: "#B91C1C" }}
                   onMouseEnter={(e) => {
-                    if (canSubmit) e.currentTarget.style.backgroundColor = "#B91C1C";
+                    if (canSubmit) e.currentTarget.style.backgroundColor = "#991B1B";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#DC2626";
+                    e.currentTarget.style.backgroundColor = "#B91C1C";
                   }}
                 >
                   {submitting ? (
@@ -312,7 +318,7 @@ export function CancelBookingModal({
                       <div
                         className="w-3.5 h-3.5 border-2 rounded-full animate-spin"
                         style={{
-                          borderColor: "rgba(255,255,255,0.3)",
+                          borderColor: "rgba(255,255,255,0.35)",
                           borderTopColor: "white",
                         }}
                       />

@@ -11,7 +11,7 @@ export const useApiSuccess = () => {
     apiResponse: AxiosResponse<ApiSuccess> | string,
     options?: { duration?: number }
   ) {
-    const toastOptions = { duration: options?.duration || 5000 };
+    const toastOptions = { duration: options?.duration ?? 2500 };
 
     if (typeof apiResponse === "string") {
       return toast.success(apiResponse, toastOptions);

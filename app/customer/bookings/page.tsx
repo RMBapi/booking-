@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useRoleAuth } from "@/contexts";
 import { PageLoader } from "@/components";
-import { BRAND, getImageUrl } from "@/lib/publicBrand";
+import { ELEGANZA, getImageUrl } from "@/lib/publicBrand";
 import {
   cancelBooking,
   deleteReview,
@@ -335,36 +335,54 @@ export default function MyBookingsPage() {
   if (!user || !token) return null;
 
   return (
-    <div className="min-h-screen text-white" style={{ backgroundColor: BRAND.dark }}>
+    <div
+      className="min-h-screen text-[#222222]"
+      style={{ backgroundColor: ELEGANZA.background }}
+    >
       <nav
         className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 lg:px-16"
-        style={{ backgroundColor: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)" }}
+        style={{
+          backgroundColor: "rgba(255,255,255,0.96)",
+          backdropFilter: "blur(12px)",
+          borderBottom: `1px solid ${ELEGANZA.border}`,
+        }}
       >
         <div className="flex items-center gap-3">
           <button
             onClick={handleBack}
             className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest mr-2 transition-colors"
-            style={{ color: "#888" }}
+            style={{ color: ELEGANZA.inkMuted }}
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back</span>
           </button>
           <span
             className="font-black text-lg uppercase tracking-[0.12em]"
-            style={{ color: BRAND.dark }}
+            style={{ color: ELEGANZA.ink }}
           >
             My Bookings
           </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="hidden md:block text-sm font-semibold" style={{ color: BRAND.dark }}>
+          <span
+            className="hidden md:block text-sm font-semibold"
+            style={{ color: ELEGANZA.ink }}
+          >
             {user.firstName} {user.lastName}
           </span>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded text-sm font-bold uppercase tracking-widest transition-all"
-            style={{ backgroundColor: BRAND.card, color: "white" }}
+            className="flex items-center gap-2 px-4 py-2 rounded text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+            style={{ border: `1px solid ${ELEGANZA.ink}`, color: ELEGANZA.ink }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = ELEGANZA.ink;
+              e.currentTarget.style.color = "white";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "transparent";
+              e.currentTarget.style.color = ELEGANZA.ink;
+            }}
           >
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Logout</span>
@@ -374,7 +392,10 @@ export default function MyBookingsPage() {
 
       <main className="pt-16">
         {/* Hero */}
-        <section className="py-12 px-6 lg:px-16" style={{ backgroundColor: BRAND.darker }}>
+        <section
+          className="py-12 px-6 lg:px-16"
+          style={{ backgroundColor: ELEGANZA.surfaceMuted }}
+        >
           <div className="max-w-6xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 12 }}
@@ -383,20 +404,21 @@ export default function MyBookingsPage() {
             >
               <p
                 className="text-xs font-bold uppercase tracking-[0.4em] mb-3"
-                style={{ color: BRAND.accent }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 Your Appointments
               </p>
               <h1
-                className="font-black uppercase text-white mb-3"
+                className="font-black uppercase mb-3"
                 style={{
                   fontSize: "clamp(1.75rem, 4vw, 3rem)",
                   letterSpacing: "0.04em",
+                  color: ELEGANZA.ink,
                 }}
               >
                 MY BOOKINGS
               </h1>
-              <p style={{ color: "rgba(255,255,255,0.6)" }} className="text-base">
+              <p style={{ color: ELEGANZA.inkMuted }} className="text-base">
                 Manage and review your appointments.
               </p>
             </motion.div>
@@ -422,22 +444,27 @@ export default function MyBookingsPage() {
                 <div
                   key={s.label}
                   className="flex items-center gap-4 rounded p-5"
-                  style={{ backgroundColor: BRAND.card }}
+                  style={{
+                    backgroundColor: ELEGANZA.surface,
+                    border: `1px solid ${ELEGANZA.border}`,
+                  }}
                 >
                   <div
                     className="w-11 h-11 rounded flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+                    style={{ backgroundColor: ELEGANZA.surfaceMuted }}
                   >
-                    <s.icon className="w-5 h-5" style={{ color: BRAND.accent }} />
+                    <s.icon className="w-5 h-5" style={{ color: ELEGANZA.ink }} />
                   </div>
                   <div>
                     <p
                       className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: "rgba(255,255,255,0.5)" }}
+                      style={{ color: ELEGANZA.inkMuted }}
                     >
                       {s.label}
                     </p>
-                    <p className="text-xl font-bold text-white mt-0.5">{s.value}</p>
+                    <p className="text-xl font-bold mt-0.5" style={{ color: ELEGANZA.ink }}>
+                      {s.value}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -449,15 +476,15 @@ export default function MyBookingsPage() {
         <section
           className="sticky top-16 z-30 border-b"
           style={{
-            backgroundColor: BRAND.dark,
-            borderColor: "rgba(255,255,255,0.08)",
+            backgroundColor: ELEGANZA.surface,
+            borderColor: ELEGANZA.border,
           }}
         >
           <div className="max-w-6xl mx-auto px-6 lg:px-16 py-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div
                 className="inline-flex rounded-lg p-1 self-start"
-                style={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                style={{ backgroundColor: ELEGANZA.surfaceMuted }}
               >
                 {[
                   { key: "all" as Filter, label: "All" },
@@ -472,8 +499,8 @@ export default function MyBookingsPage() {
                       onClick={() => setFilter(key)}
                       className="px-4 py-2 text-xs font-bold uppercase tracking-widest rounded-md transition-all"
                       style={{
-                        backgroundColor: active ? BRAND.cta : "transparent",
-                        color: active ? "white" : "rgba(255,255,255,0.6)",
+                        backgroundColor: active ? ELEGANZA.ink : "transparent",
+                        color: active ? "white" : ELEGANZA.inkMuted,
                       }}
                     >
                       {label}
@@ -485,7 +512,7 @@ export default function MyBookingsPage() {
               <div className="relative w-full sm:w-72">
                 <Search
                   className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-                  style={{ color: "rgba(255,255,255,0.4)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 />
                 <input
                   type="text"
@@ -494,9 +521,9 @@ export default function MyBookingsPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 rounded-lg text-sm focus:outline-none focus:ring-2"
                   style={{
-                    backgroundColor: "rgba(255,255,255,0.06)",
-                    color: "white",
-                    border: "1px solid rgba(255,255,255,0.1)",
+                    backgroundColor: ELEGANZA.surface,
+                    color: ELEGANZA.ink,
+                    border: `1px solid ${ELEGANZA.border}`,
                   }}
                 />
               </div>
@@ -510,32 +537,38 @@ export default function MyBookingsPage() {
             {loading ? (
               <div
                 className="rounded p-16 text-center"
-                style={{ backgroundColor: BRAND.card }}
+                style={{
+                  backgroundColor: ELEGANZA.surface,
+                  border: `1px solid ${ELEGANZA.border}`,
+                }}
               >
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
+                <p className="text-sm" style={{ color: ELEGANZA.inkMuted }}>
                   Loading your bookings...
                 </p>
               </div>
             ) : filtered.length === 0 ? (
               <div
                 className="rounded p-16 text-center"
-                style={{ backgroundColor: BRAND.card }}
+                style={{
+                  backgroundColor: ELEGANZA.surface,
+                  border: `1px solid ${ELEGANZA.border}`,
+                }}
               >
                 <div
                   className="w-16 h-16 rounded flex items-center justify-center mx-auto mb-6"
-                  style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+                  style={{ backgroundColor: ELEGANZA.surfaceMuted }}
                 >
                   <Calendar
                     className="h-8 w-8"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold mb-2" style={{ color: ELEGANZA.ink }}>
                   No bookings found
                 </h3>
                 <p
                   className="text-sm mb-8"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 >
                   {searchQuery
                     ? "Try adjusting your search or filter."
@@ -544,13 +577,13 @@ export default function MyBookingsPage() {
                 {!searchQuery && (
                   <button
                     onClick={handleBrowseServices}
-                    className="px-6 py-3 rounded text-white text-sm font-bold uppercase tracking-widest transition-all"
-                    style={{ backgroundColor: BRAND.cta }}
+                    className="px-6 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+                    style={{ backgroundColor: ELEGANZA.cta }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = BRAND.ctaHover)
+                      (e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover)
                     }
                     onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = BRAND.cta)
+                      (e.currentTarget.style.backgroundColor = ELEGANZA.cta)
                     }
                   >
                     Browse Services
@@ -658,9 +691,9 @@ function BookingRow({
         : "Cancelled";
 
   const statusStyles: Record<string, { bg: string; color: string }> = {
-    upcoming: { bg: "rgba(201, 150, 109, 0.18)", color: BRAND.accent },
-    completed: { bg: "rgba(34, 197, 94, 0.15)", color: "#4ADE80" },
-    cancelled: { bg: "rgba(239, 68, 68, 0.15)", color: "#FCA5A5" },
+    upcoming: { bg: "rgba(129, 123, 100, 0.15)", color: ELEGANZA.accent },
+    completed: { bg: "rgba(34, 197, 94, 0.12)", color: "#2F855A" },
+    cancelled: { bg: "rgba(239, 68, 68, 0.12)", color: "#B91C1C" },
   };
   const sStyle = statusStyles[bucket];
 
@@ -677,8 +710,8 @@ function BookingRow({
       transition={{ delay: Math.min(index * 0.03, 0.3) }}
       className="rounded-lg p-5 transition-all"
       style={{
-        backgroundColor: BRAND.card,
-        border: "1px solid rgba(255,255,255,0.06)",
+        backgroundColor: ELEGANZA.surface,
+        border: `1px solid ${ELEGANZA.border}`,
       }}
     >
       {/* Top-right status badge — consistent placement across all states */}
@@ -695,7 +728,7 @@ function BookingRow({
         {/* Thumbnail */}
         <div
           className="w-full md:w-20 h-40 md:h-20 rounded-lg overflow-hidden flex-shrink-0"
-          style={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+          style={{ backgroundColor: ELEGANZA.surfaceMuted }}
         >
           {thumbnailUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
@@ -708,7 +741,7 @@ function BookingRow({
             <div className="w-full h-full flex items-center justify-center">
               <Calendar
                 className="w-8 h-8"
-                style={{ color: "rgba(255,255,255,0.25)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               />
             </div>
           )}
@@ -716,7 +749,7 @@ function BookingRow({
 
         {/* Main content */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold text-white truncate">
+          <h3 className="text-base font-bold truncate" style={{ color: ELEGANZA.ink }}>
             {serviceName}
           </h3>
 
@@ -724,7 +757,7 @@ function BookingRow({
             <div className="flex items-center gap-2 mt-1.5">
               <div
                 className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0"
-                style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
+                style={{ backgroundColor: ELEGANZA.surfaceMuted }}
               >
                 {providerAvatarUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
@@ -737,14 +770,14 @@ function BookingRow({
                   <div className="w-full h-full flex items-center justify-center">
                     <UserIcon
                       className="w-3 h-3"
-                      style={{ color: "rgba(255,255,255,0.5)" }}
+                      style={{ color: ELEGANZA.inkMuted }}
                     />
                   </div>
                 )}
               </div>
               <span
                 className="text-xs"
-                style={{ color: "rgba(255,255,255,0.7)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 with <span className="font-semibold">{providerName}</span>
               </span>
@@ -753,7 +786,7 @@ function BookingRow({
           {businessName && (
             <p
               className="text-[11px] mt-1"
-              style={{ color: "rgba(255,255,255,0.4)" }}
+              style={{ color: ELEGANZA.inkMuted }}
             >
               {businessName}
             </p>
@@ -762,23 +795,23 @@ function BookingRow({
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3">
             <div
               className="flex items-center gap-1.5 text-xs"
-              style={{ color: "rgba(255,255,255,0.6)" }}
+              style={{ color: ELEGANZA.inkMuted }}
             >
-              <Calendar className="w-3.5 h-3.5" style={{ color: BRAND.accent }} />
+              <Calendar className="w-3.5 h-3.5" style={{ color: ELEGANZA.accent }} />
               <span>{formatDate(booking.bookingTime?.start)}</span>
             </div>
             <div
               className="flex items-center gap-1.5 text-xs"
-              style={{ color: "rgba(255,255,255,0.6)" }}
+              style={{ color: ELEGANZA.inkMuted }}
             >
-              <Clock className="w-3.5 h-3.5" style={{ color: BRAND.accent }} />
+              <Clock className="w-3.5 h-3.5" style={{ color: ELEGANZA.accent }} />
               <span>
                 {formatTime(booking.bookingTime?.start)}
                 {duration ? ` · ${duration}` : ""}
               </span>
             </div>
             {price > 0 && (
-              <div className="text-sm font-bold text-white">
+              <div className="text-sm font-bold" style={{ color: ELEGANZA.ink }}>
                 ${price.toFixed(2)}
               </div>
             )}
@@ -788,7 +821,7 @@ function BookingRow({
           {review && (
             <div
               className="mt-4 pt-3"
-              style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+              style={{ borderTop: `1px solid ${ELEGANZA.border}` }}
             >
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-0.5">
@@ -797,15 +830,15 @@ function BookingRow({
                       key={i}
                       className="w-3.5 h-3.5"
                       style={{
-                        color: i <= review.rating ? "#F59E0B" : "rgba(255,255,255,0.2)",
-                        fill: i <= review.rating ? "#F59E0B" : "transparent",
+                        color: i <= review.rating ? ELEGANZA.accent : ELEGANZA.border,
+                        fill: i <= review.rating ? ELEGANZA.accent : "transparent",
                       }}
                     />
                   ))}
                 </div>
                 <span
                   className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: "rgba(255,255,255,0.45)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 >
                   Your review
                 </span>
@@ -813,7 +846,7 @@ function BookingRow({
               {review.comment && (
                 <p
                   className="mt-2 text-xs italic line-clamp-2"
-                  style={{ color: "rgba(255,255,255,0.7)" }}
+                  style={{ color: ELEGANZA.ink }}
                 >
                   &ldquo;{review.comment}&rdquo;
                 </p>
@@ -828,10 +861,14 @@ function BookingRow({
             {canReview && (
               <button
                 onClick={() => onCreateReview(booking)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-widest transition-all"
-                style={{ backgroundColor: BRAND.cta, color: "white" }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = BRAND.ctaHover)}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = BRAND.cta)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] transition-colors"
+                style={{ backgroundColor: ELEGANZA.cta, color: "white" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover)
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = ELEGANZA.cta)
+                }
               >
                 <Star className="w-3.5 h-3.5" />
                 Leave Review
@@ -842,19 +879,21 @@ function BookingRow({
               <>
                 <button
                   onClick={() => onEditReview(booking)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-widest border transition-all"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] border transition-colors"
                   style={{
-                    borderColor: "rgba(255,255,255,0.25)",
-                    color: "white",
+                    borderColor: ELEGANZA.border,
+                    color: ELEGANZA.ink,
                     backgroundColor: "transparent",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = BRAND.cta;
-                    e.currentTarget.style.borderColor = BRAND.cta;
+                    e.currentTarget.style.backgroundColor = ELEGANZA.ink;
+                    e.currentTarget.style.borderColor = ELEGANZA.ink;
+                    e.currentTarget.style.color = "white";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)";
+                    e.currentTarget.style.borderColor = ELEGANZA.border;
+                    e.currentTarget.style.color = ELEGANZA.ink;
                   }}
                 >
                   <Star className="w-3.5 h-3.5" />
@@ -863,15 +902,15 @@ function BookingRow({
                 <button
                   onClick={() => onDeleteReview(booking)}
                   disabled={deletingReview}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-xs font-bold uppercase tracking-widest border transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{
-                    borderColor: "rgba(252, 165, 165, 0.4)",
-                    color: "#FCA5A5",
+                    borderColor: "rgba(185, 28, 28, 0.4)",
+                    color: "#B91C1C",
                     backgroundColor: "transparent",
                   }}
                   onMouseEnter={(e) => {
                     if (!deletingReview)
-                      e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+                      e.currentTarget.style.backgroundColor = "rgba(185, 28, 28, 0.08)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -890,20 +929,20 @@ function BookingRow({
       {isUpcoming && (
         <div
           className="mt-5 pt-4 flex justify-end"
-          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+          style={{ borderTop: `1px solid ${ELEGANZA.border}` }}
         >
           <button
             onClick={() => onCancel(booking)}
             disabled={canceling}
-            className="flex items-center justify-center gap-2 px-5 py-2 rounded text-xs font-bold uppercase tracking-widest border transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 px-5 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              borderColor: "rgba(252, 165, 165, 0.5)",
-              color: "#FCA5A5",
+              borderColor: "rgba(185, 28, 28, 0.4)",
+              color: "#B91C1C",
               backgroundColor: "transparent",
             }}
             onMouseEnter={(e) => {
               if (!canceling)
-                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+                e.currentTarget.style.backgroundColor = "rgba(185, 28, 28, 0.08)";
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = "transparent";

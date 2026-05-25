@@ -260,6 +260,19 @@
   background: theme(colors.gray.400);
 }
 
+/* Subject focus for responsive hero imagery */
+.focus-subject {
+  object-position: var(--focus-x, 50%) var(--focus-y, 50%);
+}
+
+@media (max-width: 768px) {
+  .focus-subject {
+    object-position:
+      var(--focus-x-mobile, var(--focus-x, 50%))
+      var(--focus-y-mobile, var(--focus-y, 50%));
+  }
+}
+
 /* Force light scrollbar style for light-design modals even in dark mode/OS themes */
 .modal-light-scrollbar {
   scrollbar-width: thin;

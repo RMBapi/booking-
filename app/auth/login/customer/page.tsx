@@ -15,7 +15,7 @@ import { PageLoader } from "@/components";
 import { useLogin } from "@/features/authentication/hooks";
 import { useBusinessHeroImage } from "@/hooks";
 import { motion } from "framer-motion";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 
 const formatBusinessName = (slug: string | null) => {
   if (!slug) return "";
@@ -106,7 +106,10 @@ function CustomerLoginContent() {
     };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row" style={{ backgroundColor: BRAND.dark }}>
+    <div
+      className="min-h-screen flex flex-col lg:flex-row"
+      style={{ backgroundColor: ELEGANZA.background }}
+    >
       {/* Left visual panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
         <div className="absolute inset-0">
@@ -114,15 +117,22 @@ function CustomerLoginContent() {
             <img
               src={heroImage}
               alt={businessName ? `${businessName} background` : "Business background"}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover focus-subject"
+              style={{
+                "--focus-x": "12%",
+                "--focus-y": "35%",
+                "--focus-x-mobile": "18%",
+                "--focus-y-mobile": "32%",
+              } as React.CSSProperties}
             />
           ) : (
-            <div className="w-full h-full" style={{ backgroundColor: BRAND.darker }} />
+            <div className="w-full h-full" style={{ backgroundColor: ELEGANZA.inkSoft }} />
           )}
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(to top, ${BRAND.darker}CC 0%, ${BRAND.dark}66 50%, ${BRAND.dark}33 100%)`,
+              background:
+                "linear-gradient(to top, rgba(34,34,34,0.8) 0%, rgba(34,34,34,0.55) 50%, rgba(34,34,34,0.25) 100%)",
             }}
           />
         </div>
@@ -131,7 +141,7 @@ function CustomerLoginContent() {
           <h2 className="text-6xl font-black text-white tracking-tight leading-[1.1] uppercase">
             Welcome
             <br />
-            <span style={{ color: BRAND.accent }}>Back.</span>
+            <span style={{ color: ELEGANZA.accent }}>Back.</span>
           </h2>
         </div>
 
@@ -139,9 +149,9 @@ function CustomerLoginContent() {
           <div
             className="p-8 rounded-lg space-y-4 border"
             style={{
-              backgroundColor: "rgba(255,255,255,0.05)",
+              backgroundColor: "rgba(255,255,255,0.12)",
               backdropFilter: "blur(20px)",
-              borderColor: "rgba(255,255,255,0.1)",
+              borderColor: "rgba(255,255,255,0.2)",
             }}
           >
             <p style={{ color: "rgba(255,255,255,0.85)" }} className="text-lg font-medium leading-relaxed">
@@ -176,16 +186,22 @@ function CustomerLoginContent() {
                 onClick={handleBack}
                 type="button"
                 className="group flex items-center gap-2 transition-colors font-bold text-xs uppercase tracking-[0.2em] mb-8"
-                style={{ color: "rgba(255,255,255,0.4)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 Back
               </button>
 
-              <h1 className="text-4xl font-black tracking-tight text-white uppercase">
+              <h1
+                className="text-4xl font-black tracking-tight uppercase"
+                style={{ color: ELEGANZA.ink }}
+              >
                 Sign In
               </h1>
-              <p style={{ color: "rgba(255,255,255,0.6)" }} className="font-medium text-lg">
+              <p
+                style={{ color: ELEGANZA.inkMuted }}
+                className="font-medium text-lg"
+              >
                 {businessName
                   ? `Log in to your account at ${businessName}`
                   : "Sign in to book services"}
@@ -197,9 +213,9 @@ function CustomerLoginContent() {
                 <div
                   className="rounded-lg border px-4 py-3 text-sm font-medium"
                   style={{
-                    borderColor: "rgba(239,68,68,0.3)",
-                    backgroundColor: "rgba(239,68,68,0.1)",
-                    color: "#fca5a5",
+                    borderColor: "rgba(185,28,28,0.25)",
+                    backgroundColor: "rgba(185,28,28,0.08)",
+                    color: "#b91c1c",
                   }}
                 >
                   {formError || errorMessage}
@@ -209,14 +225,14 @@ function CustomerLoginContent() {
               <div className="space-y-2">
                 <label
                   className="text-[11px] font-bold uppercase tracking-widest ml-1"
-                  style={{ color: "rgba(255,255,255,0.4)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 >
                   Email Address
                 </label>
                 <div className="relative">
                   <Mail
                     className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   />
                   <input
                     required
@@ -224,10 +240,11 @@ function CustomerLoginContent() {
                     type="email"
                     placeholder="you@example.com"
                     autoComplete="email"
-                    className="w-full pl-12 pr-6 py-4 rounded-lg text-white font-medium border outline-none transition-all focus:ring-2"
+                    className="w-full pl-12 pr-6 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2"
                     style={{
-                      backgroundColor: BRAND.card,
-                      borderColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: ELEGANZA.surface,
+                      borderColor: ELEGANZA.border,
+                      color: ELEGANZA.ink,
                     }}
                     value={formData.email}
                     onChange={updateField("email")}
@@ -238,14 +255,14 @@ function CustomerLoginContent() {
               <div className="space-y-2">
                 <label
                   className="text-[11px] font-bold uppercase tracking-widest ml-1"
-                  style={{ color: "rgba(255,255,255,0.4)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 >
                   Password
                 </label>
                 <div className="relative">
                   <Lock
                     className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   />
                   <input
                     required
@@ -253,10 +270,11 @@ function CustomerLoginContent() {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="w-full pl-12 pr-14 py-4 rounded-lg text-white font-medium border outline-none transition-all focus:ring-2"
+                    className="w-full pl-12 pr-14 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2"
                     style={{
-                      backgroundColor: BRAND.card,
-                      borderColor: "rgba(255,255,255,0.1)",
+                      backgroundColor: ELEGANZA.surface,
+                      borderColor: ELEGANZA.border,
+                      color: ELEGANZA.ink,
                     }}
                     value={formData.password}
                     onChange={updateField("password")}
@@ -265,7 +283,7 @@ function CustomerLoginContent() {
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-5 top-1/2 -translate-y-1/2 transition-colors"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -276,13 +294,13 @@ function CustomerLoginContent() {
                 <button
                   type="submit"
                   disabled={isLogging}
-                  className="w-full py-5 rounded-lg text-[15px] font-bold text-white uppercase tracking-widest flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-                  style={{ backgroundColor: BRAND.cta }}
+                  className="w-full py-5 rounded-lg text-[15px] font-bold text-white uppercase tracking-widest flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  style={{ backgroundColor: ELEGANZA.cta }}
                   onMouseEnter={(e) => {
-                    if (!isLogging) e.currentTarget.style.backgroundColor = BRAND.ctaHover;
+                    if (!isLogging) e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = BRAND.cta;
+                    e.currentTarget.style.backgroundColor = ELEGANZA.cta;
                   }}
                 >
                   {isLogging ? (
@@ -295,13 +313,16 @@ function CustomerLoginContent() {
                   )}
                 </button>
 
-                <p className="text-center font-medium text-sm" style={{ color: "rgba(255,255,255,0.4)" }}>
+                <p
+                  className="text-center font-medium text-sm"
+                  style={{ color: ELEGANZA.inkMuted }}
+                >
                   Don&apos;t have an account?{" "}
                   <button
                     type="button"
                     onClick={handleSignUp}
                     className="font-bold hover:underline underline-offset-4"
-                    style={{ color: BRAND.accent }}
+                    style={{ color: ELEGANZA.ink }}
                   >
                     Sign up
                   </button>

@@ -25,14 +25,7 @@ export default function BusinessNotFound() {
         </p>
         <Link
           href="/"
-          className="inline-block px-6 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
-          style={{ backgroundColor: ELEGANZA.cta }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = ELEGANZA.cta;
-          }}
+          className="inline-block px-6 py-3 rounded bg-[#817b64] hover:bg-[#6f6a55] text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
         >
           Go Home
         </Link>

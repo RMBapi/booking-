@@ -17,7 +17,7 @@ import { motion } from "framer-motion";
 import { PageLoader } from "@/components";
 import { useRegister } from "@/features/authentication/hooks";
 import { useBusinessHeroImage } from "@/hooks";
-import { BRAND } from "@/lib/publicBrand";
+import { ELEGANZA } from "@/lib/publicBrand";
 
 const formatBusinessName = (slug: string | null) => {
   if (!slug) return "";
@@ -107,17 +107,17 @@ function RegisterContent() {
     };
 
   const inputClass =
-    "w-full pl-12 pr-6 py-4 rounded-lg text-white font-medium border outline-none transition-all focus:ring-2";
-  const inputStyle = { backgroundColor: BRAND.card, borderColor: "rgba(255,255,255,0.1)" };
+    "w-full pl-12 pr-6 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2";
+  const inputStyle = { backgroundColor: ELEGANZA.surface, borderColor: ELEGANZA.border, color: ELEGANZA.ink };
   const labelClass = "text-[11px] font-bold uppercase tracking-widest ml-1";
-  const labelStyle = { color: "rgba(255,255,255,0.4)" };
+  const labelStyle = { color: ELEGANZA.inkMuted };
   const iconClass = "absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4";
-  const iconStyle = { color: "rgba(255,255,255,0.3)" };
+  const iconStyle = { color: ELEGANZA.inkMuted };
 
   return (
     <div
       className="min-h-screen flex flex-col lg:flex-row"
-      style={{ backgroundColor: BRAND.dark }}
+      style={{ backgroundColor: ELEGANZA.background }}
     >
       {/* Left visual panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
@@ -126,15 +126,22 @@ function RegisterContent() {
             <img
               src={heroImage}
               alt={businessName ? `${businessName} background` : "Business background"}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover focus-subject"
+              style={{
+                "--focus-x": "12%",
+                "--focus-y": "35%",
+                "--focus-x-mobile": "18%",
+                "--focus-y-mobile": "32%",
+              } as React.CSSProperties}
             />
           ) : (
-            <div className="w-full h-full" style={{ backgroundColor: BRAND.darker }} />
+            <div className="w-full h-full" style={{ backgroundColor: ELEGANZA.inkSoft }} />
           )}
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(to top, ${BRAND.darker}CC 0%, ${BRAND.dark}66 50%, ${BRAND.dark}33 100%)`,
+              background:
+                "linear-gradient(to top, rgba(34,34,34,0.8) 0%, rgba(34,34,34,0.55) 50%, rgba(34,34,34,0.25) 100%)",
             }}
           />
         </div>
@@ -143,7 +150,7 @@ function RegisterContent() {
           <h2 className="text-6xl font-black text-white tracking-tight leading-[1.1] uppercase">
             Join
             <br />
-            <span style={{ color: BRAND.accent }}>{businessName}.</span>
+            <span style={{ color: ELEGANZA.accent }}>{businessName}.</span>
           </h2>
         </div>
 
@@ -151,9 +158,9 @@ function RegisterContent() {
           <div
             className="p-8 rounded-lg space-y-4 border"
             style={{
-              backgroundColor: "rgba(255,255,255,0.05)",
+              backgroundColor: "rgba(255,255,255,0.12)",
               backdropFilter: "blur(20px)",
-              borderColor: "rgba(255,255,255,0.1)",
+              borderColor: "rgba(255,255,255,0.2)",
             }}
           >
             <p
@@ -189,17 +196,20 @@ function RegisterContent() {
                 onClick={handleBack}
                 type="button"
                 className="group flex items-center gap-2 transition-colors font-bold text-xs uppercase tracking-[0.2em] mb-8"
-                style={{ color: "rgba(255,255,255,0.4)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 Back
               </button>
-              <h1 className="text-4xl font-black uppercase tracking-tight text-white">
+              <h1
+                className="text-4xl font-black uppercase tracking-tight"
+                style={{ color: ELEGANZA.ink }}
+              >
                 Create Account
               </h1>
               <p
                 className="font-medium text-lg"
-                style={{ color: "rgba(255,255,255,0.6)" }}
+                style={{ color: ELEGANZA.inkMuted }}
               >
                 Join {businessName} to book services and manage your appointments.
               </p>
@@ -234,7 +244,7 @@ function RegisterContent() {
                     name="lastName"
                     type="text"
                     placeholder="Doe"
-                    className="w-full px-6 py-4 rounded-lg text-white font-medium border outline-none transition-all focus:ring-2"
+                    className="w-full px-6 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2"
                     style={inputStyle}
                     value={formData.lastName}
                     onChange={updateField("lastName")}
@@ -288,7 +298,7 @@ function RegisterContent() {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="new-password"
-                    className="w-full pl-12 pr-14 py-4 rounded-lg text-white font-medium border outline-none transition-all focus:ring-2"
+                    className="w-full pl-12 pr-14 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2"
                     style={inputStyle}
                     value={formData.password}
                     onChange={updateField("password")}
@@ -297,7 +307,7 @@ function RegisterContent() {
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-5 top-1/2 -translate-y-1/2 transition-colors"
-                    style={{ color: "rgba(255,255,255,0.3)" }}
+                    style={{ color: ELEGANZA.inkMuted }}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -307,22 +317,22 @@ function RegisterContent() {
               <div
                 className="p-5 rounded-lg flex items-start gap-4 border"
                 style={{
-                  backgroundColor: "rgba(255,255,255,0.05)",
-                  borderColor: "rgba(255,255,255,0.08)",
+                  backgroundColor: ELEGANZA.surfaceMuted,
+                  borderColor: ELEGANZA.border,
                 }}
               >
                 <div
                   className="mt-0.5 p-1.5 rounded-lg"
-                  style={{ backgroundColor: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.4)" }}
+                  style={{ backgroundColor: ELEGANZA.surface, color: ELEGANZA.inkMuted }}
                 >
                   <Info className="w-4 h-4" />
                 </div>
                 <p
                   className="text-[13px] font-medium leading-relaxed"
-                  style={{ color: "rgba(255,255,255,0.5)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 >
                   You&apos;re creating a customer account for{" "}
-                  <span className="font-bold" style={{ color: BRAND.accent }}>
+                  <span className="font-bold" style={{ color: ELEGANZA.ink }}>
                     {businessName}
                   </span>
                   . Your data is managed securely.
@@ -333,9 +343,9 @@ function RegisterContent() {
                 <div
                   className="rounded-lg border px-4 py-3 text-sm font-medium"
                   style={{
-                    borderColor: "rgba(239,68,68,0.3)",
-                    backgroundColor: "rgba(239,68,68,0.1)",
-                    color: "#fca5a5",
+                    borderColor: "rgba(185,28,28,0.25)",
+                    backgroundColor: "rgba(185,28,28,0.08)",
+                    color: "#b91c1c",
                   }}
                 >
                   {formError}
@@ -346,8 +356,8 @@ function RegisterContent() {
                 <button
                   type="submit"
                   disabled={isRegistering}
-                  className="w-full py-5 rounded-lg text-[15px] font-bold text-white uppercase tracking-widest flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:brightness-110"
-                  style={{ backgroundColor: BRAND.cta }}
+                  className="w-full py-5 rounded-lg text-[15px] font-bold text-white uppercase tracking-widest flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                  style={{ backgroundColor: ELEGANZA.cta }}
                 >
                   {isRegistering ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -361,14 +371,14 @@ function RegisterContent() {
 
                 <p
                   className="text-center font-medium text-sm"
-                  style={{ color: "rgba(255,255,255,0.4)" }}
+                  style={{ color: ELEGANZA.inkMuted }}
                 >
                   Already have an account?{" "}
                   <button
                     type="button"
                     onClick={handleSignIn}
                     className="font-bold hover:underline underline-offset-4"
-                    style={{ color: BRAND.accent }}
+                    style={{ color: ELEGANZA.ink }}
                   >
                     Sign in
                   </button>

@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
         : false,
   },
   images: {
+    // Aggressively cache optimized remote images (hero, logos) for 1 year.
+    minimumCacheTTL: 31536000,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "http", hostname: "localhost" },
@@ -27,6 +29,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    const IMMUTABLE = "public, max-age=31536000, immutable";
     return [
       {
         source: "/:path*",
@@ -39,6 +42,18 @@ const nextConfig: NextConfig = {
             value: "camera=(), microphone=(), geolocation=()",
           },
         ],
+      },
+      // Static assets in /public (images, video, GIF loader, fonts) — these are
+      // content-stable, so cache them for a year and serve from disk on reload.
+      {
+        source:
+          "/:all*(svg|jpg|jpeg|png|gif|webp|avif|ico|mp4|webm|mov|woff|woff2|ttf|otf|eot)",
+        headers: [{ key: "Cache-Control", value: IMMUTABLE }],
+      },
+      // Hashed Next.js build assets are already immutable; make it explicit.
+      {
+        source: "/_next/static/:path*",
+        headers: [{ key: "Cache-Control", value: IMMUTABLE }],
       },
     ];
   },

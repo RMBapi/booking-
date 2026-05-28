@@ -52,6 +52,7 @@ export function SmartImage({
 }: SmartImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const imgElRef = useRef<HTMLImageElement | null>(null);
   const [naturalRatio, setNaturalRatio] = useState<number | null>(null);
   const [containerRatio, setContainerRatio] = useState<number | null>(null);
   const [errored, setErrored] = useState(false);
@@ -64,6 +65,18 @@ export function SmartImage({
     setErrored(false);
     setLoaded(false);
     setNaturalRatio(null);
+  }, [resolvedSrc]);
+
+  // Cached images may already be decoded by the time the <img> mounts, so the
+  // `onLoad` event never fires and the element would stay hidden. Detect the
+  // already-complete case (e.g. switching to a service whose image was shown
+  // earlier in the grid) and reveal it immediately.
+  useEffect(() => {
+    const img = imgElRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setNaturalRatio(img.naturalWidth / img.naturalHeight);
+      setLoaded(true);
+    }
   }, [resolvedSrc]);
 
   useEffect(() => {
@@ -158,6 +171,7 @@ export function SmartImage({
       ) : hasMedia ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
+          ref={imgElRef}
           src={resolvedSrc}
           alt={alt}
           onLoad={(e) => {

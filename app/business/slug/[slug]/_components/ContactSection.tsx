@@ -22,6 +22,7 @@ interface ContactSectionProps {
   displayPhone: string;
   displayEmail: string;
   featuredService: Service | undefined;
+  services?: Service[];
   slug: string;
   heroImage: string;
 }
@@ -32,6 +33,7 @@ export function ContactSection({
   displayPhone,
   displayEmail,
   featuredService,
+  services,
   slug,
   heroImage,
 }: ContactSectionProps) {
@@ -159,6 +161,7 @@ export function ContactSection({
                   >
                     <BookingForm
                       service={featuredService}
+                      services={services}
                       businessSlug={slug}
                       businessId={business.id}
                       heroImageUrl={heroImage}

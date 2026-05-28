@@ -145,6 +145,7 @@ export function CustomerSiteNavigation() {
       slug={slug}
       heroImage={resolvedHeroImage}
       featuredService={featuredService}
+      services={services}
       activeSection={null}
       mobileMenuOpen={mobileMenuOpen}
       setMobileMenuOpen={setMobileMenuOpen}

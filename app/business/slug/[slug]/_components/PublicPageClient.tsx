@@ -128,6 +128,7 @@ export function PublicPageClient({
         slug={slug}
         heroImage={heroImage}
         featuredService={featuredService}
+        services={services}
         activeSection={activeSection}
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
@@ -152,6 +153,7 @@ export function PublicPageClient({
             heroImage={heroImage}
             displayAddress={displayAddress}
             featuredService={featuredService}
+            services={services}
             slug={slug}
           />
         </SectionErrorBoundary>
@@ -207,6 +209,7 @@ export function PublicPageClient({
             displayPhone={displayPhone}
             displayEmail={displayEmail}
             featuredService={featuredService}
+            services={services}
             slug={slug}
             heroImage={heroImage}
           />

@@ -14,6 +14,7 @@ interface HeroSectionProps {
   heroImage: string;
   displayAddress: string;
   featuredService: Service | undefined;
+  services?: Service[];
   slug: string;
 }
 
@@ -27,6 +28,7 @@ export function HeroSection({
   heroImage,
   displayAddress,
   featuredService,
+  services,
   slug,
 }: HeroSectionProps) {
   const heroRef = useRef<HTMLElement>(null);
@@ -178,6 +180,7 @@ export function HeroSection({
                 >
                   <BookingForm
                     service={featuredService}
+                    services={services}
                     businessSlug={slug}
                     businessId={business.id}
                     heroImageUrl={heroImage}

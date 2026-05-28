@@ -14,6 +14,7 @@ interface PageNavigationProps {
   slug: string;
   heroImage: string;
   featuredService: Service | undefined;
+  services?: Service[];
   activeSection: "home" | "bookings" | null;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
@@ -37,6 +38,7 @@ export function PageNavigation({
   slug,
   heroImage,
   featuredService,
+  services,
   activeSection,
   mobileMenuOpen,
   setMobileMenuOpen,
@@ -155,6 +157,7 @@ export function PageNavigation({
               >
                 <BookingForm
                   service={featuredService}
+                  services={services}
                   businessSlug={slug}
                   businessId={business.id}
                   heroImageUrl={heroImage}

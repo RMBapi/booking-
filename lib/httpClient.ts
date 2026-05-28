@@ -21,11 +21,10 @@ import {
 
 const getBaseURL = () => {
   if (typeof window !== "undefined") return "/api";
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_URL;
 };
 
 const baseURL = getBaseURL();
-
 
 const REQUEST_TIMEOUT_MS = Number(
   process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000,
@@ -184,9 +183,7 @@ http.interceptors.response.use(
           (error.response?.data as Record<string, unknown>)?.message ??
           "You do not have permission to perform this action.",
       };
-      window.dispatchEvent(
-        new CustomEvent("auth:forbidden", { detail }),
-      );
+      window.dispatchEvent(new CustomEvent("auth:forbidden", { detail }));
     }
 
     return Promise.reject(error);

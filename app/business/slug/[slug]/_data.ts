@@ -5,7 +5,7 @@ import { Business, Service } from "@/types";
  * Uses the full backend URL (not the /api proxy) so these work in RSC.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 interface ApiResponse<T> {
   success: boolean;

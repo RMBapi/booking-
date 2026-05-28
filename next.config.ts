@@ -45,8 +45,7 @@ const nextConfig: NextConfig = {
   async rewrites() {
     // Prefer explicit backend URL; fall back to localhost:3000
     const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:3000";
+      process.env.NEXT_PUBLIC_API_URL;
 
     return [
       {

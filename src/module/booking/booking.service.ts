@@ -516,17 +516,6 @@ export class BookingService {
         );
       }
 
-      const startISO = (booking.bookingTime as { start?: string } | null)
-        ?.start;
-      if (startISO) {
-        const start = new Date(startISO);
-        if (!Number.isNaN(start.getTime()) && start.getTime() <= Date.now()) {
-          throw new BadRequestException(
-            'Cannot cancel a booking after its start time has passed',
-          );
-        }
-      }
-
       this.logger.debug(`Updating booking ${id} status to Cancelled`);
       const cancelledBooking = await this.prisma.booking.update({
         where: { id },

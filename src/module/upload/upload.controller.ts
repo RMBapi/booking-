@@ -25,11 +25,11 @@ export class UploadController {
 
   @Post('image')
   @ApiOperation({
-    summary: 'Upload an image file',
-    description: `Upload an image file and get back a URL that can be used for business logo, image, or any other image field.
+    summary: 'Upload an image or MP4 video file',
+    description: `Upload an image or MP4 video file and get back a URL that can be used for business logo, image, or any other media field.
 
-**Supported formats:** JPEG, PNG, WebP, GIF, SVG
-**Max file size:** 5MB (configurable via UPLOAD_MAX_SIZE env var)
+**Supported formats:** JPEG, PNG, WebP, GIF, SVG, MP4
+**Max file size:** 20MB (configurable via UPLOAD_MAX_SIZE env var)
 
 **Usage:** Send the file as multipart/form-data with field name \`file\`.
 The returned \`url\` can then be used when creating or updating a business.`,

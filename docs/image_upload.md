@@ -1,6 +1,6 @@
-# Image Upload & Business Image Fields — Frontend Integration Guide
+# Media Upload & Business Image Fields — Frontend Integration Guide
 
-This guide explains how image upload works, how to use uploaded images when creating/updating a business, and the full journey from file selection to displaying the image.
+This guide explains how media upload works, how to use uploaded images or videos when creating/updating a business, and the full journey from file selection to displaying the media.
 
 ---
 
@@ -8,24 +8,27 @@ This guide explains how image upload works, how to use uploaded images when crea
 
 There are two image fields on a Business:
 
-| Field   | Purpose                          |
-|---------|----------------------------------|
-| `logo`  | Business logo (small, branding)  |
-| `image` | Business cover/banner image      |
+| Field   | Purpose                         |
+| ------- | ------------------------------- |
+| `logo`  | Business logo (small, branding) |
+| `image` | Business cover/banner image     |
 
-Both fields support **two ways** to set an image:
+Both fields support **two ways** to set an image or video:
 
 1. **Upload a file** via `POST /upload/image` → get back a URL → use that URL in business create/update.
 2. **Provide an external URL** directly (e.g. `"https://example.com/photo.jpg"`).
 
 There is one image field on a Service:
 
-| Field   | Purpose                         |
-|---------|---------------------------------|
-| `image` | Service image (card / cover)    |
+| Field   | Purpose                      |
+| ------- | ---------------------------- |
+| `image` | Service image (card / cover) |
 
 It supports the same two ways as Business: upload via `POST /upload/image` or
 provide an external URL directly.
+
+**Note:** The upload endpoint accepts images and MP4 videos. When using a video URL,
+render it with a `<video>` tag on the frontend.
 
 ---
 
@@ -69,7 +72,7 @@ provide an external URL directly.
 
 ## API Reference
 
-### 1. Upload an Image
+### 1. Upload an Image or MP4 Video
 
 **Endpoint:** `POST /upload/image`
 
@@ -78,8 +81,9 @@ provide an external URL directly.
 **Content-Type:** `multipart/form-data`
 
 **Constraints:**
-- Allowed file types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `image/svg+xml`
-- Max file size: 5 MB
+
+- Allowed file types: `image/jpeg`, `image/png`, `image/webp`, `image/gif`, `image/svg+xml`, `video/mp4`
+- Max file size: 20 MB
 
 #### Request (Frontend Code Example)
 
@@ -89,12 +93,12 @@ const fileInput = document.getElementById('fileInput'); // <input type="file">
 const file = fileInput.files[0];
 
 const formData = new FormData();
-formData.append('file', file);  // field name MUST be "file"
+formData.append('file', file); // field name MUST be "file"
 
 const response = await fetch('http://localhost:3000/upload/image', {
   method: 'POST',
   headers: {
-    'Authorization': 'Bearer <your-jwt-token>',
+    Authorization: 'Bearer <your-jwt-token>',
     // Do NOT set Content-Type header — browser sets it automatically with boundary
   },
   body: formData,
@@ -111,7 +115,7 @@ formData.append('file', file);
 
 const { data } = await axios.post('/upload/image', formData, {
   headers: {
-    'Authorization': 'Bearer <your-jwt-token>',
+    Authorization: 'Bearer <your-jwt-token>',
   },
 });
 
@@ -202,6 +206,7 @@ console.log(data.data.url); // "/uploads/a1b2c3d4-e5f6-7890-abcd-ef1234567890.pn
 ```
 
 > **Note:** `logo` and `image` can be:
+>
 > - A path returned from `POST /upload/image` (e.g. `"/uploads/abc123.png"`)
 > - An external URL (e.g. `"https://example.com/logo.png"`)
 > - Omitted entirely (both are optional)
@@ -234,6 +239,7 @@ console.log(data.data.url); // "/uploads/a1b2c3d4-e5f6-7890-abcd-ef1234567890.pn
 ```
 
 > **Note:** `image` can be:
+>
 > - A path returned from `POST /upload/image` (e.g. `"/uploads/abc123.png"`)
 > - An external URL (e.g. `"https://example.com/service.png"`)
 > - Omitted entirely (optional)
@@ -247,7 +253,10 @@ console.log(data.data.url); // "/uploads/a1b2c3d4-e5f6-7890-abcd-ef1234567890.pn
 Each service item includes an `image` field. Use it directly in your UI:
 
 ```html
-<img src="https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png" alt="Service image" />
+<img
+  src="https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png"
+  alt="Service image"
+/>
 ```
 
 ```json
@@ -387,11 +396,7 @@ function BusinessCard({ business }) {
       )}
       <div className="business-info">
         {logoSrc && (
-          <img
-            src={logoSrc}
-            alt={`${business.name} logo`}
-            className="logo"
-          />
+          <img src={logoSrc} alt={`${business.name} logo`} className="logo" />
         )}
         <h2>{business.name}</h2>
         <p>{business.description}</p>
@@ -406,7 +411,7 @@ function BusinessCard({ business }) {
 ```jsx
 async function handleCreateBusiness(formValues, logoFile, coverFile) {
   const token = getAuthToken();
-  const headers = { 'Authorization': `Bearer ${token}` };
+  const headers = { Authorization: `Bearer ${token}` };
 
   // Step 1: Upload logo if a file was selected
   let logo = formValues.logo; // might be an external URL typed by user

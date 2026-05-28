@@ -19,13 +19,14 @@ export class UploadService implements OnModuleInit {
     'image/webp',
     'image/gif',
     'image/svg+xml',
+    'video/mp4',
   ];
 
   private supabase!: SupabaseClient;
   private bucket!: string;
 
   constructor() {
-    this.maxFileSize = parseInt(process.env.UPLOAD_MAX_SIZE || '5242880', 10); // 5MB default
+    this.maxFileSize = parseInt(process.env.UPLOAD_MAX_SIZE || '20971520', 10); // 20MB default
   }
 
   onModuleInit(): void {

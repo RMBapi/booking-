@@ -15,6 +15,7 @@ import { PageLoader } from "@/components";
 import { useLogin } from "@/features/authentication/hooks";
 import { useBusinessHeroImage } from "@/hooks";
 import { motion } from "framer-motion";
+import { getRoleRedirectPath } from "@/lib";
 import { ELEGANZA } from "@/lib/publicBrand";
 
 const formatBusinessName = (slug: string | null) => {
@@ -54,7 +55,7 @@ function CustomerLoginContent() {
     if (!authLoading) {
       const { user, token } = getSession("Customer");
       if (user && token) {
-        router.replace(returnUrl || "/customer/dashboard");
+        router.replace(returnUrl || getRoleRedirectPath("Customer"));
       }
     }
   }, [authLoading, getSession, router, returnUrl]);

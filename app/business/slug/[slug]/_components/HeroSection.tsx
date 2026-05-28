@@ -4,8 +4,9 @@ import React, { useRef } from "react";
 import Image from "next/image";
 import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { Business, Service } from "@/types";
-import { Modal, BookingForm } from "@/components";
+import { Modal, BookingForm, SmartImage } from "@/components";
 import { ELEGANZA } from "@/lib/publicBrand";
+import { isVideoUrl } from "@/lib/media";
 import { EASE_OUT_QUART } from "../_constants";
 
 interface HeroSectionProps {
@@ -15,6 +16,11 @@ interface HeroSectionProps {
   featuredService: Service | undefined;
   slug: string;
 }
+
+const HERO_TEXT_SHADOW = "0 2px 8px rgba(0,0,0,0.35)";
+
+const CINEMATIC_OVERLAY =
+  "linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.35) 35%, rgba(0,0,0,0.08) 70%, rgba(0,0,0,0) 100%)";
 
 export function HeroSection({
   business,
@@ -29,7 +35,6 @@ export function HeroSection({
     offset: ["start start", "end start"],
   });
   const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-  const overlayOpacity = useTransform(scrollYProgress, [0, 0.6], [0.45, 0.75]);
 
   const heroStagger: Variants = {
     hidden: {},
@@ -49,52 +54,67 @@ export function HeroSection({
     <section
       ref={heroRef}
       id="home"
-      className="relative min-h-[85vh] w-full flex items-end pb-24 px-6 md:px-12 lg:px-20 overflow-hidden"
+      className="relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden"
     >
-      <motion.div className="absolute inset-0 z-0" style={{ y: imgY }}>
-        <Image
-          src={heroImage}
-          alt={`${business.name} hero`}
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover focus-subject"
-          style={{
-            willChange: "transform",
-            "--focus-x": "20%",
-            "--focus-y": "32%",
-            "--focus-x-mobile": "14%",
-            "--focus-y-mobile": "28%",
-          } as React.CSSProperties}
-        />
-      </motion.div>
-      <div
-        className="absolute inset-0 z-[1]"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(34,34,34,0.8) 0%, rgba(34,34,34,0.55) 45%, rgba(34,34,34,0.1) 75%)",
-        }}
-      />
+      {/* Sharp hero media — slight brightness reduction only */}
       <motion.div
-        className="absolute inset-0 z-[1]"
-        style={{ backgroundColor: "rgba(34,34,34,1)", opacity: overlayOpacity }}
-      />
+        className="absolute inset-0 z-0"
+        style={{ y: imgY, filter: "brightness(0.82)" }}
+      >
+        {isVideoUrl(heroImage) ? (
+          <SmartImage
+            src={heroImage}
+            alt={`${business.name} hero`}
+            className="absolute inset-0 w-full h-full"
+            placeholderColor={ELEGANZA.inkSoft}
+            videoPlayback="autoplay"
+            coverTolerance={1}
+          />
+        ) : (
+          <Image
+            src={heroImage}
+            alt={`${business.name} hero`}
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover focus-subject"
+            style={{
+              willChange: "transform",
+              "--focus-x": "20%",
+              "--focus-y": "32%",
+              "--focus-x-mobile": "14%",
+              "--focus-y-mobile": "28%",
+            } as React.CSSProperties}
+          />
+        )}
+      </motion.div>
+
+      {/* Premium cinematic gradient — left dark, right clear */}
       <div
-        className="absolute inset-0 z-[2]"
-        style={{
-          background:
-            "radial-gradient(circle at 15% 20%, rgba(221,211,207,0.35), transparent 55%)",
-        }}
+        className="pointer-events-none absolute inset-0 z-[1]"
+        style={{ background: CINEMATIC_OVERLAY }}
       />
 
-      <div className="relative z-10 w-full">
-        <motion.div variants={heroStagger} initial="hidden" animate="visible">
+      {/* Text content — lower-left glass panel */}
+      <div className="relative z-10 w-full max-w-[480px] mr-auto mb-2 md:mb-4">
+        <motion.div
+          variants={heroStagger}
+          initial="hidden"
+          animate="visible"
+          className="rounded-[20px] px-6 py-7 md:px-8 md:py-9"
+          style={{
+            background: "rgba(0,0,0,0.18)",
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+          }}
+        >
           <motion.h1
             variants={heroChild}
-            className="font-[var(--font-display)] uppercase text-white mb-8 leading-none"
+            className="font-[var(--font-display)] uppercase text-white mb-5 md:mb-6 leading-none"
             style={{
-              fontSize: "clamp(3rem, 4vw, 7rem)",
+              fontSize: "clamp(2.25rem, 5vw, 4.5rem)",
               letterSpacing: "0.06em",
+              textShadow: HERO_TEXT_SHADOW,
             }}
           >
             {business.name.split(" ").map((word, i) => (
@@ -108,19 +128,22 @@ export function HeroSection({
           {business.description && (
             <motion.p
               variants={heroChild}
-              className="max-w-xl text-lg font-medium leading-relaxed mb-8"
-              style={{ color: "rgba(255,255,255,0.78)" }}
+              className="text-base md:text-lg font-medium leading-relaxed mb-6 md:mb-8"
+              style={{
+                color: "rgba(255,255,255,0.88)",
+                textShadow: HERO_TEXT_SHADOW,
+              }}
             >
               {business.description}
             </motion.p>
           )}
 
-          <motion.div variants={heroChild} className="flex flex-wrap gap-4">
+          <motion.div variants={heroChild} className="flex flex-wrap gap-3 md:gap-4">
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || business.name)}`}
               target="_blank"
               rel="noreferrer"
-              className="px-8 py-3 rounded text-sm font-semibold uppercase tracking-[0.2em] border border-white/70 text-white bg-transparent transition-colors hover:bg-white hover:text-[#222222]"
+              className="px-6 md:px-8 py-2.5 md:py-3 rounded text-sm font-semibold uppercase tracking-[0.2em] border border-white/70 text-white bg-transparent transition-colors hover:bg-white hover:text-[#222222]"
             >
               Show on Map
             </a>
@@ -129,7 +152,7 @@ export function HeroSection({
               <Modal>
                 <Modal.Open opens="hero-book-now">
                   <button
-                    className="px-8 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+                    className="px-6 md:px-8 py-2.5 md:py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
                     style={{ backgroundColor: ELEGANZA.cta }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
@@ -160,7 +183,7 @@ export function HeroSection({
               </Modal>
             ) : (
               <button
-                className="px-8 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+                className="px-6 md:px-8 py-2.5 md:py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
                 style={{ backgroundColor: ELEGANZA.cta }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;

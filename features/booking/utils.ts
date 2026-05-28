@@ -24,6 +24,34 @@ export const formatPrice = (price: unknown) => {
   return `$${num.toFixed(2)}`;
 };
 
+type ServicePriceFields = {
+  priceDisplayMode?: boolean | string | null;
+};
+
+/** Whether a customer-facing surface should show the numeric service price. */
+export function isServicePriceVisible(
+  service?: ServicePriceFields | null,
+): boolean {
+  if (!service) return false;
+  const mode = service.priceDisplayMode;
+  return mode !== false && mode !== "false";
+}
+
+export function resolveServicePriceVisibility(
+  serviceId: string,
+  embeddedService?: Service | null,
+  catalog?: Record<string, ServicePriceFields>,
+): boolean {
+  if (embeddedService?.priceDisplayMode !== undefined) {
+    return isServicePriceVisible(embeddedService);
+  }
+  const catalogEntry = catalog?.[serviceId];
+  if (catalogEntry !== undefined) {
+    return isServicePriceVisible(catalogEntry);
+  }
+  return true;
+}
+
 export const getServiceDuration = (service: Service) => {
   const s = service as Service & {
     durationMinutes?: number;
@@ -46,9 +74,8 @@ export const serviceDescription = (service: Service) => {
   return raw;
 };
 
-export const getServicePriceLabel = (service: Service) => {
-  const s = service as Service & { priceDisplayMode?: boolean | string };
-  if (s.priceDisplayMode === false) return "Custom";
+export const getServicePriceLabel = (service: Service): string | null => {
+  if (!isServicePriceVisible(service)) return null;
   return formatPrice(service.price);
 };
 

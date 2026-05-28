@@ -159,21 +159,25 @@ function BookingSummaryCard({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: B.surfaceMuted }}
-            >
-              <DollarSign className="w-4 h-4" style={{ color: B.ink }} />
-            </div>
+            {service.price ? (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ backgroundColor: B.surfaceMuted }}
+              >
+                <DollarSign className="w-4 h-4" style={{ color: B.ink }} />
+              </div>
+            ) : null}
             <div>
               <p className="text-[11px]" style={{ color: B.muted }}>
                 {service.duration}
               </p>
             </div>
           </div>
-          <p className="text-sm font-semibold" style={{ color: B.ink }}>
-            {service.price}
-          </p>
+          {service.price && (
+            <p className="text-sm font-semibold" style={{ color: B.ink }}>
+              {service.price}
+            </p>
+          )}
         </div>
       </div>
     </div>

@@ -237,7 +237,6 @@ export default function GalleryPage() {
           {[
             { label: "Home", href: basePath, hash: null },
             { label: "Gallery", href: null, hash: null },
-            { label: "Reviews", href: basePath, hash: "reviews" },
             { label: "Contact", href: basePath, hash: "bookings" },
           ].map((item) => (
             <button
@@ -297,7 +296,6 @@ export default function GalleryPage() {
             {[
               { label: "Home", href: basePath, hash: null },
               { label: "Gallery", href: null, hash: null },
-              { label: "Reviews", href: basePath, hash: "reviews" },
               { label: "Contact", href: basePath, hash: "bookings" },
             ].map((item) => (
               <button
@@ -420,17 +418,6 @@ export default function GalleryPage() {
               &copy; {new Date().getFullYear()} {businessName}. All rights
               reserved.
             </p>
-          </div>
-          <div
-            className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest"
-            style={{ color: "rgba(255,255,255,0.35)" }}
-          >
-            <a href="#" className="hover:text-white transition-colors">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Terms
-            </a>
           </div>
         </div>
       </motion.footer>

@@ -6,7 +6,7 @@ import { Menu, User as UserIcon, X } from "lucide-react";
 import { Business, Service, User } from "@/types";
 import { Modal, BookingForm } from "@/components";
 import { ELEGANZA, getImageUrl } from "@/lib/publicBrand";
-import { EASE_OUT_QUART } from "../_constants";
+import { EASE_OUT_QUART } from "@/lib/motion";
 import { UserMenu } from "./UserMenu";
 
 interface PageNavigationProps {
@@ -14,10 +14,10 @@ interface PageNavigationProps {
   slug: string;
   heroImage: string;
   featuredService: Service | undefined;
-  activeSection: "home" | "reviews" | "bookings";
+  activeSection: "home" | "bookings" | null;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
-  scrollToSection: (section: "home" | "reviews" | "bookings") => void;
+  scrollToSection: (section: "home" | "bookings") => void;
   authValidated: boolean;
   isCustomerForThisSite: boolean;
   customerUser: User | null;
@@ -25,6 +25,11 @@ interface PageNavigationProps {
   onSignup: () => void;
   onLogout: () => void;
   onMyBookings: () => void;
+  /** Logo click — defaults to Home navigation. */
+  onLogoClick?: () => void;
+  /** When set, Home/Contact use route navigation instead of in-page scroll. */
+  onNavigateHome?: () => void;
+  onNavigateContact?: () => void;
 }
 
 export function PageNavigation({
@@ -43,7 +48,14 @@ export function PageNavigation({
   onSignup,
   onLogout,
   onMyBookings,
+  onLogoClick,
+  onNavigateHome,
+  onNavigateContact,
 }: PageNavigationProps) {
+  const goHome = onNavigateHome ?? (() => scrollToSection("home"));
+  const goContact = onNavigateContact ?? (() => scrollToSection("bookings"));
+  const goLogo = onLogoClick ?? goHome;
+
   return (
     <>
       <nav
@@ -55,20 +67,27 @@ export function PageNavigation({
         }}
       >
         <div className="flex items-center gap-4 py-2 pr-4 md:pr-8">
-          {getImageUrl(business.logo) ? (
-            <img
-              src={getImageUrl(business.logo)!}
-              alt={`${business.name} logo`}
-              className="h-[calc(var(--spacing)*21)] w-auto object-contain transition-transform duration-200 hover:scale-105"
-            />
-          ) : (
-            <span
-              className="font-[var(--font-display)] text-2xl sm:text-3xl md:text-[2rem] lg:text-[2.25rem] uppercase tracking-[0.12em] transition-opacity duration-200 hover:opacity-85"
-              style={{ color: ELEGANZA.ink }}
-            >
-              {business.name}
-            </span>
-          )}
+          <button
+            type="button"
+            onClick={goLogo}
+            className="flex items-center gap-4 text-left transition-opacity duration-200 hover:opacity-85 cursor-pointer"
+            aria-label={`Go to ${business.name} homepage`}
+          >
+            {getImageUrl(business.logo) ? (
+              <img
+                src={getImageUrl(business.logo)!}
+                alt={`${business.name} logo`}
+                className="h-[calc(var(--spacing)*21)] w-auto object-contain transition-transform duration-200 hover:scale-105"
+              />
+            ) : (
+              <span
+                className="font-[var(--font-display)] text-2xl sm:text-3xl md:text-[2rem] lg:text-[2.25rem] uppercase tracking-[0.12em]"
+                style={{ color: ELEGANZA.ink }}
+              >
+                {business.name}
+              </span>
+            )}
+          </button>
         </div>
 
         <div className="hidden md:flex items-center gap-8">
@@ -76,17 +95,12 @@ export function PageNavigation({
             {
               key: "home",
               label: "Home",
-              action: () => scrollToSection("home"),
-            },
-            {
-              key: "reviews",
-              label: "Reviews",
-              action: () => scrollToSection("reviews"),
+              action: goHome,
             },
             {
               key: "bookings",
               label: "Contact",
-              action: () => scrollToSection("bookings"),
+              action: goContact,
             },
           ].map((item) => (
             <button
@@ -228,17 +242,12 @@ export function PageNavigation({
               {
                 key: "home",
                 label: "Home",
-                action: () => scrollToSection("home"),
-              },
-              {
-                key: "reviews",
-                label: "Reviews",
-                action: () => scrollToSection("reviews"),
+                action: goHome,
               },
               {
                 key: "bookings",
                 label: "Contact",
-                action: () => scrollToSection("bookings"),
+                action: goContact,
               },
             ].map((item) => (
               <button

@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import { Business, Service, User } from "@/types";
 import { useRoleAuth } from "@/contexts";
 import { ELEGANZA } from "@/lib/publicBrand";
-import { PageNavigation } from "./PageNavigation";
+import { SectionErrorBoundary } from "@/components/errors";
+import { writeSiteCache } from "@/lib/publicCache";
+import { PageNavigation } from "@/components/navigation";
 import { HeroSection } from "./HeroSection";
 import { ServicesGrid } from "./ServicesGrid";
 import { ContactSection } from "./ContactSection";
@@ -33,9 +35,9 @@ export function PublicPageClient({
   const [authValidated, setAuthValidated] = useState(false);
   const [isCustomerForThisSite, setIsCustomerForThisSite] = useState(false);
   const [customerUser, setCustomerUser] = useState<User | null>(null);
-  const [activeSection, setActiveSection] = useState<
-    "home" | "reviews" | "bookings"
-  >("home");
+  const [activeSection, setActiveSection] = useState<"home" | "bookings">(
+    "home",
+  );
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const customerSession = getSession("Customer");
@@ -68,7 +70,7 @@ export function PublicPageClient({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, customerToken, sessionUserId, slug]);
 
-  const scrollToSection = (section: "home" | "reviews" | "bookings") => {
+  const scrollToSection = (section: "home" | "bookings") => {
     setActiveSection(section);
     setMobileMenuOpen(false);
     document.getElementById(section)?.scrollIntoView({ behavior: "smooth" });
@@ -76,13 +78,19 @@ export function PublicPageClient({
 
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    if (hash && ["home", "reviews", "bookings"].includes(hash)) {
+    if (hash && ["home", "bookings"].includes(hash)) {
       setTimeout(() => {
         document.getElementById(hash)?.scrollIntoView({ behavior: "smooth" });
-        setActiveSection(hash as "home" | "reviews" | "bookings");
+        setActiveSection(hash as "home" | "bookings");
       }, 300);
     }
   }, []);
+
+  // Seed the shared site cache so the customer navbar (My Bookings) can render
+  // instantly without re-fetching business/services.
+  useEffect(() => {
+    writeSiteCache(slug, { business, services });
+  }, [slug, business, services]);
 
   const displayAddress = business.address || "Address not available";
   const displayPhone = business.phone || "Phone not available";
@@ -134,16 +142,19 @@ export function PublicPageClient({
           window.location.assign(logoutTarget);
         }}
         onMyBookings={() => router.push("/customer/bookings")}
+        onLogoClick={() => scrollToSection("home")}
       />
 
       <main className="pt-18 md:pt-20 lg:pt-22">
-        <HeroSection
-          business={business}
-          heroImage={heroImage}
-          displayAddress={displayAddress}
-          featuredService={featuredService}
-          slug={slug}
-        />
+        <SectionErrorBoundary sectionName="hero">
+          <HeroSection
+            business={business}
+            heroImage={heroImage}
+            displayAddress={displayAddress}
+            featuredService={featuredService}
+            slug={slug}
+          />
+        </SectionErrorBoundary>
 
         {/* Booking step bar */}
         <div
@@ -180,22 +191,26 @@ export function PublicPageClient({
           </div>
         </div>
 
-        <ServicesGrid
-          services={services}
-          business={business}
-          slug={slug}
-          heroImage={heroImage}
-        />
+        <SectionErrorBoundary sectionName="services">
+          <ServicesGrid
+            services={services}
+            business={business}
+            slug={slug}
+            heroImage={heroImage}
+          />
+        </SectionErrorBoundary>
 
-        <ContactSection
-          business={business}
-          displayAddress={displayAddress}
-          displayPhone={displayPhone}
-          displayEmail={displayEmail}
-          featuredService={featuredService}
-          slug={slug}
-          heroImage={heroImage}
-        />
+        <SectionErrorBoundary sectionName="contact">
+          <ContactSection
+            business={business}
+            displayAddress={displayAddress}
+            displayPhone={displayPhone}
+            displayEmail={displayEmail}
+            featuredService={featuredService}
+            slug={slug}
+            heroImage={heroImage}
+          />
+        </SectionErrorBoundary>
       </main>
     </>
   );

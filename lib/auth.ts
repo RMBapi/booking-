@@ -12,6 +12,7 @@ import {
   clearAllRoleSessions,
   getActiveRoleSessions,
   getRoleRedirectPath,
+  getCustomerHomePath,
   isLoggedInAs,
 } from "./roleBasedAuth";
 
@@ -49,6 +50,26 @@ export function resolveRoleForLogout(_opts: {
 
 export function getLoginPathForRole(_role: UserRole): string {
   return "/auth/login/customer";
+}
+
+/**
+ * Only force a global logout + login redirect when a 401 likely means the
+ * session token is invalid. Resource mutations (POST/PATCH/DELETE) and review
+ * endpoints may return 401 for permission/validation issues — those should be
+ * handled by the calling UI instead of clearing the session.
+ */
+export function shouldForceLogoutOn401(
+  url: string,
+  method?: string,
+): boolean {
+  if (url.includes("/review")) return false;
+
+  const normalizedMethod = (method ?? "get").toLowerCase();
+  if (normalizedMethod !== "get" && normalizedMethod !== "head") {
+    return false;
+  }
+
+  return true;
 }
 
 const PUBLIC_ENDPOINT_FRAGMENTS = [

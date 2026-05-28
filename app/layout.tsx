@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Marcellus } from "next/font/google";
 import { Providers } from "./providers";
+import { ELEGANZA_TEXT_REVEAL_LOADER } from "@/lib/assets";
 import "./globals.css";
 
 const inter = Inter({
@@ -36,6 +37,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+          rel="preload"
+          href={ELEGANZA_TEXT_REVEAL_LOADER}
+          as="image"
+          type="image/gif"
+        />
       </head>
       <body
         className={`${inter.variable} ${marcellus.variable} antialiased bg-[#fafafa] font-sans text-[#222222]`}

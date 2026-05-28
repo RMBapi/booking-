@@ -2,7 +2,7 @@ import { Service, ServiceProviderSummary } from "@/types";
 
 export interface ServiceInfo {
   name: string;
-  price: string;
+  price: string | null;
   duration: string;
   description?: string;
   imageUrl?: string;

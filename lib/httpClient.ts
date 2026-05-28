@@ -11,6 +11,7 @@ import {
   clearAllRoleSessions,
   isPublicEndpoint,
   getLoginPathForRole,
+  shouldForceLogoutOn401,
 } from "./auth";
 
 /**
@@ -26,9 +27,14 @@ const getBaseURL = () => {
 const baseURL = getBaseURL();
 
 
+const REQUEST_TIMEOUT_MS = Number(
+  process.env.NEXT_PUBLIC_API_TIMEOUT_MS || 20000,
+);
+
 export const http = axios.create({
   baseURL,
   withCredentials: true,
+  timeout: REQUEST_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -142,6 +148,10 @@ http.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      if (!shouldForceLogoutOn401(url, config?.method)) {
+        return Promise.reject(error);
+      }
+
       const role = resolveRoleForLogout({
         pagePath: window.location.pathname,
         requestUrl: url,
@@ -150,12 +160,17 @@ http.interceptors.response.use(
         ),
       });
 
+      const returnUrl = encodeURIComponent(
+        `${window.location.pathname}${window.location.search}`,
+      );
+      const loginBase = role ? getLoginPathForRole(role) : "/auth/login";
+
       if (role) {
         clearRoleSession(role);
-        window.location.href = getLoginPathForRole(role);
+        window.location.href = `${loginBase}?returnUrl=${returnUrl}`;
       } else {
         clearAllRoleSessions();
-        window.location.href = "/auth/login";
+        window.location.href = `${loginBase}?returnUrl=${returnUrl}`;
       }
     }
 

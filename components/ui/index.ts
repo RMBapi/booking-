@@ -5,6 +5,7 @@ export { LoadingSpinner, PageLoader } from "./Loading";
 export { Badge } from "./Badge";
 export { Alert } from "./Alert";
 export { Skeleton, SkeletonText, SkeletonCard } from "./Skeleton";
+export { SmartImage } from "./SmartImage";
 export {
   Dialog,
   DialogPortal,

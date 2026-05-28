@@ -76,8 +76,22 @@ export const clearAllRoleSessions = () => {
   clearRoleSession("Customer");
 };
 
+export const getCustomerHomePath = (): string => {
+  if (typeof window !== "undefined") {
+    const slug =
+      localStorage.getItem(STORAGE_KEYS.businessSiteSlug) ||
+      process.env.NEXT_PUBLIC_BUSINESS_SLUG;
+    if (slug) return `/business/slug/${slug}`;
+  }
+
+  const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG;
+  if (envSlug) return `/business/slug/${envSlug}`;
+
+  return "/";
+};
+
 export const getRoleRedirectPath = (_role: UserRole): string => {
-  return "/customer/dashboard";
+  return getCustomerHomePath();
 };
 
 export const migrateToRoleBasedStorage = () => {

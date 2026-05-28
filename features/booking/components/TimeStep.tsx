@@ -9,6 +9,7 @@ import type { AvailableSlot } from "@/types";
 import { formatSlotTime } from "../utils";
 import { MiniCalendar } from "./MiniCalendar";
 import { SafeImage } from "./SafeImage";
+import { SmartImage } from "@/components";
 
 interface TimeStepProps {
   service: ServiceInfo;
@@ -85,17 +86,15 @@ export const TimeStep = React.memo(function TimeStep({
             style={{ backgroundColor: B.card, borderColor: B.border }}
           >
             {serviceImage && (
-              <div
-                className="relative overflow-hidden"
-                style={{ height: "160px" }}
-              >
-                <SafeImage
+              <div className="relative" style={{ height: "160px" }}>
+                <SmartImage
                   src={serviceImage}
                   alt={service.name}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full"
+                  placeholderColor={B.surfaceMuted}
                 />
                 <div
-                  className="absolute inset-0"
+                  className="pointer-events-none absolute inset-0"
                   style={{
                     background:
                       "linear-gradient(to top, rgba(34,34,34,0.5) 0%, transparent 55%)",
@@ -127,9 +126,11 @@ export const TimeStep = React.memo(function TimeStep({
                 >
                   {service.duration}
                 </span>
-                <span className="font-semibold" style={{ color: B.ink }}>
-                  {service.price}
-                </span>
+                {service.price && (
+                  <span className="font-semibold" style={{ color: B.ink }}>
+                    {service.price}
+                  </span>
+                )}
               </div>
             </div>
           </div>

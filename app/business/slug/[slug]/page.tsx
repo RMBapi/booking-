@@ -7,7 +7,6 @@ import {
 } from "@/lib/publicBrand";
 import { fetchBusiness, fetchServices } from "./_data";
 import { PublicPageClient } from "./_components/PublicPageClient";
-import { ReviewsSection } from "./_components/ReviewsSection";
 import { PageFooter } from "./_components/PageFooter";
 
 interface PageProps {
@@ -72,7 +71,7 @@ export default async function PublicBusinessPage({ params }: PageProps) {
       {/*
         PublicPageClient handles all interactive state (auth, scroll, mobile menu)
         and renders the client-only sections (nav, hero, services, contact).
-        ReviewsSection and PageFooter are server-rendered below the fold.
+        PageFooter is server-rendered below the fold.
       */}
       <PublicPageClient
         business={business}
@@ -81,8 +80,6 @@ export default async function PublicBusinessPage({ params }: PageProps) {
         heroImage={heroImage}
       />
 
-      {/* Server-rendered sections — zero JS, instant HTML */}
-      <ReviewsSection />
       <PageFooter business={business} />
     </div>
   );

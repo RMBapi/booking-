@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { ErrorFallback } from "@/components/errors";
 import { normalizeErrorMessage } from "@/lib/errorUtils";
 
-export default function RootError({
+export default function BookingsPageError({
   error,
   reset,
 }: {
@@ -12,15 +12,13 @@ export default function RootError({
   reset: () => void;
 }) {
   useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.error("Root error boundary:", normalizeErrorMessage(error), error);
-    }
+    console.error("Bookings page error:", normalizeErrorMessage(error), error);
   }, [error]);
 
   return (
     <ErrorFallback
-      title="Something went wrong"
-      message="An unexpected error occurred. Please try again or refresh the page."
+      title="Couldn't load your bookings"
+      message="Something went wrong. Please try again."
       onRetry={reset}
     />
   );

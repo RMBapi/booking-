@@ -1,5 +1,9 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import { cn } from "@/utils";
+import { ELEGANZA } from "@/lib/publicBrand";
+import { ELEGANZA_TEXT_REVEAL_LOADER } from "@/lib/assets";
 
 export const LoadingSpinner: React.FC<{
   size?: "sm" | "md" | "lg" | "xl";
@@ -25,16 +29,53 @@ export const LoadingSpinner: React.FC<{
   );
 };
 
-export const PageLoader: React.FC = () => {
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-3 border-primary-600 border-t-transparent mx-auto" />
-          <div className="absolute inset-0 rounded-full h-16 w-16 border-3 border-primary-200 mx-auto" />
+function LoaderGif({ className }: { className?: string }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div
+        className={cn("flex flex-col items-center gap-4", className)}
+        aria-label="Loading"
+      >
+        <div
+          className="h-1 w-24 rounded-full overflow-hidden"
+          style={{ backgroundColor: ELEGANZA.border }}
+        >
+          <div
+            className="h-full w-1/2 rounded-full animate-pulse"
+            style={{ backgroundColor: ELEGANZA.accent }}
+          />
         </div>
-        <p className="mt-6 text-sm font-medium text-gray-600">Loading...</p>
       </div>
+    );
+  }
+
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={ELEGANZA_TEXT_REVEAL_LOADER}
+      alt=""
+      aria-hidden="true"
+      className={cn("max-w-[min(320px,75vw)] w-full h-auto", className)}
+      draggable={false}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+export const PageLoader: React.FC = () => {
+  useEffect(() => {
+    const img = new window.Image();
+    img.src = ELEGANZA_TEXT_REVEAL_LOADER;
+  }, []);
+
+  return (
+    <div
+      className="flex items-center justify-center min-h-screen"
+      style={{ backgroundColor: ELEGANZA.background }}
+    >
+      <LoaderGif />
     </div>
   );
 };

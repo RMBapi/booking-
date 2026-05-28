@@ -62,27 +62,6 @@ export const SERVICE_FALLBACK_IMAGES = [
   "https://images.unsplash.com/photo-1604368640692-027f44ffb8cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600",
 ];
 
-export const MOCK_REVIEWS = [
-  {
-    name: "James T.",
-    rating: 5,
-    text: "Best experience! The team always deliver a sharp clean result. My go-to place.",
-    date: "2 weeks ago",
-  },
-  {
-    name: "Marcus W.",
-    rating: 5,
-    text: "Absolutely immaculate work. Super professional, relaxed atmosphere. Highly recommend.",
-    date: "1 month ago",
-  },
-  {
-    name: "Daniel K.",
-    rating: 5,
-    text: "Went in feeling unsure and left feeling like a new person. A must-try experience. 10/10.",
-    date: "1 month ago",
-  },
-];
-
 export const OPERATING_HOURS = [
   { day: "Monday", hours: "7:00 AM – 6:00 PM" },
   { day: "Tuesday", hours: "7:00 AM – 6:00 PM" },

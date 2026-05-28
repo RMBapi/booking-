@@ -3,8 +3,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Service, Business } from "@/types";
-import { Modal, BookingForm } from "@/components";
+import { Modal, BookingForm, SmartImage } from "@/components";
 import { ELEGANZA } from "@/lib/publicBrand";
+import { isServicePriceVisible } from "@/features/booking/utils";
 import { fadeUp, staggerContainer, scaleUp, VP } from "../_constants";
 import {
   formatPrice,
@@ -100,13 +101,12 @@ export function ServicesGrid({
                   }}
                 >
                   {serviceImg && (
-                    <div className="relative h-48 overflow-hidden">
-                      <img
-                        src={serviceImg}
-                        alt={service.name}
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                      />
-                    </div>
+                    <SmartImage
+                      src={serviceImg}
+                      alt={service.name}
+                      className="h-48"
+                      placeholderColor={ELEGANZA.surfaceMuted}
+                    />
                   )}
 
                   <div className="flex flex-col flex-1 p-5">
@@ -153,7 +153,7 @@ export function ServicesGrid({
                         className="font-semibold"
                         style={{ color: ELEGANZA.ink }}
                       >
-                        {service.priceDisplayMode
+                        {isServicePriceVisible(service)
                           ? formatPrice(price)
                           : "Custom"}
                       </span>

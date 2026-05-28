@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { PageLoader } from "@/components";
 
 export default function Home() {
   const router = useRouter();
@@ -13,14 +14,13 @@ export default function Home() {
     }
   }, [router, envSlug]);
 
+  if (envSlug) {
+    return <PageLoader />;
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">
-          {envSlug ? "Loading..." : "Missing business slug"}
-        </p>
-      </div>
+      <p className="text-sm text-gray-600">Missing business slug</p>
     </div>
   );
 }

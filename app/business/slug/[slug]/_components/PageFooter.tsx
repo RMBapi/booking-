@@ -48,18 +48,6 @@ export function PageFooter({ business }: PageFooterProps) {
             <Facebook className="w-5 h-5" />
           </a>
         </div>
-
-        <div
-          className="flex items-center gap-6 text-[10px] font-semibold uppercase tracking-[0.2em]"
-          style={{ color: ELEGANZA.inkMuted }}
-        >
-          <a href="#" className="transition-colors hover:text-[#222222]">
-            Privacy
-          </a>
-          <a href="#" className="transition-colors hover:text-[#222222]">
-            Terms
-          </a>
-        </div>
       </div>
     </footer>
   );

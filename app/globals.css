@@ -279,12 +279,12 @@
    ========================================================================== */
 
 @media (max-width: 768px) {
-  /* Fullscreen cinematic stage, content anchored to the bottom. */
+  /* Fullscreen cinematic stage, content anchored to the lower-left. */
   .hero-section {
     min-height: 100svh;
     justify-content: flex-end;
-    padding-bottom: 50px;
-    padding-inline: 0;
+    padding-bottom: 48px;
+    padding-inline: 20px;
   }
 
   .hero-mobile-media video,
@@ -292,45 +292,51 @@
     object-position: center top;
   }
 
-  /* Bottom-up cinematic fade — integrates content with the image, no box. */
+  /* Cinematic bottom fade — improves readability without blurring the image. */
   .hero-overlay-mobile {
     background: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 0.25) 40%,
+      rgba(0, 0, 0, 0.18) 40%,
       rgba(0, 0, 0, 0.72) 100%
     );
   }
 
-  /* No glass card on mobile — content sits directly on the image. */
+  /* Subtle luxury glassmorphism panel — integrated, soft, premium. */
   .hero-glass-panel {
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    padding: 24px;
+    border-radius: 20px;
+    background: rgba(20, 20, 20, 0.38);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
   }
 
   .hero-content-wrap {
-    max-width: 85%;
-    padding-inline: 24px;
+    max-width: 100%;
+    margin-bottom: 0;
   }
 
   .hero-heading {
     font-size: clamp(48px, 10vw, 64px);
-    line-height: 1;
+    line-height: 0.95;
+    letter-spacing: 0.04em;
     margin-bottom: 0.85rem;
   }
 
   .hero-lead {
     font-size: 17px;
     line-height: 1.7;
-    max-width: 32ch;
+    font-weight: 400;
+    max-width: 34ch;
     margin-bottom: 1.5rem;
   }
 
   .hero-actions {
+    display: flex;
     gap: 12px;
+    flex-wrap: wrap;
   }
 
   .hero-actions > * {
@@ -350,7 +356,7 @@
 
   .hero-heading {
     font-size: clamp(2.25rem, 5vw, 4.5rem);
-    margin-bottom: 0;
+    letter-spacing: 0.06em;
   }
 }
 

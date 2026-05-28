@@ -5,7 +5,7 @@ import Image from "next/image";
 import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { Business, Service } from "@/types";
 import { Modal, BookingForm, SmartImage } from "@/components";
-import { ELEGANZA } from "@/lib/publicBrand";
+import { ELEGANZA, HERO_FALLBACK, getImageUrl } from "@/lib/publicBrand";
 import { isVideoUrl } from "@/lib/media";
 import { EASE_OUT_QUART } from "../_constants";
 
@@ -35,6 +35,12 @@ export function HeroSection({
     offset: ["start start", "end start"],
   });
   const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
+
+  // Still image shown before a hero video plays (and if it fails to load).
+  const heroPoster =
+    getImageUrl(business.logoUrl) ||
+    getImageUrl(business.logo) ||
+    HERO_FALLBACK;
 
   const heroStagger: Variants = {
     hidden: {},
@@ -69,6 +75,7 @@ export function HeroSection({
             placeholderColor={ELEGANZA.inkSoft}
             videoPlayback="autoplay"
             coverTolerance={1}
+            poster={heroPoster}
           />
         ) : (
           <Image
@@ -110,7 +117,6 @@ export function HeroSection({
             variants={heroChild}
             className="hero-heading font-[var(--font-display)] uppercase text-white mb-5 md:mb-6 leading-none"
             style={{
-              letterSpacing: "0.06em",
               textShadow: HERO_TEXT_SHADOW,
             }}
           >

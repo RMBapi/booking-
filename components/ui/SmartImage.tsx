@@ -25,6 +25,12 @@ interface SmartImageProps {
    * - `controls`: user-controlled playback with native controls
    */
   videoPlayback?: "autoplay" | "controls";
+  /**
+   * Optional still image shown before/while a video loads (the `poster`).
+   * Lets the user see imagery instantly while the video buffers, then the
+   * video fades in over it.
+   */
+  poster?: string | null;
 }
 
 type FitMode = "cover" | "contain";
@@ -42,6 +48,7 @@ export function SmartImage({
   fallback,
   rounded,
   videoPlayback = "autoplay",
+  poster,
 }: SmartImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -133,6 +140,7 @@ export function SmartImage({
         <video
           ref={videoRef}
           src={resolvedSrc}
+          poster={poster ?? undefined}
           aria-label={alt}
           controls={videoPlayback === "controls"}
           autoPlay={videoPlayback === "autoplay"}
@@ -145,7 +153,7 @@ export function SmartImage({
             handleDimensions(video.videoWidth, video.videoHeight);
           }}
           onError={() => setErrored(true)}
-          className={`relative w-full h-full transition-opacity duration-300 ${fitClass} ${visibilityClass}`}
+          className={`relative w-full h-full transition-opacity duration-500 ${fitClass} ${visibilityClass}`}
         />
       ) : hasMedia ? (
         /* eslint-disable-next-line @next/next/no-img-element */
@@ -160,7 +168,17 @@ export function SmartImage({
           className={`relative w-full h-full transition-opacity duration-300 ${fitClass} ${visibilityClass}`}
         />
       ) : (
-        fallback ?? null
+        /* Media missing or failed — prefer an explicit fallback, then a poster
+           still, so a video that fails to load still shows imagery. */
+        fallback ??
+        (poster ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={poster}
+            alt={alt}
+            className="relative w-full h-full object-cover"
+          />
+        ) : null)
       )}
     </div>
   );

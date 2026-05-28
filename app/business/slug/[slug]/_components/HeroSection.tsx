@@ -54,7 +54,7 @@ export function HeroSection({
     <section
       ref={heroRef}
       id="home"
-      className="relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden"
+      className="hero-section relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden"
     >
       {/* Sharp hero media — slight brightness reduction only */}
       <motion.div
@@ -65,7 +65,7 @@ export function HeroSection({
           <SmartImage
             src={heroImage}
             alt={`${business.name} hero`}
-            className="absolute inset-0 w-full h-full"
+            className="hero-mobile-media absolute inset-0 w-full h-full"
             placeholderColor={ELEGANZA.inkSoft}
             videoPlayback="autoplay"
             coverTolerance={1}
@@ -77,42 +77,39 @@ export function HeroSection({
             fill
             priority
             sizes="100vw"
-            className="object-cover focus-subject"
+            className="hero-mobile-media object-cover focus-subject"
             style={{
               willChange: "transform",
               "--focus-x": "20%",
               "--focus-y": "32%",
-              "--focus-x-mobile": "14%",
-              "--focus-y-mobile": "28%",
+              "--focus-x-mobile": "50%",
+              "--focus-y-mobile": "top",
             } as React.CSSProperties}
           />
         )}
       </motion.div>
 
-      {/* Premium cinematic gradient — left dark, right clear */}
+      {/* Mobile: vertical gradient for portrait readability */}
+      <div className="hero-overlay-mobile pointer-events-none absolute inset-0 z-[1] md:hidden" />
+
+      {/* Desktop: premium cinematic gradient — left dark, right clear */}
       <div
-        className="pointer-events-none absolute inset-0 z-[1]"
+        className="pointer-events-none absolute inset-0 z-[1] hidden md:block"
         style={{ background: CINEMATIC_OVERLAY }}
       />
 
       {/* Text content — lower-left glass panel */}
-      <div className="relative z-10 w-full max-w-[480px] mr-auto mb-2 md:mb-4">
+      <div className="hero-content-wrap relative z-10 w-full max-w-[480px] mr-auto mb-2 md:mb-4">
         <motion.div
           variants={heroStagger}
           initial="hidden"
           animate="visible"
-          className="rounded-[20px] px-6 py-7 md:px-8 md:py-9"
-          style={{
-            background: "rgba(0,0,0,0.18)",
-            backdropFilter: "blur(6px)",
-            WebkitBackdropFilter: "blur(6px)",
-          }}
+          className="hero-glass-panel md:rounded-[20px] md:px-8 md:py-9"
         >
           <motion.h1
             variants={heroChild}
-            className="font-[var(--font-display)] uppercase text-white mb-5 md:mb-6 leading-none"
+            className="hero-heading font-[var(--font-display)] uppercase text-white mb-5 md:mb-6 leading-none"
             style={{
-              fontSize: "clamp(2.25rem, 5vw, 4.5rem)",
               letterSpacing: "0.06em",
               textShadow: HERO_TEXT_SHADOW,
             }}
@@ -128,7 +125,7 @@ export function HeroSection({
           {business.description && (
             <motion.p
               variants={heroChild}
-              className="text-base md:text-lg font-medium leading-relaxed mb-6 md:mb-8"
+              className="hero-lead text-base md:text-lg font-medium leading-relaxed mb-6 md:mb-8"
               style={{
                 color: "rgba(255,255,255,0.88)",
                 textShadow: HERO_TEXT_SHADOW,
@@ -138,7 +135,10 @@ export function HeroSection({
             </motion.p>
           )}
 
-          <motion.div variants={heroChild} className="flex flex-wrap gap-3 md:gap-4">
+          <motion.div
+            variants={heroChild}
+            className="hero-actions flex flex-wrap gap-3 md:gap-4"
+          >
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(displayAddress || business.name)}`}
               target="_blank"

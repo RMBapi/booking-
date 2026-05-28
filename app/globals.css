@@ -273,6 +273,70 @@
   }
 }
 
+/* ==========================================================================
+   Hero — mobile portrait layout (desktop styles live in component / md:)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 82vh;
+    justify-content: flex-end;
+    padding-bottom: 80px;
+  }
+
+  .hero-mobile-media video,
+  .hero-mobile-media img {
+    object-position: center top;
+  }
+
+  .hero-overlay-mobile {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.15) 0%,
+      rgba(0, 0, 0, 0.45) 100%
+    );
+  }
+
+  .hero-glass-panel {
+    padding: 24px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.28);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .hero-content-wrap {
+    max-width: 85%;
+  }
+
+  .hero-heading {
+    font-size: clamp(42px, 8vw, 64px);
+    margin-bottom: 1.25rem;
+  }
+
+  .hero-lead {
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .hero-actions {
+    gap: 12px;
+  }
+}
+
+@media (min-width: 769px) {
+  .hero-glass-panel {
+    background: rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .hero-heading {
+    font-size: clamp(2.25rem, 5vw, 4.5rem);
+    margin-bottom: 0;
+  }
+}
+
 /* Force light scrollbar style for light-design modals even in dark mode/OS themes */
 .modal-light-scrollbar {
   scrollbar-width: thin;

@@ -1,13 +1,23 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { motion, LayoutGroup } from "framer-motion";
 import { ChevronLeft, ChevronRight, Filter, Menu, Plus, X } from "lucide-react";
 import { cn } from "@/utils";
 import { CreateBookingModal } from "./CreateBookingModal";
 import { EditBookingModal } from "./EditBookingModal";
 import { CancelBookingDialog } from "./CancelBookingDialog";
-import { useGetBookings, useServiceProviders, useBusinessServices } from "../hooks";
+import {
+  useGetBookings,
+  useServiceProviders,
+  useBusinessServices,
+} from "../hooks";
 import type { Booking, BookingStatus, ServiceProvider } from "@/types";
 import { CalendarSidebar } from "./calendar/CalendarSidebar";
 import { CalendarBookingSheet } from "./calendar/CalendarBookingSheet";
@@ -51,11 +61,15 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   const [view, setView] = useState<CalendarViewMode>("week");
   const [providerSearch, setProviderSearch] = useState("");
   const [serviceSearch, setServiceSearch] = useState("");
-  const [serviceVisibility, setServiceVisibility] = useState<Record<string, boolean>>({});
+  const [serviceVisibility, setServiceVisibility] = useState<
+    Record<string, boolean>
+  >({});
   const [calendarServiceFilterId, setCalendarServiceFilterId] = useState("");
   const [statusVisibility, setStatusVisibility] =
     useState<Record<BookingStatus, boolean>>(DEFAULT_STATUS);
-  const [providerVisibility, setProviderVisibility] = useState<Record<string, boolean>>({});
+  const [providerVisibility, setProviderVisibility] = useState<
+    Record<string, boolean>
+  >({});
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [hourHeight] = useState(DEFAULT_HOUR_HEIGHT);
@@ -82,12 +96,24 @@ export function CalendarView({ businessId }: CalendarViewProps) {
       const end = addDays(start, 7);
       return { startDate: start.toISOString(), endDate: end.toISOString() };
     }
-    const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-    const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1);
+    const start = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      1,
+    );
+    const end = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth() + 1,
+      1,
+    );
     return { startDate: start.toISOString(), endDate: end.toISOString() };
   }, [view, selectedDate]);
 
-  const { bookings: rawBookings, isLoading: bookingsLoading, refetch: refetchBookings } = useGetBookings(businessId, {
+  const {
+    bookings: rawBookings,
+    isLoading: bookingsLoading,
+    refetch: refetchBookings,
+  } = useGetBookings(businessId, {
     ...bookingQuery,
     limit: 100,
     sortBy: "bookingTime",
@@ -151,7 +177,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
     (booking: Booking) => {
       const sid = bookingServiceId(booking);
       if (sid && serviceToneMap.has(sid)) return serviceToneMap.get(sid)!;
-      if (booking.serviceProviderId && providerToneMap.has(booking.serviceProviderId)) {
+      if (
+        booking.serviceProviderId &&
+        providerToneMap.has(booking.serviceProviderId)
+      ) {
         return providerToneMap.get(booking.serviceProviderId)!;
       }
       return defaultTone;
@@ -175,7 +204,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
     if (!el) return;
     const now = new Date();
     const hour = isToday ? now.getHours() : 8;
-    const scrollTop = Math.max(0, (hour - START_HOUR) * hourHeight - hourHeight);
+    const scrollTop = Math.max(
+      0,
+      (hour - START_HOUR) * hourHeight - hourHeight,
+    );
     el.scrollTop = scrollTop;
   }, [view, selectedDate, hourHeight, isToday]);
   const weekDays = useMemo(() => getWeekDays(selectedDate), [selectedDate]);
@@ -209,8 +241,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
     }) => {
       const d = opts?.date ?? selectedDate;
       const serviceId =
-        opts?.serviceId ??
-        (calendarServiceFilterId || undefined);
+        opts?.serviceId ?? (calendarServiceFilterId || undefined);
       setCreateBooking({
         date: toDateInput(d),
         start: opts?.start?.toISOString(),
@@ -294,7 +325,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   const filteredBookings = useMemo(
     () =>
       bookings.filter(
-        (b) => bookingMatchesProviderFilter(b) && bookingMatchesServiceFilter(b),
+        (b) =>
+          bookingMatchesProviderFilter(b) && bookingMatchesServiceFilter(b),
       ),
     [bookings, bookingMatchesProviderFilter, bookingMatchesServiceFilter],
   );
@@ -327,7 +359,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
 
   return (
     <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-10 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
-      <header className="sticky top-14 z-20 bg-canvas/90 backdrop-blur-xl border-b border-border-subtle">
+      <header className="sticky top-14 z-10 bg-canvas/90 backdrop-blur-xl border-b border-border-subtle">
         <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-14">
           <div className="flex items-center gap-2 min-w-0">
             <button
@@ -415,7 +447,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
             <div className="absolute inset-y-0 left-0 w-[280px] bg-surface shadow-xl flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 border-b border-border-subtle shrink-0">
                 <span className="text-sm font-semibold">Calendar</span>
-                <button type="button" onClick={() => setMobileSidebarOpen(false)}>
+                <button
+                  type="button"
+                  onClick={() => setMobileSidebarOpen(false)}
+                >
                   <X className="h-4 w-4 text-text-tertiary" />
                 </button>
               </div>
@@ -426,7 +461,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           </div>
         )}
 
-        <main ref={mainScrollRef} className="flex-1 min-w-0 min-h-0 overflow-auto bg-canvas">
+        <main
+          ref={mainScrollRef}
+          className="flex-1 min-w-0 min-h-0 overflow-auto bg-canvas"
+        >
           {bookingsLoading ? (
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary-200 border-t-primary-600" />
@@ -452,7 +490,9 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                   defaultTone={defaultTone}
                   hourHeight={hourHeight}
                   getBookingTone={getBookingTone}
-                  onSlotClick={(h, pid) => handleSlotClick(selectedDate, h, pid)}
+                  onSlotClick={(h, pid) =>
+                    handleSlotClick(selectedDate, h, pid)
+                  }
                   onBookingClick={setSelectedBooking}
                   showNow={isToday}
                 />
@@ -552,7 +592,9 @@ function ViewSwitcher({
               onClick={() => onChange(item.k)}
               className={cn(
                 "relative px-3 py-1 text-xs font-medium rounded-md transition-colors",
-                active ? "text-text-primary" : "text-text-tertiary hover:text-text-secondary",
+                active
+                  ? "text-text-primary"
+                  : "text-text-tertiary hover:text-text-secondary",
               )}
             >
               {active && (
@@ -613,11 +655,21 @@ function DayView({
     <div className="min-w-0">
       <div className="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-border-subtle">
         <div className="flex">
-          <div className="w-14 shrink-0" style={{ paddingTop: GRID_TOP_PADDING }} />
+          <div
+            className="w-14 shrink-0"
+            style={{ paddingTop: GRID_TOP_PADDING }}
+          />
           {columns.map((col) => (
-            <div key={col.id} className="flex-1 min-w-[140px] px-2 py-2 border-l border-border-subtle">
-              <p className="text-xs font-semibold text-text-primary truncate">{col.label}</p>
-              <p className="text-[10px] text-text-tertiary">{col.bookings.length} booking(s)</p>
+            <div
+              key={col.id}
+              className="flex-1 min-w-[140px] px-2 py-2 border-l border-border-subtle"
+            >
+              <p className="text-xs font-semibold text-text-primary truncate">
+                {col.label}
+              </p>
+              <p className="text-[10px] text-text-tertiary">
+                {col.bookings.length} booking(s)
+              </p>
             </div>
           ))}
         </div>
@@ -631,7 +683,9 @@ function DayView({
             tone={defaultTone}
             getToneForBooking={getBookingTone}
             hourHeight={hourHeight}
-            onSlotClick={(h) => onSlotClick(h, col.id === "all" ? undefined : col.id)}
+            onSlotClick={(h) =>
+              onSlotClick(h, col.id === "all" ? undefined : col.id)
+            }
             onBookingClick={onBookingClick}
             showNow={showNow}
           />
@@ -666,7 +720,10 @@ function WeekView({
     <div className="min-w-[700px]">
       <div className="sticky top-0 z-10 bg-canvas/90 backdrop-blur border-b border-border-subtle">
         <div className="flex">
-          <div className="w-14 shrink-0" style={{ paddingTop: GRID_TOP_PADDING }} />
+          <div
+            className="w-14 shrink-0"
+            style={{ paddingTop: GRID_TOP_PADDING }}
+          />
           {weekDays.map((day) => {
             const isToday = isSameDay(day, today);
             return (
@@ -784,7 +841,8 @@ function MonthView({
               <div className="flex-1 space-y-0.5 overflow-hidden">
                 {dayBookings.slice(0, 3).map((b) => {
                   const sid = bookingServiceId(b);
-                  const tone = (sid ? serviceToneMap.get(sid) : undefined) ?? defaultTone;
+                  const tone =
+                    (sid ? serviceToneMap.get(sid) : undefined) ?? defaultTone;
                   const cust = b.user || b.customer;
                   const name = cust
                     ? `${cust.firstName} ${cust.lastName ?? ""}`.trim()
@@ -822,7 +880,8 @@ function MonthView({
         })}
       </div>
       <p className="text-xs text-text-tertiary mt-3 px-1">
-        Click a day for day view. Click a booking to manage it. Double-click a day to create.
+        Click a day for day view. Click a booking to manage it. Double-click a
+        day to create.
       </p>
     </div>
   );

@@ -276,12 +276,7 @@ describe('BusinessTeamService', () => {
       prisma.userBusiness.count.mockResolvedValue(1);
 
       await expect(
-        service.updateMember(
-          'b1',
-          'u1',
-          { status: 'Deactivated' },
-          'actor',
-        ),
+        service.updateMember('b1', 'u1', { status: 'Deactivated' }, 'actor'),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });

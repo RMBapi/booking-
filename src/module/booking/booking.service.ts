@@ -569,6 +569,21 @@ export class BookingService {
     );
 
     try {
+      const include = this.buildBookingInclude(queryDto.include);
+
+      const hasDateFilter = Boolean(queryDto.startDate || queryDto.endDate);
+      if (hasDateFilter) {
+        const { data, total } = await this.findAllWithDateRange(
+          queryDto,
+          businessId,
+          include,
+        );
+        const page = queryDto.page || 1;
+        const limit = queryDto.limit || 10;
+        const meta = this.paginationService.buildMeta(page, limit, total);
+        return { data: data.map(flattenBooking), meta };
+      }
+
       const paginationOptions =
         this.paginationService.buildPaginationOptions(queryDto);
 
@@ -578,6 +593,11 @@ export class BookingService {
 
       if (queryDto.status) {
         where.status = queryDto.status;
+      } else if (queryDto.excludeStatus) {
+        const excluded = this.parseStatusList(queryDto.excludeStatus);
+        if (excluded.length > 0) {
+          where.status = { notIn: excluded };
+        }
       }
 
       if (queryDto.userId) {
@@ -608,7 +628,7 @@ export class BookingService {
         this.prisma.booking.findMany({
           where,
           ...paginationOptions,
-          include: BOOKING_INCLUDE,
+          include,
         }),
         this.prisma.booking.count({ where }),
       ]);
@@ -630,6 +650,183 @@ export class BookingService {
         errorStack,
       );
       throw error;
+    }
+  }
+
+  private buildBookingInclude(include?: string): Prisma.BookingInclude {
+    if (!include) return BOOKING_INCLUDE;
+    const set = new Set(
+      include
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean),
+    );
+
+    const result: Prisma.BookingInclude = {};
+    if (set.has('customer')) result.user = BOOKING_INCLUDE.user;
+    if (set.has('service')) result.service = BOOKING_INCLUDE.service;
+    if (set.has('serviceProvider'))
+      result.serviceProvider = BOOKING_INCLUDE.serviceProvider;
+    return result;
+  }
+
+  private parseStatusList(raw: string): BookingStatus[] {
+    const values = raw
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const allowed = new Set(Object.values(BookingStatus));
+    return values.filter((value) => allowed.has(value as BookingStatus)) as
+      | BookingStatus[]
+      | [];
+  }
+
+  private parseDateInput(value: string, label: string, isEnd = false): Date {
+    const trimmed = value.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      const start = new Date(`${trimmed}T00:00:00.000Z`);
+      if (Number.isNaN(start.getTime())) {
+        throw new BadRequestException(`${label} must be a valid ISO date`);
+      }
+      if (isEnd) {
+        return new Date(start.getTime() + 86_399_999);
+      }
+      return start;
+    }
+
+    const date = new Date(trimmed);
+    if (Number.isNaN(date.getTime())) {
+      throw new BadRequestException(`${label} must be a valid ISO date`);
+    }
+    return date;
+  }
+
+  private async findAllWithDateRange(
+    queryDto: BookingQueryDto,
+    businessId: string,
+    include: Prisma.BookingInclude,
+  ) {
+    const start = queryDto.startDate
+      ? this.parseDateInput(queryDto.startDate, 'startDate')
+      : undefined;
+    const end = queryDto.endDate
+      ? this.parseDateInput(queryDto.endDate, 'endDate', true)
+      : undefined;
+
+    if (start && end && end < start) {
+      throw new BadRequestException('endDate must be after startDate');
+    }
+
+    const filters: Prisma.Sql[] = [Prisma.sql`"business_id" = ${businessId}`];
+
+    if (queryDto.status) {
+      filters.push(Prisma.sql`"status" = ${queryDto.status}`);
+    } else if (queryDto.excludeStatus) {
+      const excluded = this.parseStatusList(queryDto.excludeStatus);
+      if (excluded.length > 0) {
+        filters.push(Prisma.sql`"status" NOT IN (${Prisma.join(excluded)})`);
+      }
+    }
+
+    if (queryDto.userId) {
+      filters.push(Prisma.sql`"user_id" = ${queryDto.userId}`);
+    }
+
+    if (queryDto.serviceId) {
+      filters.push(Prisma.sql`"service_id" = ${queryDto.serviceId}`);
+    }
+
+    if (queryDto.serviceProviderId) {
+      filters.push(
+        Prisma.sql`"service_provider_id" = ${queryDto.serviceProviderId}`,
+      );
+    }
+
+    if (queryDto.search) {
+      const like = `%${queryDto.search}%`;
+      filters.push(
+        Prisma.sql`(
+          "customer_notes" ILIKE ${like}
+          OR "cancellation_reason" ILIKE ${like}
+        )`,
+      );
+    }
+
+    if (start || end) {
+      filters.push(Prisma.sql`"bookingTime" IS NOT NULL`);
+      if (start) {
+        filters.push(
+          Prisma.sql`("bookingTime"->>'start')::timestamptz >= ${start}`,
+        );
+      }
+      if (end) {
+        filters.push(
+          Prisma.sql`("bookingTime"->>'start')::timestamptz <= ${end}`,
+        );
+      }
+    }
+
+    const whereSql = Prisma.join(filters, ' AND ');
+
+    const page = queryDto.page || 1;
+    const limit = queryDto.limit || 10;
+    const offset = (page - 1) * limit;
+    const sortOrder = queryDto.sortOrder === 'desc' ? 'DESC' : 'ASC';
+    const sortColumn = this.mapSortColumn(queryDto.sortBy);
+
+    const idRows = await this.prisma.$queryRaw<{ id: string }[]>(
+      Prisma.sql`
+        SELECT "id"
+        FROM "bookings"
+        WHERE ${whereSql}
+        ORDER BY ${sortColumn} ${Prisma.raw(sortOrder)}
+        LIMIT ${limit} OFFSET ${offset}
+      `,
+    );
+
+    const totalRows = await this.prisma.$queryRaw<{ total: number }[]>(
+      Prisma.sql`
+        SELECT COUNT(*)::int AS "total"
+        FROM "bookings"
+        WHERE ${whereSql}
+      `,
+    );
+
+    const ids = idRows.map((row) => row.id);
+    if (ids.length === 0) {
+      return { data: [], total: Number(totalRows[0]?.total ?? 0) };
+    }
+
+    const data = await this.prisma.booking.findMany({
+      where: { id: { in: ids } },
+      include,
+    });
+
+    const byId = new Map(data.map((booking) => [booking.id, booking]));
+    const ordered = ids
+      .map((id) => byId.get(id))
+      .filter((booking): booking is (typeof data)[number] => Boolean(booking));
+
+    return { data: ordered, total: Number(totalRows[0]?.total ?? 0) };
+  }
+
+  private mapSortColumn(sortBy?: string) {
+    switch (sortBy) {
+      case 'updatedAt':
+        return Prisma.sql`"updated_at"`;
+      case 'status':
+        return Prisma.sql`"status"`;
+      case 'bookingTime':
+        return Prisma.sql`("bookingTime"->>'start')::timestamptz`;
+      case 'userId':
+        return Prisma.sql`"user_id"`;
+      case 'serviceId':
+        return Prisma.sql`"service_id"`;
+      case 'serviceProviderId':
+        return Prisma.sql`"service_provider_id"`;
+      case 'createdAt':
+      default:
+        return Prisma.sql`"created_at"`;
     }
   }
 

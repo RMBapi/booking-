@@ -36,4 +36,49 @@ export class BookingFilterDto {
   @IsString({ message: 'Service provider ID must be a string' })
   @IsOptional()
   serviceProviderId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter bookings with start >= startDate (ISO date/datetime)',
+    example: '2026-05-01',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'startDate must be a string' })
+  @IsOptional()
+  startDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filter bookings with start <= endDate (ISO date/datetime)',
+    example: '2026-05-31',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'endDate must be a string' })
+  @IsOptional()
+  endDate?: string;
+
+  @ApiPropertyOptional({
+    description: 'Exclude bookings with these statuses (comma-separated)',
+    example: 'Cancelled',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'excludeStatus must be a string' })
+  @IsOptional()
+  excludeStatus?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Comma-separated includes: service,serviceProvider,customer (default all)',
+    example: 'service,serviceProvider,customer',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'include must be a string' })
+  @IsOptional()
+  include?: string;
 }

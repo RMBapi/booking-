@@ -42,7 +42,7 @@ export class InvitationController {
     @Body() dto: CreateInvitationDto,
     @CurrentUser() user: { id: string },
   ): Promise<InvitationCreatedResponseDto> {
-    return this.invitationService.create(businessId, dto, user.id) as any;
+    return this.invitationService.create(businessId, dto, user.id);
   }
 
   @Get('business/:id/invitations')
@@ -53,7 +53,7 @@ export class InvitationController {
   async list(
     @Param('id') businessId: string,
   ): Promise<InvitationResponseDto[]> {
-    return this.invitationService.listPending(businessId) as any;
+    return this.invitationService.listPending(businessId);
   }
 
   @Delete('business/:id/invitations/:invitationId')

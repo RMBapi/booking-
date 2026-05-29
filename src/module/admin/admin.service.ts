@@ -119,7 +119,9 @@ export class AdminService {
    * Super_Admin shares the password out-of-band, then activates the
    * account via PATCH /admin/business-owners/:id/activation.
    */
-  async createBusinessOwner(dto: CreateBusinessOwnerDto): Promise<AdminUserView> {
+  async createBusinessOwner(
+    dto: CreateBusinessOwnerDto,
+  ): Promise<AdminUserView> {
     if (dto.password !== dto.confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }

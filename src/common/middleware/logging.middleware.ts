@@ -16,8 +16,9 @@ export class LoggingMiddleware implements NestMiddleware {
     );
 
     // Log request body (excluding sensitive data)
-    if (req.body && Object.keys(req.body).length > 0) {
-      const sanitizedBody = this.sanitizeBody(req.body);
+    const body = req.body as unknown;
+    if (this.isRecord(body) && Object.keys(body).length > 0) {
+      const sanitizedBody = this.sanitizeBody(body);
       this.logger.debug(`Request Body: ${JSON.stringify(sanitizedBody)}`);
     }
 
@@ -41,7 +42,7 @@ export class LoggingMiddleware implements NestMiddleware {
     next();
   }
 
-  private sanitizeBody(body: any): any {
+  private sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
     const sensitiveFields = [
       'password',
       'passwordHash',
@@ -49,14 +50,18 @@ export class LoggingMiddleware implements NestMiddleware {
       'accessToken',
       'refreshToken',
     ];
-    const sanitized = { ...body };
+    const sanitized: Record<string, unknown> = { ...body };
 
     for (const field of sensitiveFields) {
-      if (sanitized[field]) {
+      if (Object.prototype.hasOwnProperty.call(sanitized, field)) {
         sanitized[field] = '***REDACTED***';
       }
     }
 
     return sanitized;
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
 }

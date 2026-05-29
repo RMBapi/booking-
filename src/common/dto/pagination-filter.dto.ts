@@ -8,7 +8,11 @@ export class PaginationFilterDto {
     example: 1,
     minimum: 1,
   })
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  })
   @IsInt()
   @Min(1)
   @IsOptional()
@@ -20,7 +24,11 @@ export class PaginationFilterDto {
     minimum: 1,
     maximum: 100,
   })
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  })
   @IsInt()
   @Min(1)
   @IsOptional()

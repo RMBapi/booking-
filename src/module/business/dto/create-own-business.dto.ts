@@ -30,7 +30,8 @@ export class CreateOwnBusinessDto {
   @ApiProperty({
     minLength: 2,
     maxLength: 50,
-    description: 'lowercase letters, digits, hyphens; no leading/trailing/double hyphens',
+    description:
+      'lowercase letters, digits, hyphens; no leading/trailing/double hyphens',
   })
   @Transform(trim)
   @IsString()

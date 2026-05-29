@@ -41,7 +41,7 @@ export class BusinessTeamController {
   @ApiOperation({
     summary: 'List feature codes available for permission picker',
   })
-  async features(@Param('id') _businessId: string) {
+  features() {
     return {
       success: true,
       statusCode: HttpStatus.OK,
@@ -67,7 +67,8 @@ export class BusinessTeamController {
     return {
       success: true,
       statusCode: HttpStatus.CREATED,
-      message: 'Team member created in Pending status. Share the password securely with the user.',
+      message:
+        'Team member created in Pending status. Share the password securely with the user.',
       timestamp: new Date().toISOString(),
       data,
     };

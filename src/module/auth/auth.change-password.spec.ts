@@ -1,8 +1,5 @@
 import { Test } from '@nestjs/testing';
-import {
-  BadRequestException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
@@ -46,7 +43,9 @@ describe('AuthService.changePassword', () => {
         updateMany: refreshUpdateMany,
         create: refreshCreate,
       },
-      $transaction: jest.fn().mockImplementation(async (fn: any) => fn(txProxy)),
+      $transaction: jest
+        .fn()
+        .mockImplementation(async (fn: any) => fn(txProxy)),
     };
     jwt = { sign: jest.fn().mockReturnValue('fresh-jwt') };
 
@@ -55,7 +54,10 @@ describe('AuthService.changePassword', () => {
         AuthService,
         { provide: PrismaService, useValue: prisma },
         { provide: JwtService, useValue: jwt },
-        { provide: InvitationService, useValue: { acceptDuringRegister: jest.fn() } },
+        {
+          provide: InvitationService,
+          useValue: { acceptDuringRegister: jest.fn() },
+        },
       ],
     }).compile();
 

@@ -10,7 +10,11 @@ export class ReviewQueryDto extends PaginationFilterDto {
     maximum: 5,
     example: 5,
   })
-  @Transform(({ value }) => parseInt(value))
+  @Transform(({ value }: { value: unknown }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = parseInt(String(value), 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  })
   @IsInt()
   @Min(1)
   @Max(5)

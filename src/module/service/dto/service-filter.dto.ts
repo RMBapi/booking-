@@ -1,12 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsOptional,
-  IsString,
-  IsEnum,
-  IsBoolean,
-  ValidateIf,
-} from 'class-validator';
+import { IsOptional, IsEnum, IsBoolean, ValidateIf } from 'class-validator';
 import { ServiceStatus } from '../../../types/enums';
 
 export class ServiceFilterDto {
@@ -24,9 +18,13 @@ export class ServiceFilterDto {
     }
     return value;
   })
-  @ValidateIf(
-    (o) => o.status !== undefined && o.status !== null && o.status !== '',
-  )
+  @ValidateIf((payload: { status?: ServiceStatus | string | null }) => {
+    return (
+      payload.status !== undefined &&
+      payload.status !== null &&
+      payload.status !== ''
+    );
+  })
   @IsEnum(ServiceStatus, {
     message:
       'Status must be a valid ServiceStatus (Active, Inactive, Archived) or empty string for all',

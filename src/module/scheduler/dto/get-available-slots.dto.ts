@@ -1,11 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsNotEmpty,
-  IsString,
-  IsOptional,
-  IsDateString,
-} from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsString, IsOptional, IsDateString } from 'class-validator';
 
 export class GetAvailableSlotsDto {
   @ApiProperty({

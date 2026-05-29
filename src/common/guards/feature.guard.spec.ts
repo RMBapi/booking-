@@ -39,7 +39,10 @@ describe('FeatureGuard', () => {
     membership = null,
     permissions = [] as string[],
   }: {
-    membership?: { role: string; status?: 'Pending' | 'Active' | 'Deactivated' } | null;
+    membership?: {
+      role: string;
+      status?: 'Pending' | 'Active' | 'Deactivated';
+    } | null;
     permissions?: string[];
   } = {}) {
     const resolved = membership

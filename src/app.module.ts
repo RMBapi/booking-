@@ -17,6 +17,7 @@ import { ReviewModule } from './module/review/review.module';
 import { SchedulerModule } from './module/scheduler/scheduler.module';
 import { UploadModule } from './module/upload/upload.module';
 import { InvitationModule } from './module/invitation/invitation.module';
+import { AnalyticsModule } from './module/analytics/analytics.module';
 import { LoggingMiddleware } from './common/middleware/logging.middleware';
 
 @Module({
@@ -40,6 +41,7 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     SchedulerModule,
     UploadModule,
     InvitationModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],

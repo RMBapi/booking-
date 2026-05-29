@@ -13,6 +13,14 @@ import { IS_PUBLIC_KEY } from '../../module/auth/decorators/public.decorator';
 
 const HEADER_NAME = 'x-business-id';
 
+type FeatureGuardRequest = {
+  user?: { id: string; systemRole?: string };
+  params?: Record<string, string>;
+  headers: Record<string, string | string[] | undefined>;
+  businessId?: string;
+  userBusinessRole?: string;
+};
+
 @Injectable()
 export class FeatureGuard implements CanActivate {
   constructor(
@@ -33,7 +41,7 @@ export class FeatureGuard implements CanActivate {
     );
     if (!required || required.length === 0) return true;
 
-    const req = ctx.switchToHttp().getRequest();
+    const req = ctx.switchToHttp().getRequest<FeatureGuardRequest>();
     const user = req.user as { id: string; systemRole?: string } | undefined;
     if (!user?.id) {
       throw new ForbiddenException('Authentication required');

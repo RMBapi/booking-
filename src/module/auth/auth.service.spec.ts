@@ -21,7 +21,10 @@ describe('AuthService', () => {
         findUnique: jest.fn(),
         create: jest.fn(),
       },
-      userBusiness: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
+      userBusiness: {
+        create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
       userPermission: { findMany: jest.fn().mockResolvedValue([]) },
       $transaction: jest.fn().mockImplementation(async (fn: any) => fn(prisma)),
     };
@@ -150,7 +153,10 @@ describe('AuthService', () => {
         passwordChangeRequired: true,
       });
 
-      const ok = await service.login({ email: 'a@b', password: 'admin-set-pw' });
+      const ok = await service.login({
+        email: 'a@b',
+        password: 'admin-set-pw',
+      });
       expect(ok.user.passwordChangeRequired).toBe(true);
     });
 

@@ -462,7 +462,9 @@ export class AuthService {
       systemRole: user.systemRole,
     });
 
-    this.logger.log(`Password changed for user ${user.id}; refresh family rotated`);
+    this.logger.log(
+      `Password changed for user ${user.id}; refresh family rotated`,
+    );
 
     return {
       accessToken,

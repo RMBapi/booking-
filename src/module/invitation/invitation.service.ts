@@ -10,6 +10,11 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { MailService } from '../../mail/mail.service';
 import { CreateInvitationDto } from './dto/create-invitation.dto';
+import type {
+  InvitationCreatedResponseDto,
+  InvitationPublicViewDto,
+  InvitationResponseDto,
+} from './dto/invitation-response.dto';
 import { SYSTEM_ROLES } from '../../common/constants/permissions';
 
 const INVITATION_TTL_DAYS = 7;
@@ -32,7 +37,7 @@ export class InvitationService {
     businessId: string,
     dto: CreateInvitationDto,
     inviterUserId: string,
-  ) {
+  ): Promise<InvitationCreatedResponseDto> {
     const business = await this.prisma.business.findFirst({
       where: { id: businessId, deletedAt: null },
       select: { id: true, name: true },
@@ -106,7 +111,7 @@ export class InvitationService {
     return { ...created, token: rawToken };
   }
 
-  async listPending(businessId: string) {
+  async listPending(businessId: string): Promise<InvitationResponseDto[]> {
     return this.prisma.businessInvitation.findMany({
       where: { businessId, acceptedAt: null, revokedAt: null },
       orderBy: { createdAt: 'desc' },
@@ -131,7 +136,7 @@ export class InvitationService {
     });
   }
 
-  async viewByToken(rawToken: string) {
+  async viewByToken(rawToken: string): Promise<InvitationPublicViewDto> {
     const inv = await this.findByToken(rawToken);
     if (!inv) throw new NotFoundException('Invitation not found');
 

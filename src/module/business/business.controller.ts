@@ -103,7 +103,9 @@ export class BusinessController {
     @CurrentUser() user: JwtUser,
   ) {
     if (user.systemRole !== SYSTEM_ROLES.BUSINESS_OWNER) {
-      throw new ForbiddenException('Only Business_owner can onboard a business');
+      throw new ForbiddenException(
+        'Only Business_owner can onboard a business',
+      );
     }
     const business = await this.businessService.onboardOwnBusiness(
       dto,

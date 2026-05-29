@@ -26,7 +26,7 @@ export class PaginationService {
     return {
       skip,
       take: limit,
-      orderBy: orderBy as any, // Type assertion needed for dynamic field names
+      orderBy,
     };
   }
 

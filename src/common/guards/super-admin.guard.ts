@@ -9,7 +9,9 @@ import { SYSTEM_ROLES } from '../constants/permissions';
 @Injectable()
 export class SuperAdminGuard implements CanActivate {
   canActivate(ctx: ExecutionContext): boolean {
-    const req = ctx.switchToHttp().getRequest();
+    const req = ctx
+      .switchToHttp()
+      .getRequest<{ user?: { systemRole?: string } }>();
     if (req.user?.systemRole !== SYSTEM_ROLES.SUPER_ADMIN) {
       throw new ForbiddenException('Super admin only');
     }

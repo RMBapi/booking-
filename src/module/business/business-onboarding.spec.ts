@@ -18,7 +18,9 @@ describe('BusinessService.onboardOwnBusiness', () => {
     prisma = {
       userBusiness: { findFirst: jest.fn() },
       business: { findUnique: jest.fn() },
-      $transaction: jest.fn().mockImplementation(async (fn: any) => fn(txProxy)),
+      $transaction: jest
+        .fn()
+        .mockImplementation(async (fn: any) => fn(txProxy)),
     };
 
     const module = await Test.createTestingModule({

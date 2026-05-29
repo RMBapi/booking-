@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -123,10 +124,13 @@ function Lightbox({
           className="max-w-[90vw] max-h-[85vh] sm:max-w-[85vw] flex items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <img
+          <Image
             src={image.src}
             alt={image.alt}
-            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+            width={image.width}
+            height={image.height}
+            className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+            style={{ maxHeight: "85vh" }}
             draggable={false}
           />
         </motion.div>
@@ -349,11 +353,12 @@ export default function GalleryPage() {
                   style={{ flexGrow: aspectRatio, flexBasis: 0 }}
                   onClick={() => openLightbox(globalIndex)}
                 >
-                  <img
+                  <Image
                     src={image.src}
                     alt={image.alt}
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                    loading="lazy"
+                    fill
+                    sizes="(max-width: 640px) 50vw, 25vw"
+                    className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-300 flex items-center justify-center">
                     <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg" />
@@ -378,11 +383,12 @@ export default function GalleryPage() {
             className="relative overflow-hidden cursor-pointer group aspect-square"
             onClick={() => openLightbox(index)}
           >
-            <img
+            <Image
               src={image.src}
               alt={image.alt}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
+              fill
+              sizes="50vw"
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
               <ZoomIn className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

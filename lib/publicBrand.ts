@@ -50,6 +50,13 @@ export function getImageUrl(value: string | null | undefined): string | null {
 export const HERO_FALLBACK =
   "https://images.unsplash.com/photo-1723101917533-4fc9149c3684?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=2000";
 
+/** Resolve the still image shown before a hero MP4 plays. No logo/fallback chain. */
+export function resolveHeroVideoPoster(
+  business: Pick<Business, "backupImage"> | null | undefined,
+): string | null {
+  return getImageUrl(business?.backupImage);
+}
+
 /** Resolve the hero/background image for a business (same order as the public site). */
 export function resolveBusinessHeroImage(
   business: Pick<Business, "image" | "logoUrl" | "logo"> | null | undefined,

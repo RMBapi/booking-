@@ -143,7 +143,6 @@ export default function MyBookingsPage() {
       setBookings(list);
     } catch (err) {
       toast.error("Failed to load bookings. Please try again.");
-      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setLoading(false);
@@ -240,7 +239,6 @@ export default function MyBookingsPage() {
       await fetchBookings();
     } catch (err) {
       toast.error("Could not cancel the booking. Please try again.");
-      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setCancelingId(null);
@@ -284,7 +282,6 @@ export default function MyBookingsPage() {
           ? "Could not update review. Please try again."
           : "Could not submit review. Please try again.",
       );
-      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setReviewSubmitting(false);

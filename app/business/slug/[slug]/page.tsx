@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   ELEGANZA,
-  HERO_FALLBACK,
   getImageUrl,
   resolveBusinessHeroImage,
+  resolveHeroVideoPoster,
 } from "@/lib/publicBrand";
 import { isVideoUrl } from "@/lib/media";
 import { fetchBusiness, fetchServices } from "./_data";
@@ -65,10 +65,7 @@ export default async function PublicBusinessPage({ params }: PageProps) {
   // it as the LCP element. Image heroes are already preloaded by next/image's
   // `priority`, so we don't double-fetch them here.
   const heroIsVideo = isVideoUrl(heroImage);
-  const heroPoster =
-    getImageUrl(business.logoUrl) ||
-    getImageUrl(business.logo) ||
-    HERO_FALLBACK;
+  const heroPoster = resolveHeroVideoPoster(business);
 
   return (
     <div
@@ -79,7 +76,7 @@ export default async function PublicBusinessPage({ params }: PageProps) {
           "radial-gradient(circle at 12% 8%, rgba(221,211,207,0.45), transparent 55%), radial-gradient(circle at 88% 0%, rgba(239,239,239,0.7), transparent 45%)",
       }}
     >
-      {heroIsVideo && (
+      {heroIsVideo && heroPoster && (
         <link rel="preload" as="image" href={heroPoster} fetchPriority="high" />
       )}
       {/*

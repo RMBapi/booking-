@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
         hostname: "cbnhbwliowpepnrocvgl.supabase.co",
         pathname: "/storage/v1/object/public/uploads/**",
       },
+      { protocol: "https", hostname: "ik.imagekit.io" },
     ],
   },
   async headers() {

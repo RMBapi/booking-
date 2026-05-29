@@ -12,7 +12,6 @@ import {
   clearAllRoleSessions,
   getActiveRoleSessions,
   getRoleRedirectPath,
-  getCustomerHomePath,
   isLoggedInAs,
 } from "./roleBasedAuth";
 

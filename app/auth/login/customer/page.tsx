@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import {
   ArrowRight,
   ChevronLeft,
@@ -11,11 +12,12 @@ import {
   Mail,
 } from "lucide-react";
 import { useRoleAuth } from "@/contexts";
-import { PageLoader } from "@/components";
+import { PageLoader, SmartImage } from "@/components";
 import { useLogin } from "@/features/authentication/hooks";
 import { useBusinessHeroImage } from "@/hooks";
 import { motion } from "framer-motion";
 import { getRoleRedirectPath } from "@/lib";
+import { isVideoUrl } from "@/lib/media";
 import { ELEGANZA } from "@/lib/publicBrand";
 
 const formatBusinessName = (slug: string | null) => {
@@ -115,17 +117,29 @@ function CustomerLoginContent() {
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
         <div className="absolute inset-0">
           {heroImage && !heroLoading ? (
-            <img
-              src={heroImage}
-              alt={businessName ? `${businessName} background` : "Business background"}
-              className="w-full h-full object-cover focus-subject"
-              style={{
-                "--focus-x": "12%",
-                "--focus-y": "35%",
-                "--focus-x-mobile": "18%",
-                "--focus-y-mobile": "32%",
-              } as React.CSSProperties}
-            />
+            isVideoUrl(heroImage) ? (
+              <SmartImage
+                src={heroImage}
+                alt={businessName ? `${businessName} background` : "Business background"}
+                className="absolute inset-0 w-full h-full object-cover"
+                videoPlayback="autoplay"
+                forceCover
+              />
+            ) : (
+              <Image
+                src={heroImage}
+                alt={businessName ? `${businessName} background` : "Business background"}
+                fill
+                sizes="50vw"
+                className="object-cover focus-subject"
+                style={{
+                  "--focus-x": "12%",
+                  "--focus-y": "35%",
+                  "--focus-x-mobile": "18%",
+                  "--focus-y-mobile": "32%",
+                } as React.CSSProperties}
+              />
+            )
           ) : (
             <div className="w-full h-full" style={{ backgroundColor: ELEGANZA.inkSoft }} />
           )}

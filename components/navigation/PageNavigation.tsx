@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, User as UserIcon, X } from "lucide-react";
 import { Business, Service, User } from "@/types";
@@ -76,10 +77,13 @@ export function PageNavigation({
             aria-label={`Go to ${business.name} homepage`}
           >
             {getImageUrl(business.logo) ? (
-              <img
+              <Image
                 src={getImageUrl(business.logo)!}
                 alt={`${business.name} logo`}
+                width={160}
+                height={84}
                 className="h-[calc(var(--spacing)*21)] w-auto object-contain transition-transform duration-200 hover:scale-105"
+                style={{ width: "auto", height: "calc(var(--spacing) * 21)" }}
               />
             ) : (
               <span

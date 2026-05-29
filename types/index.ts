@@ -54,6 +54,7 @@ export interface Business {
   address?: string;
   logo?: string;
   image?: string;
+  backupImage?: string | null;
   logoUrl?: string;
   createdAt: string;
   updatedAt: string;

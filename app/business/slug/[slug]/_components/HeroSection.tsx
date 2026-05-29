@@ -23,6 +23,18 @@ const HERO_TEXT_SHADOW = "0 2px 8px rgba(0,0,0,0.35)";
 const CINEMATIC_OVERLAY =
   "linear-gradient(90deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.35) 35%, rgba(0,0,0,0.08) 70%, rgba(0,0,0,0) 100%)";
 
+/**
+ * Focal-point variables shared by image hero, video hero, and video poster.
+ * CSS rules for every hero media element consume these via var(--focus-x*)
+ * so all hero types maintain consistent subject framing across breakpoints.
+ */
+const HERO_FOCUS_VARS = {
+  "--focus-x": "20%",
+  "--focus-y": "32%",
+  "--focus-x-mobile": "30%",
+  "--focus-y-mobile": "50%",
+} as React.CSSProperties;
+
 export function HeroSection({
   business,
   heroImage,
@@ -67,7 +79,7 @@ export function HeroSection({
       {isVideoHero ? (
         <motion.div
           className="hero-media-wrapper hero-media-wrapper--video absolute inset-0 z-0"
-          style={{ y: imgY, filter: "brightness(0.82)" }}
+          style={{ y: imgY, filter: "brightness(0.82)", ...HERO_FOCUS_VARS }}
         >
           <SmartImage
             src={heroImage}
@@ -94,15 +106,7 @@ export function HeroSection({
             fetchPriority="high"
             sizes="100vw"
             className="hero-image-media object-cover focus-subject"
-            style={{
-              willChange: "transform",
-              // Desktop focal point (unchanged). Mobile: 30% center keeps the
-              // full face and hair in frame (18% cropped the left side of face).
-              "--focus-x": "20%",
-              "--focus-y": "32%",
-              "--focus-x-mobile": "30%",
-              "--focus-y-mobile": "50%",
-            } as React.CSSProperties}
+            style={{ willChange: "transform", ...HERO_FOCUS_VARS }}
           />
         </motion.div>
       )}

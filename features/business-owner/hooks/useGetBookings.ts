@@ -5,7 +5,8 @@ import { ApiSuccessResponse, Booking, BookingListQuery } from "@/types";
 
 export const useGetBookings = (
   businessId: string,
-  params?: BookingListQuery
+  params?: BookingListQuery,
+  options?: { enabled?: boolean }
 ) => {
   const {
     isLoading,
@@ -15,7 +16,7 @@ export const useGetBookings = (
   } = useQuery<AxiosResponse<ApiSuccessResponse<Booking[]>>>({
     queryKey: ["bookings", businessId, params],
     queryFn: () => getAllBookings(params, businessId),
-    enabled: !!businessId,
+    enabled: !!businessId && (options?.enabled ?? true),
   });
 
   const bookings = response?.data?.data || [];

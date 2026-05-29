@@ -7,7 +7,7 @@ export const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // Cache data for 10 minutes (was cacheTime in v4)
       retry: 1, // Retry failed requests once
       refetchOnWindowFocus: false, // Don't refetch on window focus
-      refetchOnMount: true, // Refetch stale data on mount
+      refetchOnMount: false, // Use cache on nav; data stays fresh via staleTime
       refetchOnReconnect: true, // Refetch on network reconnect
     },
   },

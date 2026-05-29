@@ -147,16 +147,22 @@ export const getAvailableSlots = async (
     serviceProviderId?: string;
     businessId?: string;        // Optional - for authenticated requests
     businessSlug?: string;      // Optional - for public requests
+    /**
+     * When rescheduling, pass the booking being edited so the BE removes
+     * its slot from the "taken" set — otherwise the booking would count
+     * itself as occupying its current time and prevent saving.
+     */
+    excludeBookingId?: string;
   } = {}
 ) => {
   const params = new URLSearchParams({
     serviceId,
   });
-  
+
   if (options.date) {
     params.append('date', options.date);
   }
-  
+
   if (options.serviceProviderId) {
     params.append('serviceProviderId', options.serviceProviderId);
   }
@@ -164,12 +170,16 @@ export const getAvailableSlots = async (
   if (options.businessSlug) {
     params.append('businessSlug', options.businessSlug);
   }
-  
+
+  if (options.excludeBookingId) {
+    params.append('excludeBookingId', options.excludeBookingId);
+  }
+
   const headers: Record<string, string> = {};
   if (options.businessId) {
     headers["x-business-id"] = options.businessId;
   }
-  
+
   return http.get(`/scheduler/available-slots?${params.toString()}`, {
     headers: Object.keys(headers).length > 0 ? headers : undefined,
   });

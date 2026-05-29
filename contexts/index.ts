@@ -1,2 +1,1 @@
-export * from "./AuthContext";
-export * from "./RoleAuthContext";
+export { AuthProvider, useAuth, useIsAuthenticated } from "./AuthContext";

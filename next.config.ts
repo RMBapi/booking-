@@ -4,11 +4,21 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // /api/* rewrites proxy uploads to the backend; default buffer is 10MB.
+  experimental: {
+    middlewareClientMaxBodySize: "20mb",
+  },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cbnhbwliowpepnrocvgl.supabase.co",
+        pathname: "/storage/v1/object/public/uploads/**",
+      },
+    ],
+  },
   async rewrites() {
-    // Prefer explicit backend URL; fall back to localhost:3000
-    const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:3000";
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
     return [
       {

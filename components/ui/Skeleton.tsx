@@ -23,9 +23,9 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   };
 
   const animationStyles = {
-    pulse: "animate-pulse",
-    wave: "animate-shimmer bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 bg-[length:200%_100%]",
-    none: "",
+    pulse: "shimmer",
+    wave: "shimmer",
+    none: "bg-subtle",
   };
 
   const style: React.CSSProperties = {};
@@ -35,7 +35,6 @@ export const Skeleton: React.FC<SkeletonProps> = ({
   return (
     <div
       className={cn(
-        "bg-gray-200 dark:bg-gray-700",
         variantStyles[variant],
         animationStyles[animation],
         className
@@ -65,7 +64,7 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 
 export const SkeletonCard: React.FC<{ className?: string }> = ({ className }) => {
   return (
-    <div className={cn("rounded-xl border border-gray-200 dark:border-gray-700 p-6", className)}>
+    <div className={cn("rounded-2xl border border-border-subtle bg-surface p-6", className)}>
       <Skeleton variant="rectangular" className="h-48 mb-4" />
       <Skeleton variant="text" className="h-6 w-3/4 mb-2" />
       <SkeletonText lines={2} />

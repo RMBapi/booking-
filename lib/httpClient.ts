@@ -4,23 +4,13 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { httpLogger } from "./logger";
-import {
-  resolveToken,
-  resolveRoleForLogout,
-  clearRoleSession,
-  clearAllRoleSessions,
-  isPublicEndpoint,
-  getLoginPathForRole,
-} from "./auth";
-
-/**
- * Env variables:
- * - NEXT_PUBLIC_API_URL  → Backend base URL (e.g. http://localhost:4000)
- */
+import { isPublicEndpoint } from "./auth";
+import { getAccessToken, getActiveBusinessId } from "./api/accessToken";
+import { refreshAccess } from "./api/refresh";
 
 const getBaseURL = () => {
   if (typeof window !== "undefined") return "/api";
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_URL;
 };
 
 const baseURL = getBaseURL();
@@ -38,39 +28,43 @@ export const http = axios.create({
   },
 });
 
-// ─── Extended config for metadata ────────────────────────────────────────────
-
 interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
   metadata?: { startTime?: number };
   _retry?: boolean;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function hasBusinessIdHeader(headers: Record<string, unknown>): boolean {
-  return !!(
-    headers["x-business-id"] ||
-    headers["X-Business-Id"] ||
-    (headers as Record<string, unknown>)?.["x-business-id"]
-  );
+function hasBusinessIdHeader(headers: unknown): boolean {
+  if (!headers || typeof headers !== "object") return false;
+  const h = headers as Record<string, unknown>;
+  return !!(h["X-Business-Id"] || h["x-business-id"]);
 }
 
-// ─── Request interceptor ─────────────────────────────────────────────────────
+function urlContainsBusinessIdSegment(url: string): boolean {
+  // /business/:id/* routes carry the id in the path; the header is
+  // redundant there. Don't treat /business/slug/* as business-scoped.
+  return /\/business\/[0-9a-f-]{8,}/i.test(url);
+}
+
+// ─── Request interceptor ─────────────────────────────────────────────────
 
 http.interceptors.request.use(
   (config: ExtendedAxiosRequestConfig) => {
     if (typeof window === "undefined") return config;
 
-    const token = resolveToken({
-      pagePath: window.location.pathname,
-      requestUrl: config.url ?? "",
-      hasBusinessIdHeader: hasBusinessIdHeader(
-        (config.headers ?? {}) as Record<string, unknown>,
-      ),
-    });
-
-    if (token) {
+    const token = getAccessToken();
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    const url = config.url ?? "";
+    if (
+      !hasBusinessIdHeader(config.headers) &&
+      !urlContainsBusinessIdSegment(url)
+    ) {
+      const bid = getActiveBusinessId();
+      if (bid) {
+        config.headers["X-Business-Id"] = bid;
+      }
     }
 
     config.metadata = { startTime: Date.now() };
@@ -97,7 +91,7 @@ http.interceptors.request.use(
   },
 );
 
-// ─── Response interceptor ────────────────────────────────────────────────────
+// ─── Response interceptor ────────────────────────────────────────────────
 
 http.interceptors.response.use(
   (response: AxiosResponse) => {
@@ -137,44 +131,34 @@ http.interceptors.response.use(
     const status = error.response?.status;
     const url = config?.url ?? "";
 
-    // ── 401: session invalid → clear that role, redirect to login ──────────
-    if (status === 401 && !config?._retry) {
-      if (config) config._retry = true;
+    const shouldAttemptRefresh =
+      status === 401 &&
+      !!config &&
+      !config._retry &&
+      !isPublicEndpoint(url) &&
+      !url.includes("/auth/refresh");
 
-      if (isPublicEndpoint(url)) {
-        return Promise.reject(error);
-      }
-
-      const role = resolveRoleForLogout({
-        pagePath: window.location.pathname,
-        requestUrl: url,
-        hasBusinessIdHeader: hasBusinessIdHeader(
-          (config?.headers ?? {}) as Record<string, unknown>,
-        ),
-      });
-
-      if (role) {
-        clearRoleSession(role);
-        window.location.href = getLoginPathForRole(role);
-      } else {
-        clearAllRoleSessions();
-        window.location.href = "/auth/login";
+    if (shouldAttemptRefresh && config) {
+      config._retry = true;
+      try {
+        const fresh = await refreshAccess();
+        if (config.headers) {
+          config.headers.Authorization = `Bearer ${fresh}`;
+        }
+        return http.request(config);
+      } catch {
+        window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
       }
     }
 
-    // ── 403: permission denied → dispatch event for UI handling ─────────
-    // We do NOT logout. Components can listen for this event to show
-    // an "Access Denied" message via the useAuth hook or AccessDenied component.
     if (status === 403) {
       const detail = {
         url,
         message:
-          (error.response?.data as Record<string, unknown>)?.message ??
-          "You do not have permission to perform this action.",
+          (error.response?.data as Record<string, unknown> | undefined)
+            ?.message ?? "You don't have permission to do this.",
       };
-      window.dispatchEvent(
-        new CustomEvent("auth:forbidden", { detail }),
-      );
+      window.dispatchEvent(new CustomEvent("auth:forbidden", { detail }));
     }
 
     return Promise.reject(error);

@@ -1,67 +1,192 @@
 /**
- * User Types
+ * User & Auth Types
+ *
+ * Per docs/rbac.md and docs/frontend-integration.md:
+ * - One user has exactly one systemRole (set at registration).
+ * - A user belongs to zero or more businesses via UserBusiness rows.
+ * - Inside a business, role is Business_owner or Service_Provider.
+ * - permissions[] on each membership is the full feature set (server fills it).
  */
-export type UserRole = "Customer" | "Service_Provider" | "Business_owner" | "Super_Admin";
+
+export type SystemRole =
+  | "Super_Admin"
+  | "Business_owner"
+  | "Service_Provider"
+  | "Customer";
+
+export type BusinessRole = "Business_owner" | "Service_Provider";
 
 export interface User {
   id: string;
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string; // Optional as backend may not send in login response
-  roles?: UserRole[]; // Array of roles (used in profile endpoint)
-  role?: UserRole; // Single role (backward compatibility)
-  activeRole?: UserRole; // Active role context from login (backend sends this in login response)
-  isActive?: boolean; // Optional as not sent in login response
-  createdAt?: string; // Optional as not sent in login response
-  updatedAt?: string; // Optional as not sent in login response
+  phone: string;
+  systemRole: SystemRole;
+  createdAt: string;
+  /** Always present in /auth/me. True when user must change password before continuing. */
+  passwordChangeRequired: boolean;
 }
 
-export interface CurrentUser extends User {}
-
 /**
- * Authentication Types
+ * Per-membership lifecycle on UserBusiness.status.
+ * - Pending: account exists but cannot enter the dashboard yet.
+ * - Active: full access (subject to permissions).
+ * - Deactivated: revoked; cannot enter, login is rejected when *all*
+ *   memberships are non-Active.
  */
-export interface LoginPayload {
+export type MemberStatus = "Pending" | "Active" | "Deactivated";
+
+export interface BusinessMembership {
+  id: string;
+  name: string;
+  slug: string;
+  logo: string | null;
+  role: BusinessRole;
+  status: MemberStatus;
+  /**
+   * Full feature set. Trust the array as-is — the server fills it with
+   * ALL_FEATURES for Business_owner and the actual grants for Service_Provider.
+   */
+  permissions: string[];
+}
+
+export interface MeResponse {
+  user: User;
+  businesses: BusinessMembership[];
+  /** Set client-side after fetch; not part of the wire payload. */
+  fetchedAt?: number;
+}
+
+export interface AuthLoginPayload {
   email: string;
   password: string;
-  /**
-   * Optional. When omitted the backend resolves the role from the user record.
-   * Still required for Super_Admin logins (separate route) and Customer logins
-   * that include a businessSiteSlug.
-   */
-  role?: UserRole;
-  /**
-   * Required when role === "Customer"
-   * Identifies which business site the customer belongs to
-   * Ignored for other roles (Business_owner, Service_Provider, Super_Admin)
-   */
+  /** Required when the user is a Customer. */
   businessSiteSlug?: string;
 }
 
-export interface RegisterPayload {
+export interface AuthRegisterPayload {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   password: string;
-  role: UserRole;
-  /**
-   * Required when role === "Customer"
-   * Identifies which business site the customer belongs to
-   * Ignored for other roles (Business_owner, Service_Provider, Super_Admin)
-   */
+  role: "Customer" | "Business_owner" | "Service_Provider";
+  /** Optional, only used when role=Business_owner. Backend auto-creates the business. */
+  businessName?: string;
+  /** Required when role=Customer. */
   businessSiteSlug?: string;
+  /** Optional, auto-accepts a pending invitation. */
+  invitationToken?: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
-  user: User;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    systemRole: SystemRole;
+    isActive?: boolean;
+  };
 }
 
-/**
- * Business Types
- */
+// ─── Feature codes (mirrors backend src/common/constants/permissions.ts) ────
+
+export const FEATURES = {
+  VIEW_DASHBOARD: "view_dashboard",
+  VIEW_ANALYTICS: "view_analytics",
+  VIEW_BOOKINGS: "view_bookings",
+  MANAGE_BOOKINGS: "manage_bookings",
+  VIEW_SERVICES: "view_services",
+  MANAGE_SERVICES: "manage_services",
+  VIEW_CONTACTS: "view_contacts",
+  MANAGE_CONTACTS: "manage_contacts",
+  VIEW_PROVIDERS: "view_providers",
+  MANAGE_PROVIDERS: "manage_providers",
+  VIEW_CALENDAR: "view_calendar",
+  VIEW_SETTINGS: "view_settings",
+  MANAGE_TEAM: "manage_team",
+  MANAGE_BUSINESS: "manage_business",
+} as const;
+
+export type FeatureCode = (typeof FEATURES)[keyof typeof FEATURES];
+
+// ─── Team management ────────────────────────────────────────────────────────
+
+export interface TeamMember {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  role: BusinessRole;
+  permissions: string[];
+  status: MemberStatus;
+  joinedAt: string;
+}
+
+export interface AddTeamMemberPayload {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  role: BusinessRole;
+  /** Full set, not a delta. Ignored by backend when role=Business_owner. */
+  permissions: string[];
+  /**
+   * Owner-set initial password (min 8 chars). Shared out-of-band; the new
+   * user is forced to change it on first login.
+   */
+  password: string;
+}
+
+export interface UpdateTeamMemberPayload {
+  role?: BusinessRole;
+  /** Replaces the full set; pass [] to clear. */
+  permissions?: string[];
+  status?: MemberStatus;
+}
+
+export interface AvailableFeature {
+  code: FeatureCode;
+  label: string;
+  description: string;
+}
+
+// ─── Activation ─────────────────────────────────────────────────────────────
+
+export type ActivationView =
+  | { valid: true; email: string; firstName: string; businessName: string }
+  | { valid: false; expired?: boolean; consumed?: boolean };
+
+// ─── Invitations ────────────────────────────────────────────────────────────
+
+export interface InvitationView {
+  businessName: string;
+  email: string;
+  role: BusinessRole;
+  isExpired: boolean;
+  isRevoked: boolean;
+  isAccepted: boolean;
+}
+
+export interface PendingInvitation {
+  id: string;
+  email: string;
+  role: BusinessRole;
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface CreateInvitationPayload {
+  email: string;
+  role?: BusinessRole;
+}
+
+// ─── Business ───────────────────────────────────────────────────────────────
+
 export interface Business {
   id: string;
   name: string;
@@ -72,6 +197,7 @@ export interface Business {
   address?: string;
   logo?: string;
   image?: string;
+  backupImage?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -84,33 +210,21 @@ export interface CreateBusinessPayload {
   address?: string;
   logo?: string;
   image?: string;
+  backupImage?: string | null;
   slug?: string;
 }
 
 export interface UpdateBusinessPayload extends Partial<CreateBusinessPayload> {}
 
-export interface UserBusiness {
-  id: string;
-  business: Business;
-}
+// ─── Service ────────────────────────────────────────────────────────────────
 
-export interface BusinessOwnerWithBusinesses extends User {
-  userBusinesses: UserBusiness[];
-}
-
-/**
- * Service Types
- *
- * Note:
- * - `status` is a business-level status field (Active/Inactive/Archived)
- * - `isActive` is a quick on/off toggle for availability
- */
 export type ServiceStatus = "Active" | "Inactive" | "Archived";
 
 export interface Service {
   id: string;
   name: string;
   description?: string;
+  image?: string | null;
   price: number;
   status: ServiceStatus;
   priceDisplayMode: boolean;
@@ -127,37 +241,55 @@ export interface Service {
 export interface CreateServicePayload {
   name: string;
   description?: string;
+  image?: string | null;
   price: number;
   status: ServiceStatus;
   priceDisplayMode: boolean;
   allowCustomerChooseProvider?: boolean;
-  /**
-   * Optional because the backend expects `x-business-id` header.
-   * We keep it for backward compatibility if the API also accepts it in the body.
-   */
   businessId?: string;
   isActive?: boolean;
 }
 
 export interface UpdateServicePayload extends Partial<CreateServicePayload> {}
 
-/**
- * Booking Types
- */
+// ─── Booking ────────────────────────────────────────────────────────────────
+
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 export type ConfirmationMethod = "Email" | "SMS" | "Phone" | "None";
-export type BookingSource = "Website" | "Phone" | "WalkIn" | "Mobile";
+export type BookingSource =
+  | "Website"
+  | "Phone"
+  | "WalkIn"
+  | "Mobile"
+  | "CRM";
 
 export interface BookingTime {
-  start: string; // ISO 8601 datetime
-  end: string;   // ISO 8601 datetime
+  start: string;
+  end: string;
+}
+
+/**
+ * Customer attached to a booking. For registered users, `id` is the user's
+ * UUID. For guest bookings (created via POST /booking/staff with a `guest`
+ * block), the BE hydrates this from the snapshot — `id` is null and
+ * `isGuest` is true.
+ */
+export interface BookingCustomer {
+  id: string | null;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  systemRole?: SystemRole;
+  createdAt?: string;
+  isGuest?: boolean;
 }
 
 export interface Booking {
   id: string;
-  userId: string;
-  user?: User;
-  customer?: User;
+  userId: string | null;
+  user?: BookingCustomer;
+  customer?: BookingCustomer;
   serviceId: string;
   service?: Service;
   serviceProviderId: string;
@@ -176,23 +308,55 @@ export interface Booking {
 }
 
 export interface CreateBookingPayload {
-  userId?: string; // Optional - backend can extract from JWT token if not provided
+  userId?: string;
   serviceId: string;
-  serviceProviderId?: string; // Required when selected service has showProvider=true
+  serviceProviderId?: string;
   bookingTime: BookingTime;
-  status?: BookingStatus; // Optional - defaults to "Pending"
-  confirmationMethod?: ConfirmationMethod; // Optional
-  bookingSource?: BookingSource; // Optional - defaults to "Website"
+  status?: BookingStatus;
+  confirmationMethod?: ConfirmationMethod;
+  bookingSource?: BookingSource;
   customerNotes?: string;
+}
+
+export interface StaffBookingGuest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+}
+
+/**
+ * POST /booking/staff payload. Caller must supply `userId` XOR `guest` —
+ * sending both is a 400. `bookingSource` defaults to "CRM" server-side.
+ */
+export interface CreateStaffBookingPayload {
+  userId?: string;
+  guest?: StaffBookingGuest;
+  serviceId: string;
+  serviceProviderId?: string;
+  bookingTime: BookingTime;
+  status?: BookingStatus;
+  confirmationMethod?: ConfirmationMethod;
+  bookingSource?: Extract<BookingSource, "CRM" | "Phone" | "WalkIn">;
+  customerNotes?: string;
+}
+
+/** GET /user/lookup?email=... — 200 payload. 404 means no match. */
+export interface UserLookupResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  systemRole: SystemRole;
 }
 
 export interface CancelBookingPayload {
   cancellationReason: string;
 }
 
-/**
- * Contact Types (for non-logged-in users)
- */
+// ─── Contact ────────────────────────────────────────────────────────────────
+
 export interface Contact {
   id: string;
   businessId: string;
@@ -219,10 +383,9 @@ export interface CreateContactPayload {
   notes?: string;
 }
 
-/**
- * API Response Types
- */
-export interface ApiSuccessResponse<T = any> {
+// ─── API envelopes ──────────────────────────────────────────────────────────
+
+export interface ApiSuccessResponse<T = unknown> {
   success: true;
   statusCode: number;
   message: string;
@@ -261,6 +424,10 @@ export interface BookingListQuery extends PaginationParams {
   userId?: string;
   serviceId?: string;
   serviceProviderId?: string;
+  startDate?: string;
+  endDate?: string;
+  excludeStatus?: string;
+  include?: string;
 }
 
 export interface ContactListQuery extends PaginationParams {
@@ -271,9 +438,199 @@ export interface ContactListQuery extends PaginationParams {
   serviceId?: string;
 }
 
-/**
- * Service Provider Types
- */
+// ─── Review ─────────────────────────────────────────────────────────────────
+
+export interface ReviewUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ReviewBookingService {
+  id: string;
+  name: string;
+}
+
+export interface ReviewBooking {
+  id: string;
+  serviceId: string;
+  serviceProviderId: string;
+  service?: ReviewBookingService;
+}
+
+export interface Review {
+  id: string;
+  bookingId: string;
+  userId: string;
+  businessId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: ReviewUser;
+  booking?: ReviewBooking;
+}
+
+export interface ReviewSummary {
+  businessId: string;
+  total: number;
+  average: number;
+  distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+}
+
+export interface ReviewListQuery extends PaginationParams {
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  rating?: 1 | 2 | 3 | 4 | 5;
+  userId?: string;
+}
+
+// ─── Dashboard & Analytics ───────────────────────────────────────────────────
+
+export type AnalyticsRange = "30d" | "90d" | "year";
+export type AnalyticsMetric = "revenue" | "bookings";
+export type AnalyticsGranularity = "day" | "week" | "month";
+export type AnalyticsBreakdownGroup = "service" | "provider";
+export type AnalyticsBreakdownSort = "bookings" | "revenue";
+
+export interface DashboardSummaryToday {
+  bookingsCount: number;
+  activeProvidersCount: number;
+  pendingCount: number;
+  confirmedCount: number;
+  completedCount: number;
+}
+
+export interface DashboardSummaryComparison {
+  bookingsVsLastWeekPercent: number;
+  bookingsLastWeekSameDay: number;
+}
+
+export interface DashboardSummaryCounts {
+  activeServices: number;
+  teamMembers: number;
+  activeProviders: number;
+  newCustomersLast7Days: number;
+}
+
+export interface DashboardSparklinePoint {
+  date: string;
+  bookings: number;
+}
+
+export interface DashboardWeekHeatmapPoint {
+  date: string;
+  dayOfWeek: number;
+  bookings: number;
+  isToday: boolean;
+}
+
+export interface DashboardSummary {
+  today: DashboardSummaryToday;
+  comparison: DashboardSummaryComparison;
+  counts: DashboardSummaryCounts;
+  sparkline: DashboardSparklinePoint[];
+  weekHeatmap: DashboardWeekHeatmapPoint[];
+}
+
+export interface DashboardSummaryQuery {
+  timezone?: string;
+  includeCancelled?: boolean;
+}
+
+export interface AnalyticsSummary {
+  range: AnalyticsRange;
+  from: string;
+  to: string;
+  revenue: number;
+  currency: string;
+  totalBookings: number;
+  uniqueCustomers: number;
+  avgBookingValue: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  pendingBookings: number;
+}
+
+export interface AnalyticsSummaryQuery {
+  range: AnalyticsRange;
+  timezone?: string;
+}
+
+export interface AnalyticsTimeseriesPoint {
+  periodStart: string;
+  periodEnd: string;
+  value: number;
+}
+
+export interface AnalyticsTimeseries {
+  metric: AnalyticsMetric;
+  granularity: AnalyticsGranularity;
+  points: AnalyticsTimeseriesPoint[];
+}
+
+export interface AnalyticsTimeseriesQuery {
+  metric: AnalyticsMetric;
+  granularity: AnalyticsGranularity;
+  from: string;
+  to: string;
+  timezone?: string;
+}
+
+export interface AnalyticsBreakdownItem {
+  id: string;
+  name: string;
+  bookingsCount: number;
+  revenue: number;
+}
+
+export interface AnalyticsBreakdown {
+  groupBy: AnalyticsBreakdownGroup;
+  items: AnalyticsBreakdownItem[];
+}
+
+export interface AnalyticsBreakdownQuery {
+  groupBy: AnalyticsBreakdownGroup;
+  range: AnalyticsRange;
+  limit?: number;
+  sortBy?: AnalyticsBreakdownSort;
+  timezone?: string;
+}
+
+export interface ActivityActor {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ActivityEntity {
+  kind: string;
+  id: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: string;
+  occurredAt: string;
+  actor?: ActivityActor | null;
+  summary: string;
+  entity?: ActivityEntity;
+  metadata?: Record<string, string | undefined>;
+}
+
+export interface ActivityFeed {
+  items: ActivityItem[];
+  nextCursor?: string | null;
+}
+
+export interface ActivityFeedQuery {
+  limit?: number;
+  cursor?: string;
+  types?: string;
+}
+
+// ─── Service Provider ──────────────────────────────────────────────────────
+
 export interface ServiceProvider {
   id: string;
   serviceId: string;
@@ -305,19 +662,23 @@ export interface CreateServiceProviderPayload {
 export interface UpdateServiceProviderPayload
   extends Partial<CreateServiceProviderPayload> {}
 
+// ─── Super_Admin ────────────────────────────────────────────────────────────
+
 /**
- * Business Owner Types
+ * POST /admin/business-owners
+ *
+ * Owner-creation now provisions only the user account (no business). The
+ * Super_Admin types a temporary password and shares it out-of-band; the
+ * owner is forced to change it on first login (passwordChangeRequired=true)
+ * and self-onboards their business via /onboarding/business.
  */
-export interface CreateBusinessOwnerPayload {
+export interface CreateBusinessOwnerDto {
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   password: string;
-}
-
-export interface AddOwnerByEmailPayload {
-  email: string;
+  confirmPassword: string;
 }
 
 export interface BusinessOwner {
@@ -326,39 +687,66 @@ export interface BusinessOwner {
   lastName: string;
   email: string;
   phone?: string;
+  isActive: boolean;
+  passwordChangeRequired: boolean;
+  /**
+   * Empty array until the owner self-onboards. Used by the admin list to
+   * derive the "Onboarding" status.
+   */
+  userBusinesses: Array<{ id: string }>;
   createdAt: string;
 }
 
-/**
- * Check Business Status Types
- */
-export interface CheckBusinessResponse {
-  hasBusiness: boolean;
-  userId: string;
+// ─── Auth: change password / onboarding ─────────────────────────────────────
+
+export interface ChangePasswordDto {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  accessToken: string;
+  user: User;
 }
 
 /**
- * Scheduler Types
+ * POST /business/onboarding — Business_owner self-onboards their first
+ * business. Backend takes `slug` literally; frontend MUST auto-generate
+ * a valid one (lowercase, dashes, no special chars).
  */
+export interface CreateOwnBusinessDto {
+  name: string;
+  slug: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  description?: string;
+  logo?: string;
+  image?: string;
+}
+
+// ─── Scheduler ──────────────────────────────────────────────────────────────
+
 export interface DaySchedule {
-  startTime?: string; // HH:mm format
-  endTime?: string;   // HH:mm format
-  isOff?: boolean;    // true if day is off
+  startTime?: string;
+  endTime?: string;
+  isOff?: boolean;
 }
 
 export interface BlockedTime {
-  startTime: string;  // HH:mm format
-  endTime: string;    // HH:mm format
+  startTime: string;
+  endTime: string;
 }
 
 export interface TimeSlotConfig {
-  intervalMinutes: number;      // e.g., 30 for 30-minute intervals
-  allowUserSelection: boolean;   // true if customers can select time slots
-  bookingsPerSlot: number;       // 1 for single booking, >1 for multiple
+  intervalMinutes: number;
+  allowUserSelection: boolean;
+  bookingsPerSlot: number;
 }
 
 export interface CanScheduleTime {
-  timeFormat: '12' | '24';
+  timeFormat: "12" | "24";
   sunday?: DaySchedule;
   monday?: DaySchedule;
   tuesday?: DaySchedule;
@@ -366,7 +754,7 @@ export interface CanScheduleTime {
   thursday?: DaySchedule;
   friday?: DaySchedule;
   saturday?: DaySchedule;
-  blockedTimes?: Record<string, BlockedTime[]>;  // day name -> blocked times
+  blockedTimes?: Record<string, BlockedTime[]>;
   timeSlotConfig: TimeSlotConfig;
 }
 
@@ -388,14 +776,14 @@ export interface UpdateSchedulerRequest {
 }
 
 export interface AvailableSlot {
-  start: string;      // ISO 8601 datetime
-  end: string;        // ISO 8601 datetime
+  start: string;
+  end: string;
   available: boolean;
 }
 
 export interface AvailableSlotsResponse {
-  date: string;                    // YYYY-MM-DD
+  date: string;
   availableSlots: AvailableSlot[];
-  timeFormat?: '12' | '24';
+  timeFormat?: "12" | "24";
   message?: string;
 }

@@ -6,7 +6,6 @@ import {
   DollarSign,
   Eye,
   FileText,
-  Info,
   Tag,
   Users,
 } from "lucide-react";
@@ -36,7 +35,6 @@ const defaultForm = {
   description: "",
   image: null as string | null,
   price: "",
-  status: "Active" as ServiceStatus,
   priceDisplayMode: true,
   isActive: true,
   allowCustomerChooseProvider: true,
@@ -49,9 +47,9 @@ const buildFormFromService = (service: Service): ServiceFormState => ({
   description: service.description ?? "",
   image: service.image ?? null,
   price: Number.isFinite(service.price) ? service.price.toString() : "",
-  status: service.status === "Inactive" ? "Inactive" : "Active",
   priceDisplayMode: service.priceDisplayMode ?? true,
-  isActive: service.isActive ?? true,
+  isActive:
+    service.status === "Active" && (service.isActive ?? true),
   allowCustomerChooseProvider: service.allowCustomerChooseProvider ?? true,
 });
 
@@ -107,7 +105,7 @@ export function AddServiceModal({
       name: trimmedName,
       description: form.description.trim() || undefined,
       price: priceNum,
-      status: (form.status === "Inactive" ? "Inactive" : "Active") as ServiceStatus,
+      status: (form.isActive ? "Active" : "Inactive") as ServiceStatus,
       priceDisplayMode: form.priceDisplayMode,
       isActive: form.isActive,
       allowCustomerChooseProvider: form.allowCustomerChooseProvider,
@@ -244,58 +242,32 @@ export function AddServiceModal({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label
-                htmlFor="service-price"
-                className={`${modalFieldLabelClass} flex items-center gap-2 normal-case tracking-normal`}
-              >
-                <DollarSign className="h-4 w-4 text-text-tertiary" />
-                Price <span className="text-rose-600">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-text-tertiary">
-                  $
-                </span>
-                <input
-                  id="service-price"
-                  required
-                  type="number"
-                  inputMode="decimal"
-                  step="0.01"
-                  min="0"
-                  placeholder="0.00"
-                  value={form.price}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, price: e.target.value }))
-                  }
-                  className={`${modalInputClass} pl-7`}
-                />
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="service-status"
-                className={`${modalFieldLabelClass} flex items-center gap-2 normal-case tracking-normal`}
-              >
-                <Info className="h-4 w-4 text-text-tertiary" />
-                Status
-              </label>
-              <select
-                id="service-status"
-                value={form.status}
+          <div>
+            <label
+              htmlFor="service-price"
+              className={`${modalFieldLabelClass} flex items-center gap-2 normal-case tracking-normal`}
+            >
+              <DollarSign className="h-4 w-4 text-text-tertiary" />
+              Price <span className="text-rose-600">*</span>
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-medium text-text-tertiary">
+                $
+              </span>
+              <input
+                id="service-price"
+                required
+                type="number"
+                inputMode="decimal"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={form.price}
                 onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    status: e.target.value as ServiceStatus,
-                  }))
+                  setForm((f) => ({ ...f, price: e.target.value }))
                 }
-                className={`${modalInputClass} cursor-pointer appearance-none`}
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-              </select>
+                className={`${modalInputClass} pl-7`}
+              />
             </div>
           </div>
 
@@ -353,10 +325,10 @@ export function AddServiceModal({
                         form.isActive ? "text-emerald-600" : "text-text-tertiary"
                       }`}
                     />
-                    Active
+                    Available for booking
                   </span>
                   <span className="text-xs text-text-tertiary">
-                    Ready to book
+                    {form.isActive ? "Customers can book this service" : "Hidden from booking"}
                   </span>
                 </div>
                 <div

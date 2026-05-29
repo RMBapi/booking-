@@ -25,7 +25,6 @@ export { FilterChip } from "./FilterChip";
 export { FilterBar } from "./FilterBar";
 export { ImageUploader } from "./ImageUploader";
 export { Skeleton, SkeletonText, SkeletonCard, SkeletonTable } from "./Skeleton";
-export { ThemeToggle } from "./ThemeToggle";
 export {
   Dialog,
   DialogPortal,

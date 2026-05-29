@@ -52,6 +52,15 @@ export class BusinessResponseDto {
 
   @Expose()
   @ApiPropertyOptional({
+    description: 'Business backup image URL',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
+    nullable: true,
+  })
+  backupImage: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
     description: 'The email of the business',
     example: 'contact@acme.com',
     nullable: true,

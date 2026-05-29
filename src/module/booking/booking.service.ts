@@ -325,9 +325,7 @@ export class BookingService {
     const existing = await this.findOne(id, businessId);
 
     if (existing.status === BookingStatus.Cancelled) {
-      throw new BadRequestException(
-        'Cannot edit a cancelled booking',
-      );
+      throw new BadRequestException('Cannot edit a cancelled booking');
     }
 
     const updateData: Prisma.BookingUpdateInput = {
@@ -511,9 +509,7 @@ export class BookingService {
         booking.status === BookingStatus.Completed &&
         !options.allowFromCompleted
       ) {
-        throw new BadRequestException(
-          'Completed bookings cannot be cancelled',
-        );
+        throw new BadRequestException('Completed bookings cannot be cancelled');
       }
 
       this.logger.debug(`Updating booking ${id} status to Cancelled`);
@@ -559,7 +555,9 @@ export class BookingService {
     }
 
     if (booking.userId !== userId) {
-      throw new ForbiddenException('You are not allowed to cancel this booking');
+      throw new ForbiddenException(
+        'You are not allowed to cancel this booking',
+      );
     }
 
     return this.cancel(id, cancellationReason, businessId);

@@ -63,6 +63,19 @@ export class UpdateBusinessDto {
   image?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Business backup image URL (upload via POST /upload/image or provide an external URL)',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/abc123.png',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'Backup image must be a string' })
+  @IsOptional()
+  backupImage?: string;
+
+  @ApiPropertyOptional({
     description: 'The email of the business',
     example: 'contact@acme.com',
   })

@@ -81,4 +81,10 @@ export class CreateOwnBusinessDto {
   @IsOptional()
   @IsString()
   image?: string;
+
+  @ApiPropertyOptional()
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  backupImage?: string;
 }

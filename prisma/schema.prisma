@@ -50,6 +50,7 @@ model Business {
   description String?
   logo        String?
   image       String?
+  backupImage String?   @map("backup_image")
   email       String?
   phone       String?
   address     String?

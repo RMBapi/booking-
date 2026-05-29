@@ -46,14 +46,14 @@ class HttpLogger {
     return new Date().toISOString();
   }
 
-  private formatHeaders(headers: Record<string, any>): Record<string, any> {
+  private formatHeaders(headers: Record<string, unknown>): Record<string, unknown> {
     if (!this.config.logHeaders) {
       return { "Content-Type": headers["Content-Type"] || "application/json" };
     }
 
     // Mask sensitive headers
     const sensitiveHeaders = ["authorization", "cookie", "x-api-key"];
-    const formatted: Record<string, any> = {};
+    const formatted: Record<string, unknown> = {};
 
     Object.keys(headers).forEach((key) => {
       const lowerKey = key.toLowerCase();
@@ -67,7 +67,7 @@ class HttpLogger {
     return formatted;
   }
 
-  private formatBody(body: any): any {
+  private formatBody(body: unknown): unknown {
     if (!this.config.logBody) {
       return body ? "[Body hidden]" : undefined;
     }
@@ -75,7 +75,7 @@ class HttpLogger {
     // Mask sensitive fields in body
     if (typeof body === "object" && body !== null) {
       const sensitiveFields = ["password", "token", "secret", "apiKey", "accessToken", "refreshToken"];
-      const formatted = { ...body };
+      const formatted = { ...(body as Record<string, unknown>) };
 
       sensitiveFields.forEach((field) => {
         if (formatted[field]) {
@@ -93,9 +93,9 @@ class HttpLogger {
     method: string;
     url: string;
     baseURL?: string;
-    headers: Record<string, any>;
-    data?: any;
-    params?: any;
+    headers: Record<string, unknown>;
+    data?: unknown;
+    params?: unknown;
   }) {
     if (!this.shouldLog("info") || !this.config.logRequests) return;
 
@@ -103,7 +103,7 @@ class HttpLogger {
       ? `${config.baseURL}${config.url}`
       : config.url;
 
-    const logData: any = {
+    const logData: Record<string, unknown> = {
       timestamp: this.formatTimestamp(),
       type: "REQUEST",
       method: config.method.toUpperCase(),
@@ -140,8 +140,8 @@ class HttpLogger {
     url: string;
     status: number;
     statusText: string;
-    data?: any;
-    headers?: Record<string, any>;
+    data?: unknown;
+    headers?: Record<string, unknown>;
     duration?: number;
   }) {
     if (!this.shouldLog("info") || !this.config.logResponses) return;
@@ -169,7 +169,7 @@ class HttpLogger {
     method: string;
     url: string;
     baseURL?: string;
-    error: any;
+    error: unknown;
     duration?: number;
   }) {
     if (!this.shouldLog("error") || !this.config.logErrors) return;
@@ -178,7 +178,16 @@ class HttpLogger {
       ? `${config.baseURL}${config.url}`
       : config.url;
 
-    const error = config.error;
+    const error = config.error as {
+      message?: string;
+      response?: {
+        status?: number;
+        statusText?: string;
+        data?: unknown;
+        headers?: Record<string, unknown>;
+      };
+      request?: unknown;
+    };
     const response = error?.response;
     const request = error?.request;
 

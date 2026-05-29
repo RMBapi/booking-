@@ -38,6 +38,8 @@ export function HeroSection({
   });
   const imgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
 
+  const isVideoHero = isVideoUrl(heroImage);
+
   // Still image shown before a hero video plays (and if it fails to load).
   const heroPoster =
     getImageUrl(business.logoUrl) ||
@@ -62,14 +64,14 @@ export function HeroSection({
     <section
       ref={heroRef}
       id="home"
-      className="hero-section relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden"
+      className={`hero-section relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden${isVideoHero ? " hero-section--video" : ""}`}
     >
       {/* Sharp hero media — slight brightness reduction only */}
-      <motion.div
-        className="absolute inset-0 z-0"
-        style={{ y: imgY, filter: "brightness(0.82)" }}
-      >
-        {isVideoUrl(heroImage) ? (
+      {isVideoHero ? (
+        <motion.div
+          className="hero-media-wrapper hero-media-wrapper--video absolute inset-0 z-0"
+          style={{ y: imgY, filter: "brightness(0.82)" }}
+        >
           <SmartImage
             src={heroImage}
             alt={`${business.name} hero`}
@@ -79,8 +81,14 @@ export function HeroSection({
             coverTolerance={1}
             poster={heroPoster}
             deferVideo
+            forceCover
           />
-        ) : (
+        </motion.div>
+      ) : (
+        <motion.div
+          className="absolute inset-0 z-0"
+          style={{ y: imgY, filter: "brightness(0.82)" }}
+        >
           <Image
             src={heroImage}
             alt={`${business.name} hero`}
@@ -99,8 +107,8 @@ export function HeroSection({
               "--focus-y-mobile": "50%",
             } as React.CSSProperties}
           />
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       {/* Mobile: vertical gradient for portrait readability */}
       <div className="hero-overlay-mobile pointer-events-none absolute inset-0 z-[1] md:hidden" />

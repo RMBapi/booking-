@@ -37,6 +37,8 @@ interface SmartImageProps {
    * video then crossfades over the poster. Keeps the hero off the LCP path.
    */
   deferVideo?: boolean;
+  /** Always use object-cover (never letterbox with contain). Used for hero video. */
+  forceCover?: boolean;
 }
 
 type FitMode = "cover" | "contain";
@@ -56,6 +58,7 @@ export function SmartImage({
   videoPlayback = "autoplay",
   poster,
   deferVideo = false,
+  forceCover = false,
 }: SmartImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -158,11 +161,11 @@ export function SmartImage({
   }, [isVideo, resolvedSrc, videoPlayback, deferVideo, videoActivated]);
 
   const fitMode: FitMode =
-    naturalRatio && containerRatio
-      ? Math.abs(naturalRatio - containerRatio) / containerRatio <= coverTolerance
+    forceCover || !naturalRatio || !containerRatio
+      ? "cover"
+      : Math.abs(naturalRatio - containerRatio) / containerRatio <= coverTolerance
         ? "cover"
-        : "contain"
-      : "cover";
+        : "contain";
 
   const hasMedia = !!resolvedSrc && !errored;
   const radiusClass = rounded ?? "";

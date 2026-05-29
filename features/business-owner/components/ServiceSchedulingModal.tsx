@@ -1,8 +1,15 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { X, Clock, Users, CalendarClock, Plus } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { Clock, Users, CalendarClock, Plus, X } from "lucide-react";
+import {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalShell,
+  modalCancelButtonClass,
+} from "@/components/ui";
+import { Button } from "@/components/buttons";
 import type { CanScheduleTime } from "@/services";
 
 interface BlockedTimeFrame {
@@ -226,56 +233,24 @@ export const ServiceSchedulingModal = ({
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-stone-900/30 backdrop-blur-sm"
-          />
+    <ModalShell open={isOpen} onClose={onClose} size="full" zIndex={60}>
+      <ModalHeader
+        eyebrow="Scheduling"
+        title="Service availability"
+        description={`Configure scheduling settings for ${serviceName}`}
+        onClose={onClose}
+      />
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
-          >
-            <div className="px-8 py-6 border-b border-stone-200/50 bg-stone-50/50">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-stone-900">
-                    Service Availability
-                  </h2>
-                  <p className="text-sm text-stone-500 font-medium mt-0.5">
-                    Configure scheduling settings for {serviceName}
-                  </p>
-                </div>
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-stone-200/50 rounded-xl text-stone-400 hover:text-stone-900 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <form
-              onSubmit={handleSubmit}
-              className="flex-1 overflow-y-auto px-8 py-6"
-            >
-              <div className="space-y-8">
+      <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        <ModalBody className="space-y-8">
                 {isLoading && (
-                  <div className="text-sm text-stone-500 font-medium">
+                  <div className="text-sm text-text-tertiary font-medium">
                     Loading availability settings...
                   </div>
                 )}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-6 bg-stone-50 rounded-2xl border border-stone-200">
-                    <div className="flex items-center gap-2 text-stone-500 mb-4">
+                  <div className="p-6 bg-subtle/50 rounded-lg border border-border-subtle">
+                    <div className="flex items-center gap-2 text-text-tertiary mb-4">
                       <Clock className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">
                         Time Format
@@ -288,8 +263,8 @@ export const ServiceSchedulingModal = ({
                         disabled={isDisabled}
                         className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${
                           timeFormat === "12"
-                            ? "bg-stone-900 text-white shadow-lg"
-                            : "bg-white text-stone-400 border border-stone-200 hover:border-stone-300"
+                            ? "bg-text-primary text-white shadow-lg"
+                            : "bg-surface text-text-tertiary border border-border-default hover:border-border-strong"
                         }`}
                       >
                         12-Hour
@@ -300,8 +275,8 @@ export const ServiceSchedulingModal = ({
                         disabled={isDisabled}
                         className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${
                           timeFormat === "24"
-                            ? "bg-stone-900 text-white shadow-lg"
-                            : "bg-white text-stone-400 border border-stone-200 hover:border-stone-300"
+                            ? "bg-text-primary text-white shadow-lg"
+                            : "bg-surface text-text-tertiary border border-border-default hover:border-border-strong"
                         }`}
                       >
                         24-Hour
@@ -309,8 +284,8 @@ export const ServiceSchedulingModal = ({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-stone-50 rounded-2xl border border-stone-200">
-                    <div className="flex items-center gap-2 text-stone-500 mb-4">
+                  <div className="p-6 bg-subtle/50 rounded-lg border border-border-subtle">
+                    <div className="flex items-center gap-2 text-text-tertiary mb-4">
                       <CalendarClock className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">
                         Interval
@@ -333,8 +308,8 @@ export const ServiceSchedulingModal = ({
                     </div>
                   </div>
 
-                  <div className="p-6 bg-stone-50 rounded-2xl border border-stone-200">
-                    <div className="flex items-center gap-2 text-stone-500 mb-4">
+                  <div className="p-6 bg-subtle/50 rounded-lg border border-border-subtle">
+                    <div className="flex items-center gap-2 text-text-tertiary mb-4">
                       <Users className="w-4 h-4" />
                       <span className="text-xs font-bold uppercase tracking-wider">
                         Capacity
@@ -524,30 +499,22 @@ export const ServiceSchedulingModal = ({
                     ))}
                   </div>
                 </div>
-              </div>
-            </form>
+        </ModalBody>
 
-            <div className="px-8 py-6 border-t border-stone-200/50 bg-stone-50/50 flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSubmitting}
-                className="flex-1 px-6 py-3 bg-white border border-stone-200 text-stone-700 font-bold rounded-2xl hover:bg-stone-50 transition-all active:scale-[0.97]"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                disabled={isDisabled}
-                className="flex-1 px-6 py-3 bg-stone-900 text-white font-bold rounded-2xl hover:bg-stone-800 transition-all shadow-lg shadow-stone-900/10 active:scale-[0.97]"
-              >
-                {isSubmitting ? "Saving..." : "Save Availability Settings"}
-              </button>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+        <ModalFooter>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isSubmitting}
+            className={modalCancelButtonClass}
+          >
+            Cancel
+          </button>
+          <Button type="submit" size="sm" disabled={isDisabled} isLoading={isSubmitting}>
+            Save availability settings
+          </Button>
+        </ModalFooter>
+      </form>
+    </ModalShell>
   );
 };

@@ -1,8 +1,17 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
-import { BookingsAndContacts } from "@/features/business-owner";
+import { PageSkeleton } from "@/components/layout/PageSkeleton";
+
+const BookingsAndContacts = dynamic(
+  () =>
+    import("@/features/business-owner/components/BookingsAndContacts").then((m) => ({
+      default: m.BookingsAndContacts,
+    })),
+  { loading: () => <PageSkeleton /> },
+);
 
 export default function BookingsPage() {
   const params = useParams<{ businessId: string }>();

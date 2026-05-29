@@ -1,17 +1,13 @@
 import type { ActivationView, AuthResponse } from "@/types";
 
 const baseURL =
-  typeof window !== "undefined"
-    ? "/api"
-    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * Activation endpoints are public (no Authorization header). We bypass
  * the http client so a stale Bearer in memory doesn't bias the response.
  */
-export const getActivation = async (
-  token: string,
-): Promise<ActivationView> => {
+export const getActivation = async (token: string): Promise<ActivationView> => {
   const res = await fetch(
     `${baseURL}/activation/${encodeURIComponent(token)}`,
     { credentials: "include" },

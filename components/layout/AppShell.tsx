@@ -18,9 +18,8 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  ScrollText,
+  Star,
   Settings as SettingsIcon,
-  Sparkles,
   UserCircle,
   Users,
   UsersRound,
@@ -44,7 +43,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: (id) => `/app/${id}/calendar`, label: "Calendar", feature: "view_calendar", icon: Calendar },
   { href: (id) => `/app/${id}/bookings`, label: "Bookings", feature: "view_bookings", icon: ClipboardList },
   { href: (id) => `/app/${id}/services`, label: "Services", feature: "view_services", icon: Wrench },
-  { href: (id) => `/app/${id}/contacts`, label: "Contacts", feature: "view_contacts", icon: ScrollText },
+  { href: (id) => `/app/${id}/reviews`, label: "Reviews", feature: "view_contacts", icon: Star },
   { href: (id) => `/app/${id}/providers`, label: "Providers", feature: "view_providers", icon: UsersRound },
   { href: (id) => `/app/${id}/analytics`, label: "Analytics", feature: "view_analytics", icon: ChartBar },
   { href: (id) => `/app/${id}/team`, label: "Team", feature: "manage_team", icon: Users },
@@ -111,6 +110,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }, [me, urlBusinessId, activeMembership]);
 
+  useEffect(() => {
+    if (!business?.id) return;
+    NAV_ITEMS.forEach((item) => {
+      router.prefetch(item.href(business.id));
+    });
+  }, [business?.id, router]);
+
   if (!me || !business) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-canvas">
@@ -126,7 +132,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const unreadCount = MOCK_NOTIFICATIONS.filter((n) => n.unread).length;
-  const planLabel = business.role.replace(/_/g, " ");
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -208,40 +213,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
         </LayoutGroup>
-
-        {/* Workspace card */}
-        <AnimatePresence initial={false}>
-          {!collapsed && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.18 }}
-              className="mx-3 mb-3 rounded-xl border border-border-subtle bg-subtle/60 px-3 py-2.5"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-indigo-500 text-white text-xs font-semibold shrink-0">
-                  {business.name.charAt(0).toUpperCase()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-text-primary truncate">
-                    {business.name}
-                  </p>
-                  <p className="text-[11px] text-text-tertiary capitalize truncate">
-                    {planLabel}
-                  </p>
-                </div>
-                <Sparkles className="h-3.5 w-3.5 text-text-quaternary" />
-              </div>
-              <button
-                type="button"
-                className="mt-2 w-full text-left text-[11px] font-medium text-primary-700 hover:text-primary-800 transition-colors"
-              >
-                Upgrade plan →
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <div className="border-t border-border-subtle p-2">
           <button

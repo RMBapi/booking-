@@ -10,7 +10,7 @@ import { setAccessToken } from "./accessToken";
 
 const baseURL = (() => {
   if (typeof window !== "undefined") return "/api";
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_URL;
 })();
 
 let refreshInFlight: Promise<string> | null = null;

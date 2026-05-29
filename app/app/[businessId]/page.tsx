@@ -22,35 +22,19 @@ import {
 import { FeatureGate } from "@/components/auth";
 import { AccessDenied } from "@/components/auth/AccessDenied";
 import { useAuth } from "@/contexts";
+import {
+  useDashboardSummary,
+  useActivityFeed,
+} from "@/features/business-owner";
+import {
+  formatPercentChange,
+  formatRelativeTime,
+  initialsFromName,
+  weekdayLabel,
+} from "@/features/business-owner/lib/analyticsHelpers";
+import type { DashboardSummary, ActivityItem } from "@/types";
 import { formatDate } from "@/utils";
 import type { FeatureCode } from "@/types";
-
-// Visual placeholder data — will be replaced by real hooks later. No logic.
-const SPARK_DATA = [
-  { d: "Mon", v: 4 },
-  { d: "Tue", v: 7 },
-  { d: "Wed", v: 5 },
-  { d: "Thu", v: 9 },
-  { d: "Fri", v: 12 },
-  { d: "Sat", v: 8 },
-  { d: "Sun", v: 11 },
-];
-
-const WEEK_HEATMAP = [
-  { day: "M", count: 4 },
-  { day: "T", count: 7 },
-  { day: "W", count: 5 },
-  { day: "T", count: 9 },
-  { day: "F", count: 12, today: true },
-  { day: "S", count: 0 },
-  { day: "S", count: 0 },
-];
-
-const ACTIVITY_PLACEHOLDER = [
-  { id: 1, who: "Sarah Chen", action: "booked Haircut with John", time: "2m ago", initials: "SC" },
-  { id: 2, who: "Maya Patel", action: "rescheduled to Friday", time: "14m ago", initials: "MP" },
-  { id: 3, who: "Tom Reeves", action: "joined the team as Provider", time: "1h ago", initials: "TR" },
-];
 
 const container = {
   hidden: { opacity: 0 },
@@ -78,6 +62,12 @@ function DashboardContent() {
   const today = new Date();
   const businessName = activeMembership?.name ?? "Your business";
 
+  const { summary, isLoading: summaryLoading } = useDashboardSummary(businessId);
+  const { items: activityItems, isLoading: activityLoading } = useActivityFeed(
+    businessId,
+    { limit: 10 },
+  );
+
   return (
     <motion.div
       variants={container}
@@ -99,8 +89,8 @@ function DashboardContent() {
 
       {/* Hero stat + secondary stack */}
       <motion.section variants={item} className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-        <HeroStat />
-        <SecondaryStack />
+        <HeroStat summary={summary} isLoading={summaryLoading} />
+        <SecondaryStack summary={summary} isLoading={summaryLoading} />
       </motion.section>
 
       {/* Quick action command rail */}
@@ -156,7 +146,7 @@ function DashboardContent() {
               <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-          <ActivityTimeline />
+          <ActivityTimeline items={activityItems} isLoading={activityLoading} />
         </div>
         <AllSetCard businessId={businessId} />
       </motion.section>
@@ -167,7 +157,7 @@ function DashboardContent() {
           <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">This week at a glance</h2>
           <span className="text-xs text-text-tertiary tabular">{formatDate(today, "MMM YYYY")}</span>
         </div>
-        <WeekHeatmap />
+        <WeekHeatmap data={summary?.weekHeatmap} isLoading={summaryLoading} />
       </motion.section>
     </motion.div>
   );
@@ -175,9 +165,22 @@ function DashboardContent() {
 
 /* ───────────────────────── HERO ───────────────────────── */
 
-function HeroStat() {
-  const value = 12;
-  const delta = 12;
+function HeroStat({
+  summary,
+  isLoading,
+}: {
+  summary: DashboardSummary | null;
+  isLoading: boolean;
+}) {
+  const value = summary?.today.bookingsCount ?? 0;
+  const delta = summary?.comparison.bookingsVsLastWeekPercent ?? 0;
+  const providers = summary?.today.activeProvidersCount ?? 0;
+  const sparkData = (summary?.sparkline ?? []).map((p) => ({
+    d: formatDate(p.date, "ddd"),
+    v: p.bookings,
+  }));
+  const deltaLabel = formatPercentChange(delta);
+
   return (
     <motion.div
       whileHover={{ y: -2 }}
@@ -187,28 +190,46 @@ function HeroStat() {
       <div className="relative z-10 flex flex-col h-full">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Today&apos;s bookings</p>
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-medium tabular border border-emerald-100/80">
-            <TrendingUp className="h-3 w-3" />
-            +{delta}% vs last week
-          </span>
+          {!isLoading && delta !== 0 && (
+            <span
+              className={
+                "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium tabular border " +
+                (delta >= 0
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-100/80"
+                  : "bg-rose-50 text-rose-700 border-rose-100/80")
+              }
+            >
+              <TrendingUp className={"h-3 w-3 " + (delta < 0 ? "rotate-180" : "")} />
+              {deltaLabel} vs last week
+            </span>
+          )}
         </div>
 
         <div className="flex items-end gap-3 mt-3">
-          <motion.span
-            key={value}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="text-[64px] leading-none font-bold text-text-primary tabular tracking-display"
-          >
-            {value}
-          </motion.span>
-          <span className="text-sm text-text-tertiary mb-2.5">bookings · 7 providers</span>
+          {isLoading ? (
+            <div className="h-16 w-24 rounded-lg bg-subtle animate-pulse" />
+          ) : (
+            <motion.span
+              key={value}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="text-[64px] leading-none font-bold text-text-primary tabular tracking-display"
+            >
+              {value}
+            </motion.span>
+          )}
+          <span className="text-sm text-text-tertiary mb-2.5">
+            bookings · {providers} provider{providers === 1 ? "" : "s"}
+          </span>
         </div>
 
         <div className="flex-1 -mx-2 mt-4 min-h-[100px]">
-          <ResponsiveContainer width="100%" height={100}>
-            <AreaChart data={SPARK_DATA} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
+          {isLoading ? (
+            <div className="h-[100px] rounded-lg bg-subtle animate-pulse" />
+          ) : sparkData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={100}>
+              <AreaChart data={sparkData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.28} />
@@ -230,6 +251,11 @@ function HeroStat() {
               />
             </AreaChart>
           </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-[100px] text-xs text-text-tertiary">
+              No bookings in the last 7 days
+            </div>
+          )}
         </div>
       </div>
 
@@ -241,11 +267,29 @@ function HeroStat() {
 
 /* ────────────────────── SECONDARY STACK ────────────────────── */
 
-function SecondaryStack() {
+function SecondaryStack({
+  summary,
+  isLoading,
+}: {
+  summary: DashboardSummary | null;
+  isLoading: boolean;
+}) {
   const rows = [
-    { label: "Active services", value: "—", trend: "stable" as const },
-    { label: "Team members", value: "—", trend: "up" as const },
-    { label: "New customers", value: "—", trend: "up" as const },
+    {
+      label: "Active services",
+      value: summary?.counts.activeServices ?? 0,
+      trend: "stable" as const,
+    },
+    {
+      label: "Team members",
+      value: summary?.counts.teamMembers ?? 0,
+      trend: "stable" as const,
+    },
+    {
+      label: "New customers (7d)",
+      value: summary?.counts.newCustomersLast7Days ?? 0,
+      trend: "up" as const,
+    },
   ];
   return (
     <div className="lg:col-span-2 rounded-2xl border border-border-subtle bg-surface p-6 flex flex-col">
@@ -260,9 +304,15 @@ function SecondaryStack() {
         >
           <div>
             <p className="text-xs text-text-tertiary uppercase tracking-wider font-medium">{r.label}</p>
-            <p className="text-2xl font-bold text-text-primary tabular tracking-tight mt-0.5">{r.value}</p>
+            {isLoading ? (
+              <div className="h-8 w-12 mt-1 rounded bg-subtle animate-pulse" />
+            ) : (
+              <p className="text-2xl font-bold text-text-primary tabular tracking-tight mt-0.5">
+                {r.value}
+              </p>
+            )}
           </div>
-          <MiniTrend trend={r.trend} />
+          {!isLoading && <MiniTrend trend={r.trend} />}
         </div>
       ))}
     </div>
@@ -326,31 +376,52 @@ function CommandPill({
 
 /* ────────────────────── ACTIVITY TIMELINE ────────────────────── */
 
-function ActivityTimeline() {
-  if (!ACTIVITY_PLACEHOLDER.length) {
+function ActivityTimeline({
+  items,
+  isLoading,
+}: {
+  items: ActivityItem[];
+  isLoading: boolean;
+}) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3 py-2">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-10 rounded-lg bg-subtle animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!items.length) {
     return <ActivityEmpty />;
   }
+
   return (
     <ol className="relative ml-2">
       <span className="absolute left-3 top-1.5 bottom-1.5 w-px bg-border-default" aria-hidden />
-      {ACTIVITY_PLACEHOLDER.map((a) => (
-        <li
-          key={a.id}
-          className="group relative pl-9 py-2.5 -mx-2 px-2 rounded-lg hover:bg-subtle/70 transition-colors flex items-start justify-between gap-4"
-        >
-          <span className="absolute left-2 top-3.5 h-2 w-2 rounded-full bg-surface ring-2 ring-primary-400 shadow-sm" aria-hidden />
-          <div className="flex items-start gap-2.5 min-w-0">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-indigo-100 text-primary-700 text-[10px] font-semibold shrink-0">
-              {a.initials}
+      {items.map((a) => {
+        const initials = a.actor
+          ? initialsFromName(a.actor.firstName, a.actor.lastName)
+          : "?";
+        return (
+          <li
+            key={a.id}
+            className="group relative pl-9 py-2.5 -mx-2 px-2 rounded-lg hover:bg-subtle/70 transition-colors flex items-start justify-between gap-4"
+          >
+            <span className="absolute left-2 top-3.5 h-2 w-2 rounded-full bg-surface ring-2 ring-primary-400 shadow-sm" aria-hidden />
+            <div className="flex items-start gap-2.5 min-w-0">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-indigo-100 text-primary-700 text-[10px] font-semibold shrink-0">
+                {initials}
+              </span>
+              <p className="text-sm text-text-secondary leading-relaxed min-w-0">{a.summary}</p>
+            </div>
+            <span className="text-xs text-text-tertiary tabular shrink-0 mt-1.5">
+              {formatRelativeTime(a.occurredAt)}
             </span>
-            <p className="text-sm text-text-secondary leading-relaxed min-w-0">
-              <span className="font-semibold text-text-primary">{a.who}</span>{" "}
-              {a.action}
-            </p>
-          </div>
-          <span className="text-xs text-text-tertiary tabular shrink-0 mt-1.5">{a.time}</span>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ol>
   );
 }
@@ -401,46 +472,66 @@ function AllSetCard({ businessId }: { businessId: string }) {
 
 /* ────────────────────── WEEK HEATMAP ────────────────────── */
 
-function WeekHeatmap() {
-  const max = Math.max(...WEEK_HEATMAP.map((d) => d.count), 1);
+function WeekHeatmap({
+  data,
+  isLoading,
+}: {
+  data?: DashboardSummary["weekHeatmap"];
+  isLoading: boolean;
+}) {
+  const points = data ?? [];
+  const max = Math.max(...points.map((d) => d.bookings), 1);
+
+  if (isLoading) {
+    return (
+      <div className="rounded-2xl border border-border-subtle bg-surface p-4 h-28 animate-pulse bg-subtle" />
+    );
+  }
+
   return (
     <div className="rounded-2xl border border-border-subtle bg-surface p-4">
       <div className="grid grid-cols-7 gap-2">
-        {WEEK_HEATMAP.map((d, i) => {
-          const intensity = d.count / max;
+        {points.map((d, i) => {
+          const intensity = d.bookings / max;
           return (
             <motion.div
-              key={i}
+              key={d.date}
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 * i, duration: 0.3 }}
               className={
                 "relative flex flex-col items-center gap-2 rounded-xl py-3 transition-colors " +
-                (d.today ? "bg-gradient-to-br from-primary-50 to-indigo-50/50 border border-primary-200/60" : "")
+                (d.isToday ? "bg-gradient-to-br from-primary-50 to-indigo-50/50 border border-primary-200/60" : "")
               }
             >
-              <span className={"text-[10px] font-semibold uppercase tracking-wider " + (d.today ? "text-primary-700" : "text-text-tertiary")}>
-                {d.day}
+              <span
+                className={
+                  "text-[10px] font-semibold uppercase tracking-wider " +
+                  (d.isToday ? "text-primary-700" : "text-text-tertiary")
+                }
+              >
+                {weekdayLabel(d.dayOfWeek)}
               </span>
               <div
                 className="h-7 w-7 rounded-lg flex items-center justify-center"
                 style={{
                   background:
-                    d.count === 0
+                    d.bookings === 0
                       ? "transparent"
                       : `linear-gradient(135deg, rgba(14,165,233,${0.2 + intensity * 0.6}), rgba(99,102,241,${0.2 + intensity * 0.6}))`,
-                  border: d.count === 0 ? "1px dashed rgba(15, 15, 14, 0.10)" : "none",
+                  border: d.bookings === 0 ? "1px dashed rgba(15, 15, 14, 0.10)" : "none",
                 }}
               >
                 <span
                   className={
-                    "text-xs font-semibold tabular " + (d.count === 0 ? "text-text-quaternary" : "text-white")
+                    "text-xs font-semibold tabular " +
+                    (d.bookings === 0 ? "text-text-quaternary" : "text-white")
                   }
                 >
-                  {d.count}
+                  {d.bookings}
                 </span>
               </div>
-              {d.today && (
+              {d.isToday && (
                 <span className="absolute -top-1 right-1.5 h-1.5 w-1.5 rounded-full bg-primary-500 ring-2 ring-surface" />
               )}
             </motion.div>

@@ -2,26 +2,38 @@
 
 import React, { useCallback, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Image as ImageIcon, Upload, X, RefreshCw } from "lucide-react";
+import { Film, Image as ImageIcon, Upload, X, RefreshCw } from "lucide-react";
 import { uploadImage } from "@/services";
-import { cn } from "@/utils";
+import { cn, isVideoFile, isVideoUrl } from "@/utils";
 
-const ACCEPTED_TYPES = [
+const IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
   "image/svg+xml",
 ];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPT_ATTR = ACCEPTED_TYPES.join(",");
+const VIDEO_TYPES = ["video/mp4"];
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
-function validateFile(file: File): string | null {
-  if (!ACCEPTED_TYPES.includes(file.type)) {
-    return "Invalid file type. Use JPEG, PNG, WebP, GIF, or SVG.";
+function acceptedTypes(acceptVideo: boolean): string[] {
+  return acceptVideo ? [...IMAGE_TYPES, ...VIDEO_TYPES] : IMAGE_TYPES;
+}
+
+function acceptAttr(acceptVideo: boolean): string {
+  const types = acceptedTypes(acceptVideo);
+  return acceptVideo ? [...types, ".mp4"].join(",") : types.join(",");
+}
+
+function validateFile(file: File, acceptVideo: boolean): string | null {
+  const allowed = acceptedTypes(acceptVideo);
+  if (!allowed.includes(file.type)) {
+    return acceptVideo
+      ? "Invalid file type. Use JPEG, PNG, WebP, GIF, SVG, or MP4."
+      : "Invalid file type. Use JPEG, PNG, WebP, GIF, or SVG.";
   }
   if (file.size > MAX_FILE_SIZE) {
-    return "File size must be less than 5MB.";
+    return "File size must be less than 20MB.";
   }
   return null;
 }
@@ -29,14 +41,16 @@ function validateFile(file: File): string | null {
 export interface ImageUploaderProps {
   /** "icon" → 96px square. "cover" → full-width 16:9. */
   variant: "icon" | "cover";
-  /** Current image URL (already-uploaded). Pass `null` for empty. */
+  /** Current media URL (already-uploaded). Pass `null` for empty. */
   value: string | null | undefined;
-  /** Called with the uploaded URL once `/upload/image` returns 200. */
+  /** Called with the uploaded URL once `/upload/image` returns 201. */
   onChange: (url: string | null) => void;
   /** Visible label above the uploader. */
   label?: string;
   /** Helper copy below the label. */
   hint?: string;
+  /** Allow MP4 uploads. Defaults to `true` for cover, `false` for icon. */
+  acceptVideo?: boolean;
   /** Native form name (rarely used — prefer controlled `value`). */
   name?: string;
   className?: string;
@@ -49,6 +63,7 @@ export function ImageUploader({
   onChange,
   label,
   hint,
+  acceptVideo = variant === "cover",
   name,
   className,
   disabled,
@@ -58,26 +73,29 @@ export function ImageUploader({
   const [progress, setProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  /** Tracks blob previews before the server URL is known. */
+  const [previewIsVideo, setPreviewIsVideo] = useState(false);
+
+  const showingVideo =
+    previewIsVideo || (value ? isVideoUrl(value) : false);
 
   const handleFile = useCallback(
     async (file: File | undefined) => {
       if (!file || disabled) return;
       setError(null);
-      const v = validateFile(file);
+      const v = validateFile(file, acceptVideo);
       if (v) {
         setError(v);
         return;
       }
 
-      // Optimistically show a local preview while the network request flies.
-      // The local URL is replaced by the server URL on success.
+      const fileIsVideo = isVideoFile(file);
+      setPreviewIsVideo(fileIsVideo);
+
       const localUrl = URL.createObjectURL(file);
       onChange(localUrl);
       setBusy(true);
       setProgress(15);
-      // Fake progressive feedback — the real call is one POST so we can't
-      // hook into native progress without an XHR. Bump the bar at intervals
-      // until the response lands.
       const interval = window.setInterval(() => {
         setProgress((p) => Math.min(p + 8, 90));
       }, 180);
@@ -86,23 +104,23 @@ export function ImageUploader({
         const url = await uploadImage(file);
         setProgress(100);
         onChange(url);
+        setPreviewIsVideo(isVideoUrl(url));
         URL.revokeObjectURL(localUrl);
       } catch (err: unknown) {
         const message =
           (err as { response?: { data?: { message?: string } } })?.response
             ?.data?.message ?? "Upload failed. Please try again.";
         setError(typeof message === "string" ? message : "Upload failed.");
-        // Roll back to whatever was here before the local preview.
         onChange(null);
+        setPreviewIsVideo(false);
         URL.revokeObjectURL(localUrl);
       } finally {
         window.clearInterval(interval);
         setBusy(false);
-        // Allow the same file to be selected again
         if (inputRef.current) inputRef.current.value = "";
       }
     },
-    [disabled, onChange],
+    [acceptVideo, disabled, onChange],
   );
 
   const onInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,6 +139,7 @@ export function ImageUploader({
     e.preventDefault();
     if (disabled || busy) return;
     setError(null);
+    setPreviewIsVideo(false);
     onChange(null);
   };
 
@@ -133,6 +152,10 @@ export function ImageUploader({
     variant === "icon"
       ? "h-24 w-24 rounded-2xl"
       : "h-[200px] w-full rounded-2xl";
+
+  const emptyHint = acceptVideo
+    ? "JPG, PNG, or MP4 up to 20MB"
+    : "JPG, PNG up to 20MB";
 
   return (
     <div className={cn("w-full", className)}>
@@ -174,7 +197,7 @@ export function ImageUploader({
           ref={inputRef}
           name={name}
           type="file"
-          accept={ACCEPT_ATTR}
+          accept={acceptAttr(acceptVideo)}
           onChange={onInputChange}
           disabled={disabled || busy}
           className="sr-only"
@@ -182,12 +205,25 @@ export function ImageUploader({
 
         {value ? (
           <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={value}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            {showingVideo ? (
+              <video
+                src={value}
+                className="absolute inset-0 h-full w-full object-cover"
+                muted
+                loop
+                playsInline
+                autoPlay
+                preload="metadata"
+                controls={variant === "cover"}
+              />
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={value}
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
             <AnimatePresence>
               {!busy && (
                 <motion.div
@@ -250,6 +286,8 @@ export function ImageUploader({
             >
               {variant === "icon" ? (
                 <ImageIcon className="h-4 w-4" />
+              ) : acceptVideo ? (
+                <Film className="h-5 w-5" />
               ) : (
                 <Upload className="h-5 w-5" />
               )}
@@ -259,10 +297,12 @@ export function ImageUploader({
             ) : (
               <>
                 <p className="text-sm font-semibold text-text-secondary">
-                  Drop image here or click to browse
+                  {acceptVideo
+                    ? "Drop image or video here or click to browse"
+                    : "Drop image here or click to browse"}
                 </p>
                 <p className="text-xs text-text-tertiary">
-                  Recommended: 1600×400px · JPG, PNG up to 5MB
+                  Recommended: 1600×400px · {emptyHint}
                 </p>
               </>
             )}

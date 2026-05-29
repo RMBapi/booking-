@@ -57,3 +57,5 @@ export function getPublicSiteUrl(slug: string): string {
 export function humanizeFeatureCode(code: string): string {
   return code.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 }
+
+export { isVideoUrl, isVideoFile } from "./media";

@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { LayoutGroup, motion } from "framer-motion";
 import {
+  BadgeCheck,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -168,6 +169,22 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       {
         onSuccess: () => {
           toast.success("Booking confirmed successfully!");
+          refetchBookings();
+        },
+      }
+    );
+  };
+
+  const handleCompleteBooking = (bookingId: string) => {
+    updateStatus(
+      {
+        id: bookingId,
+        status: "Completed",
+        businessId,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Booking marked as completed!");
           refetchBookings();
         },
       }
@@ -369,6 +386,15 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             label: "Confirm",
             icon: <CheckCircle2 />,
             onClick: () => handleConfirmBooking(b.id),
+            disabled: isUpdating,
+          });
+        }
+        if (b.status === "Confirmed") {
+          items.push({
+            key: "complete",
+            label: "Complete booking",
+            icon: <BadgeCheck />,
+            onClick: () => handleCompleteBooking(b.id),
             disabled: isUpdating,
           });
         }

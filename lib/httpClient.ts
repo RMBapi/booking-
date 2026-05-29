@@ -5,15 +5,12 @@ import axios, {
 } from "axios";
 import { httpLogger } from "./logger";
 import { isPublicEndpoint } from "./auth";
-import {
-  getAccessToken,
-  getActiveBusinessId,
-} from "./api/accessToken";
+import { getAccessToken, getActiveBusinessId } from "./api/accessToken";
 import { refreshAccess } from "./api/refresh";
 
 const getBaseURL = () => {
   if (typeof window !== "undefined") return "/api";
-  return process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  return process.env.NEXT_PUBLIC_API_URL;
 };
 
 const baseURL = getBaseURL();

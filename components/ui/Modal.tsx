@@ -102,15 +102,15 @@ function ModalBody({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200",
+        "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/30 backdrop-blur-sm animate-in fade-in-0 duration-200",
         overlayClassName
       )}
       onClick={close}
     >
       <div
         className={cn(
-          "relative w-full bg-white dark:bg-gray-800",
-          "rounded-2xl shadow-2xl",
+          "relative w-full bg-surface",
+          "rounded-2xl shadow-2xl shadow-black/10",
           "max-h-[90vh] overflow-y-auto custom-scrollbar",
           "animate-in zoom-in-95 fade-in-0 duration-200",
           sizeStyles[size],
@@ -122,7 +122,7 @@ function ModalBody({
         {!hideDefaultClose && (
           <button
             onClick={close}
-            className="absolute top-4 right-4 p-2 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors z-10"
+            className="absolute top-4 right-4 p-2 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-subtle transition-colors z-10"
             aria-label="Close modal"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

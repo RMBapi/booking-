@@ -85,8 +85,10 @@ export default function BusinessServicesPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
   const [isAddServiceOpen, setIsAddServiceOpen] = useState(false);
+  const [isEditServiceOpen, setIsEditServiceOpen] = useState(false);
   const [isSchedulingModalOpen, setIsSchedulingModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [serviceToEdit, setServiceToEdit] = useState<Service | null>(null);
 
   const { services, isLoading, meta, deleteService } = useBusinessServices(
     businessId,
@@ -125,6 +127,16 @@ export default function BusinessServicesPage() {
   const handleSchedulingClose = () => {
     setIsSchedulingModalOpen(false);
     setSelectedService(null);
+  };
+
+  const handleEditClick = (service: Service) => {
+    setServiceToEdit(service);
+    setIsEditServiceOpen(true);
+  };
+
+  const handleEditClose = () => {
+    setIsEditServiceOpen(false);
+    setServiceToEdit(null);
   };
 
   const schedulerQuery = useQuery<Scheduler | null>({
@@ -317,7 +329,12 @@ export default function BusinessServicesPage() {
         <ActionMenu
           triggerLabel={`Actions for ${s.name}`}
           items={[
-            { key: "edit", label: "Edit service", icon: <Pencil />, onClick: () => {} },
+            {
+              key: "edit",
+              label: "Edit service",
+              icon: <Pencil />,
+              onClick: () => handleEditClick(s),
+            },
             {
               key: "providers",
               label: "Manage providers",
@@ -459,6 +476,13 @@ export default function BusinessServicesPage() {
         isOpen={isAddServiceOpen}
         onClose={() => setIsAddServiceOpen(false)}
         businessId={businessId}
+      />
+
+      <AddServiceModal
+        isOpen={isEditServiceOpen}
+        onClose={handleEditClose}
+        businessId={businessId}
+        service={serviceToEdit}
       />
 
       <ServiceSchedulingModal

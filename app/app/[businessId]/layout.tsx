@@ -26,6 +26,12 @@ export default function BusinessLayout({
     }
   }, [me, isLoading, params.businessId, router]);
 
-  if (isLoading || !me) return null;
+  if (isLoading || !me) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-canvas">
+        <div className="animate-spin rounded-full h-10 w-10 border-2 border-primary-200 border-t-primary-600" />
+      </div>
+    );
+  }
   return <AppShell>{children}</AppShell>;
 }

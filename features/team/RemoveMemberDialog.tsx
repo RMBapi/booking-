@@ -1,6 +1,13 @@
 "use client";
 
 import { toast } from "react-hot-toast";
+import {
+  ModalBody,
+  ModalHeader,
+  ModalShell,
+  modalDestructiveButtonClass,
+  modalOutlineButtonClass,
+} from "@/components/ui";
 import { useRemoveTeamMember } from "./hooks";
 import type { TeamMember } from "@/types";
 
@@ -28,36 +35,28 @@ export function RemoveMemberDialog({ businessId, member, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md">
-        <header className="px-6 py-4 border-b border-stone-200">
-          <h2 className="text-lg font-semibold text-stone-900">
-            Remove team member?
-          </h2>
-        </header>
-        <div className="px-6 py-5 space-y-3 text-sm text-stone-700">
-          <p>
-            Remove <strong>{member.firstName} {member.lastName}</strong> ({member.email})
-            from this business? They'll lose access immediately. This can't be
-            undone (you can re-invite them later).
-          </p>
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              onClick={onClose}
-              className="rounded-lg border border-stone-300 text-stone-900 text-sm font-semibold px-4 py-2 hover:bg-stone-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={remove.isPending}
-              className="rounded-lg bg-red-600 text-white text-sm font-semibold px-4 py-2 hover:bg-red-700 disabled:opacity-50"
-            >
-              {remove.isPending ? "Removing…" : "Remove"}
-            </button>
-          </div>
+    <ModalShell open={!!member} onClose={onClose} size="md">
+      <ModalHeader title="Remove team member?" onClose={onClose} />
+      <ModalBody className="space-y-3 text-sm text-text-secondary">
+        <p>
+          Remove <strong>{member.firstName} {member.lastName}</strong> ({member.email})
+          from this business? They&apos;ll lose access immediately. This can&apos;t be
+          undone (you can re-invite them later).
+        </p>
+        <div className="flex justify-end gap-2 pt-2">
+          <button type="button" onClick={onClose} className={modalOutlineButtonClass}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={remove.isPending}
+            className={modalDestructiveButtonClass}
+          >
+            {remove.isPending ? "Removing…" : "Remove"}
+          </button>
         </div>
-      </div>
-    </div>
+      </ModalBody>
+    </ModalShell>
   );
 }

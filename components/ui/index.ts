@@ -38,6 +38,19 @@ export {
   DialogTitle,
   DialogDescription,
 } from "./Dialog";
+export {
+  ModalShell,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  modalCloseButtonClass,
+  modalFieldLabelClass,
+  modalInputClass,
+  modalCancelButtonClass,
+  modalDestructiveButtonClass,
+  modalOutlineButtonClass,
+} from "./ModalShell";
+export type { ModalShellSize } from "./ModalShell";
 export { Label } from "./Label";
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs";
 export { Switch } from "./Switch";

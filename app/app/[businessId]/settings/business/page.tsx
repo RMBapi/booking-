@@ -13,7 +13,7 @@ import { Button } from "@/components/buttons";
 import { Input, TextArea, ImageUploader } from "@/components/ui";
 import { getBusinessById, updateBusiness } from "@/services/businessService";
 import type { Business, UpdateBusinessPayload } from "@/types";
-import { cn } from "@/utils";
+import { cn, isVideoUrl } from "@/utils";
 
 const DESCRIPTION_MAX = 500;
 
@@ -51,6 +51,7 @@ function BusinessSettingsContent() {
   const [address, setAddress] = useState("");
   const [logo, setLogo] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
+  const [backupImage, setBackupImage] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -62,6 +63,7 @@ function BusinessSettingsContent() {
     setAddress(business.address ?? "");
     setLogo(business.logo ?? null);
     setImage(business.image ?? null);
+    setBackupImage(business.backupImage ?? null);
     setHydrated(true);
   }, [business, hydrated]);
 
@@ -74,9 +76,10 @@ function BusinessSettingsContent() {
       (business.phone ?? "") !== phone ||
       (business.address ?? "") !== address ||
       (business.logo ?? null) !== logo ||
-      (business.image ?? null) !== image
+      (business.image ?? null) !== image ||
+      (business.backupImage ?? null) !== backupImage
     );
-  }, [business, name, description, email, phone, address, logo, image]);
+  }, [business, name, description, email, phone, address, logo, image, backupImage]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: UpdateBusinessPayload) => {
@@ -107,6 +110,7 @@ function BusinessSettingsContent() {
       address: address.trim() || undefined,
       logo: logo || undefined,
       image: image || undefined,
+      backupImage: isVideoUrl(image) ? backupImage || undefined : null,
     };
     saveMutation.mutate(payload);
   };
@@ -120,6 +124,7 @@ function BusinessSettingsContent() {
     setAddress(business.address ?? "");
     setLogo(business.logo ?? null);
     setImage(business.image ?? null);
+    setBackupImage(business.backupImage ?? null);
   };
 
   if (businessQuery.isLoading) {
@@ -139,6 +144,8 @@ function BusinessSettingsContent() {
       </div>
     );
   }
+
+  const coverIsVideo = isVideoUrl(image);
 
   return (
     <main className="flex flex-col gap-8 max-w-3xl">
@@ -160,7 +167,7 @@ function BusinessSettingsContent() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Branding */}
-        <Section title="Brand" subtitle="Your icon shows up in the sidebar and on customer-facing pages. The cover image lives at the top of your public site.">
+        <Section title="Brand" subtitle="Your icon shows up in the sidebar and on customer-facing pages. The cover can be an image or MP4 video at the top of your public site.">
           <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-6 items-start">
             <ImageUploader
               variant="icon"
@@ -169,13 +176,25 @@ function BusinessSettingsContent() {
               label="Icon"
               hint="Square. Min 96×96px."
             />
-            <ImageUploader
-              variant="cover"
-              value={image}
-              onChange={setImage}
-              label="Cover image"
-              hint="Recommended 1600×400px."
-            />
+            <div className="space-y-6">
+              <ImageUploader
+                variant="cover"
+                value={image}
+                onChange={setImage}
+                label="Cover image or video"
+                hint="Recommended 1600×400px. JPG, PNG, or MP4 up to 20MB."
+              />
+              {coverIsVideo && (
+                <ImageUploader
+                  variant="cover"
+                  acceptVideo={false}
+                  value={backupImage}
+                  onChange={setBackupImage}
+                  label="Backup cover image"
+                  hint="Optional. Shown if the video fails to load. JPG or PNG up to 20MB."
+                />
+              )}
+            </div>
           </div>
         </Section>
 

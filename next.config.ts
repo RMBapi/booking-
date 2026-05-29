@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // /api/* rewrites proxy uploads to the backend; default buffer is 10MB.
+  experimental: {
+    middlewareClientMaxBodySize: "20mb",
+  },
   images: {
     remotePatterns: [
       {
@@ -14,10 +18,7 @@ const nextConfig: NextConfig = {
     ],
   },
   async rewrites() {
-    // Prefer explicit backend URL; fall back to localhost:3000
-    const backendUrl =
-      process.env.NEXT_PUBLIC_API_URL ||
-      "http://localhost:3000";
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL;
 
     return [
       {

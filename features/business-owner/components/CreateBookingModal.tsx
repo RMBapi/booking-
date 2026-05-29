@@ -18,6 +18,13 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/buttons";
+import {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalShell,
+  modalCancelButtonClass,
+} from "@/components/ui";
 import * as toast from "@/lib/toast";
 import { cn } from "@/utils";
 import {
@@ -44,6 +51,10 @@ interface Props {
   initialStart?: string;
   /** Pre-fill provider. The matching service is still chosen by the user. */
   initialProviderId?: string;
+  /** Pre-fill service from calendar sidebar or slot context. */
+  initialServiceId?: string;
+  /** When true (calendar slot click), service must be chosen before booking. */
+  requireService?: boolean;
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -232,7 +243,7 @@ function CustomerStep({
           <div
             className={cn(
               "relative w-full flex items-center gap-2 rounded-lg border border-border-default bg-surface px-3 py-2.5 text-sm transition-colors",
-              "focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100",
+              "focus-within:border-primary-400 focus-within:outline-none",
             )}
           >
             <AtSign className="h-4 w-4 text-text-tertiary shrink-0" />
@@ -245,7 +256,7 @@ function CustomerStep({
               }}
               onFocus={() => setOpen(true)}
               placeholder="Customer email"
-              className="flex-1 bg-transparent text-text-primary placeholder:text-text-tertiary focus:outline-none"
+              className="flex-1 bg-transparent text-text-primary placeholder:text-text-tertiary focus:outline-none focus-visible:outline-none"
               autoComplete="off"
             />
             {isLookingUp && (
@@ -308,14 +319,14 @@ function CustomerStep({
               value={guestFirstName}
               onChange={(e) => setGuestFirstName(e.target.value)}
               placeholder="First name"
-              className="rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              className="rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none"
             />
             <input
               type="text"
               value={guestLastName}
               onChange={(e) => setGuestLastName(e.target.value)}
               placeholder="Last name"
-              className="rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              className="rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none"
             />
           </div>
           <div className="relative">
@@ -325,7 +336,7 @@ function CustomerStep({
               value={guestPhone}
               onChange={(e) => setGuestPhone(e.target.value)}
               placeholder="Phone number"
-              className="w-full rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              className="w-full rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none"
             />
           </div>
         </div>
@@ -385,8 +396,8 @@ function ProviderPicker({ providers, value, onChange }: ProviderPickerProps) {
         onClick={() => setOpen((s) => !s)}
         className={cn(
           "w-full flex items-center gap-2.5 rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-left transition-colors",
-          "hover:border-border-strong focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100",
-          open && "border-primary-400 ring-2 ring-primary-100",
+          "hover:border-border-strong focus:border-primary-400 focus:outline-none",
+          open && "border-primary-400",
         )}
       >
         <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-subtle text-text-tertiary shrink-0">
@@ -497,9 +508,15 @@ export function CreateBookingModal({
   initialDate,
   initialStart,
   initialProviderId,
+  initialServiceId,
+  requireService = false,
 }: Props) {
   const create = useCreateStaffBooking(businessId);
-  const { services } = useBusinessServices(businessId, { page: 1, limit: 100 });
+  const { services: rawServices } = useBusinessServices(businessId, { page: 1, limit: 100 });
+  const services = useMemo(
+    () => [...rawServices].sort((a, b) => a.name.localeCompare(b.name)),
+    [rawServices],
+  );
 
   const [email, setEmail] = useState("");
   const [selectedUser, setSelectedUser] = useState<UserLookupResult | null>(
@@ -529,13 +546,13 @@ export function CreateBookingModal({
     setGuestFirstName("");
     setGuestLastName("");
     setGuestPhone("");
-    setServiceId("");
+    setServiceId(initialServiceId ?? "");
     setServiceProviderId(initialProviderId ?? "");
     setDate(initialDate ?? toDateInput(initialStart) ?? "");
     setSlot(null);
     setNotes("");
     setError(null);
-  }, [open, initialDate, initialStart, initialProviderId]);
+  }, [open, initialDate, initialStart, initialProviderId, initialServiceId]);
 
   const selectedService: Service | undefined = useMemo(
     () => services.find((s) => s.id === serviceId),
@@ -589,8 +606,21 @@ export function CreateBookingModal({
       start: string;
       end: string;
       available: boolean;
+      bookedCount?: number;
+      capacity?: number;
     }>;
   }, [slotsQuery.data]);
+
+  const slotIsBookable = (s: {
+    available: boolean;
+    bookedCount?: number;
+    capacity?: number;
+  }) => {
+    if (s.available) return true;
+    const cap = s.capacity ?? 1;
+    const booked = s.bookedCount ?? 0;
+    return cap > 1 && booked < cap;
+  };
 
   // Auto-select the slot from initialStart once it appears in the loaded list.
   useEffect(() => {
@@ -599,7 +629,7 @@ export function CreateBookingModal({
     const match = slots.find(
       (s) => Math.abs(new Date(s.start).getTime() - target) < 60_000,
     );
-    if (match && match.available) {
+    if (match && slotIsBookable(match)) {
       setSlot({ start: match.start, end: match.end });
     }
   }, [initialStart, slots, slot]);
@@ -616,16 +646,20 @@ export function CreateBookingModal({
 
   const handleSubmit = async () => {
     setError(null);
+    if (!serviceId) {
+      setError(
+        requireService
+          ? "Select a service for this time slot before creating the booking."
+          : "Pick a service.",
+      );
+      return;
+    }
     if (!customerReady) {
       setError(
         selectedUser
           ? "Pick a customer."
           : "Email, first name, last name, and phone are required for guests.",
       );
-      return;
-    }
-    if (!serviceId) {
-      setError("Pick a service.");
       return;
     }
     if (!slot) {
@@ -683,47 +717,11 @@ export function CreateBookingModal({
     input.click();
   };
 
-  if (!open) return null;
-
   return (
-    <AnimatePresence>
-      <motion.div
-        key="create-booking-modal"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <motion.div
-          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-          onClick={onClose}
-        />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 280, damping: 28 }}
-          className="relative bg-surface rounded-2xl shadow-2xl shadow-black/10 max-h-[90vh] flex flex-col overflow-hidden w-full max-w-xl"
-        >
-          <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
-            <div>
-              <p className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                New
-              </p>
-              <h2 className="text-base font-semibold text-text-primary tracking-tight">
-                Create booking
-              </h2>
-            </div>
-            <button
-              onClick={onClose}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-subtle transition-colors"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </header>
+    <ModalShell open={open} onClose={onClose} size="xl">
+      <ModalHeader eyebrow="New" title="Create booking" onClose={onClose} />
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
+      <ModalBody className="space-y-5">
             <CustomerStep
               businessId={businessId}
               email={email}
@@ -746,7 +744,15 @@ export function CreateBookingModal({
             <div>
               <h3 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                 Service
+                {requireService && (
+                  <span className="ml-1 text-rose-600 normal-case tracking-normal">*</span>
+                )}
               </h3>
+              {requireService && !serviceId && (
+                <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-2">
+                  Select a service so we know which appointment type to book for this time slot.
+                </p>
+              )}
               <div className="relative">
                 <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
                 <select
@@ -755,9 +761,19 @@ export function CreateBookingModal({
                     setServiceId(e.target.value);
                     setSlot(null);
                   }}
-                  className="w-full appearance-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                  className={cn(
+                    "w-full appearance-none rounded-lg border bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary focus:outline-none focus:border-primary-400",
+                    requireService && !serviceId
+                      ? "border-amber-300 focus:border-amber-400"
+                      : "border-border-default focus:border-primary-400",
+                  )}
                 >
-                  <option value="">Pick a service…</option>
+                  {!requireService && <option value="">Pick a service…</option>}
+                  {requireService && !serviceId && (
+                    <option value="" disabled>
+                      Select a service…
+                    </option>
+                  )}
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -798,7 +814,7 @@ export function CreateBookingModal({
                     handleOpenDatePicker();
                   }
                 }}
-                className="relative w-full flex items-center gap-2.5 rounded-lg border border-border-default bg-surface px-3 py-2.5 text-sm cursor-pointer hover:border-border-strong focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100 transition-colors"
+                className="relative w-full flex items-center gap-2.5 rounded-lg border border-border-default bg-surface px-3 py-2.5 text-sm cursor-pointer hover:border-border-strong focus-within:border-primary-400 focus-within:outline-none transition-colors"
               >
                 <CalendarIcon className="h-4 w-4 text-text-tertiary shrink-0" />
                 <input
@@ -811,7 +827,7 @@ export function CreateBookingModal({
                     setSlot(null);
                   }}
                   onClick={(e) => e.stopPropagation()}
-                  className="flex-1 bg-transparent text-text-primary focus:outline-none"
+                  className="flex-1 bg-transparent text-text-primary focus:outline-none focus-visible:outline-none"
                 />
               </div>
             </div>
@@ -838,7 +854,11 @@ export function CreateBookingModal({
                   {slots.map((s) => {
                     const isSelected =
                       slot?.start === s.start && slot?.end === s.end;
-                    const disabled = !s.available && !isSelected;
+                    const bookable = slotIsBookable(s);
+                    const disabled = !bookable && !isSelected;
+                    const cap = s.capacity ?? 1;
+                    const booked = s.bookedCount ?? 0;
+                    const partial = cap > 1 && booked > 0 && bookable;
                     return (
                       <button
                         key={s.start}
@@ -846,16 +866,25 @@ export function CreateBookingModal({
                         disabled={disabled}
                         onClick={() => setSlot({ start: s.start, end: s.end })}
                         className={cn(
-                          "inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors",
+                          "inline-flex flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors min-h-[44px]",
                           isSelected
-                            ? "border-primary-400 bg-primary-50 text-primary-700 ring-2 ring-primary-100"
+                            ? "border-primary-400 bg-primary-50 text-primary-700"
                             : disabled
                               ? "border-border-subtle bg-subtle/50 text-text-quaternary line-through cursor-not-allowed"
-                              : "border-border-subtle bg-surface text-text-primary hover:border-border-default",
+                              : partial
+                                ? "border-amber-200 bg-amber-50/80 text-amber-900 hover:border-amber-300"
+                                : "border-border-subtle bg-surface text-text-primary hover:border-border-default",
                         )}
                       >
-                        <Clock className="h-3 w-3 opacity-70" />
-                        {formatTime(s.start)}
+                        <span className="inline-flex items-center gap-1">
+                          <Clock className="h-3 w-3 opacity-70" />
+                          {formatTime(s.start)}
+                        </span>
+                        {cap > 1 && (
+                          <span className="text-[10px] font-normal tabular opacity-80">
+                            {booked}/{cap} booked
+                          </span>
+                        )}
                       </button>
                     );
                   })}
@@ -877,34 +906,28 @@ export function CreateBookingModal({
                   placeholder="Anything the provider should know."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  className="w-full resize-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100"
+                  className="w-full resize-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none"
                 />
               </div>
             </div>
 
             {error && <p className="text-sm text-rose-600">{error}</p>}
-          </div>
+      </ModalBody>
 
-          <div className="flex items-center justify-end px-6 py-4 border-t border-border-subtle bg-subtle/40 gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-sm font-medium text-text-secondary hover:text-text-primary transition-colors"
-            >
-              Cancel
-            </button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleSubmit}
-              disabled={!canSubmit}
-              isLoading={create.isPending}
-            >
-              Create booking
-            </Button>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      <ModalFooter>
+        <button type="button" onClick={onClose} className={modalCancelButtonClass}>
+          Cancel
+        </button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleSubmit}
+          disabled={!canSubmit}
+          isLoading={create.isPending}
+        >
+          Create booking
+        </Button>
+      </ModalFooter>
+    </ModalShell>
   );
 }

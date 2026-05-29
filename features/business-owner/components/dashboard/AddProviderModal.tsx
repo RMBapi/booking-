@@ -17,14 +17,20 @@ import {
   ShieldAlert,
   User,
   UserPlus,
-  X,
 } from "lucide-react";
 import {
   useBusinessServices,
   useServiceProviders,
 } from "@/features/business-owner";
 import { useAddTeamMember } from "@/features/team/hooks";
-import { Input } from "@/components/ui";
+import {
+  Input,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalShell,
+  modalCancelButtonClass,
+} from "@/components/ui";
 import { Button } from "@/components/buttons";
 import { FEATURES } from "@/types";
 import type { FeatureCode } from "@/types";
@@ -196,68 +202,39 @@ export function AddProviderModal({
   const initials = `${firstName[0] ?? ""}${lastName[0] ?? ""}`.toUpperCase();
 
   return (
-    <AnimatePresence>
-      <motion.div
-        key="add-provider-modal"
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
+    <ModalShell
+      open={isOpen}
+      onClose={onClose}
+      panelClassName="max-w-none"
+      panelStyle={{ width: stepWidth, maxWidth: "100%" }}
+    >
+      <ModalHeader
+        eyebrow={`Step ${step} of 2`}
+        title={step === 1 ? "Provider details" : "Assign service"}
+        onClose={onClose}
+      />
+
+      <div className="h-1 bg-subtle shrink-0">
         <motion.div
-          className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-          onClick={onClose}
+          className="h-full bg-gradient-to-r from-primary-500 to-indigo-500"
+          initial={false}
+          animate={{ width: `${(step / 2) * 100}%` }}
+          transition={{ duration: 0.3 }}
         />
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 8 }}
-          animate={{ opacity: 1, scale: 1, y: 0, width: stepWidth }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 280, damping: 28 }}
-          className="relative bg-surface rounded-2xl shadow-2xl shadow-black/10 max-h-[90vh] flex flex-col overflow-hidden"
-          style={{ width: stepWidth }}
-        >
-          {/* Header */}
-          <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
-            <div className="flex items-center gap-2">
-              <div>
-                <p className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                  Step {step} of 2
-                </p>
-                <h2 className="text-base font-semibold text-text-primary tracking-tight">
-                  {step === 1 ? "Provider details" : "Assign service"}
-                </h2>
-              </div>
-            </div>
-            <button
-              onClick={onClose}
-              className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-subtle transition-colors"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </header>
+      </div>
 
-          <div className="h-1 bg-subtle">
-            <motion.div
-              className="h-full bg-gradient-to-r from-primary-500 to-indigo-500"
-              initial={false}
-              animate={{ width: `${(step / 2) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-
-          {/* Body */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-            <AnimatePresence mode="wait" custom={direction}>
-              {step === 1 ? (
-                <motion.div
-                  key="step-1"
-                  initial={{ opacity: 0, x: direction * 24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -direction * 24 }}
-                  transition={{ duration: 0.22 }}
-                  className="px-6 py-5 space-y-4"
-                >
+      <ModalBody className="py-0 px-0">
+        <div className="px-6 py-5">
+          <AnimatePresence mode="wait" custom={direction}>
+            {step === 1 ? (
+              <motion.div
+                key="step-1"
+                initial={{ opacity: 0, x: direction * 24 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -direction * 24 }}
+                transition={{ duration: 0.22 }}
+                className="space-y-4"
+              >
                   <p className="text-sm text-text-tertiary">
                     Who are you adding? Set a temporary password and share it
                     with them &mdash; they&apos;ll change it on first sign-in.
@@ -345,8 +322,8 @@ export function AddProviderModal({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -direction * 24 }}
                   transition={{ duration: 0.22 }}
-                  className="px-6 py-5 space-y-5"
-                >
+                className="space-y-5"
+              >
                   {/* Summary card — account is already created at this point,
                       so it's read-only (no Edit affordance). */}
                   <div className="rounded-xl border border-border-subtle bg-subtle/50 px-4 py-3 flex items-center gap-3">
@@ -425,61 +402,55 @@ export function AddProviderModal({
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
+        </div>
+      </ModalBody>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-border-subtle bg-subtle/40">
-            {step === 1 ? (
-              <>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="text-xs font-medium text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  Cancel
-                </button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleContinue}
-                  isLoading={addTeamMember.isPending}
-                  rightIcon={
-                    !addTeamMember.isPending ? (
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    ) : undefined
-                  }
-                >
-                  Continue to assign service
-                </Button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={handleSkip}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-text-tertiary hover:text-text-primary transition-colors"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Skip — assign later
-                </button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleAssign}
-                  isLoading={isAssigningProvider}
-                  rightIcon={
-                    !isAssigningProvider ? (
-                      <UserPlus className="h-3.5 w-3.5" />
-                    ) : undefined
-                  }
-                >
-                  Assign service
-                </Button>
-              </>
-            )}
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
+      <ModalFooter className="justify-between">
+        {step === 1 ? (
+          <>
+            <button type="button" onClick={onClose} className={modalCancelButtonClass}>
+              Cancel
+            </button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleContinue}
+              isLoading={addTeamMember.isPending}
+              rightIcon={
+                !addTeamMember.isPending ? (
+                  <ArrowRight className="h-3.5 w-3.5" />
+                ) : undefined
+              }
+            >
+              Continue to assign service
+            </Button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleSkip}
+              className="inline-flex items-center gap-1 text-xs font-medium text-text-tertiary hover:text-text-primary transition-colors"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Skip — assign later
+            </button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleAssign}
+              isLoading={isAssigningProvider}
+              rightIcon={
+                !isAssigningProvider ? (
+                  <UserPlus className="h-3.5 w-3.5" />
+                ) : undefined
+              }
+            >
+              Assign service
+            </Button>
+          </>
+        )}
+      </ModalFooter>
+    </ModalShell>
   );
 }

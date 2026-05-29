@@ -79,7 +79,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       price: getServicePriceLabel(service),
       duration: getServiceDuration(service),
       description: serviceDescription(service),
-      imageUrl: (service as Service & { imageUrl?: string }).imageUrl,
+      imageUrl: service.image ?? undefined,
     }),
     [service],
   );

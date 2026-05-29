@@ -18,6 +18,12 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/buttons";
 import {
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalShell,
+} from "@/components/ui";
+import {
   useBusinessServices,
   useUpdateBooking,
   useAvailableSlots,
@@ -145,9 +151,9 @@ function ProviderPicker({
         onClick={() => setOpen((s) => !s)}
         className={cn(
           "w-full flex items-center gap-2.5 rounded-lg border border-border-default bg-surface px-3 py-2 text-sm text-left transition-colors",
-          "hover:border-border-strong focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100",
+          "hover:border-border-strong focus:border-primary-400 focus:outline-none",
           "disabled:opacity-60 disabled:cursor-not-allowed",
-          open && "border-primary-400 ring-2 ring-primary-100",
+          open && "border-primary-400",
         )}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -395,7 +401,8 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
 
   const handleOpenDatePicker = () => {
     const input = dateInputRef.current;
-    if (!input || !booking || booking.status === "Cancelled") return;
+    if (!input || !booking) return;
+    if (booking.status === "Cancelled" || booking.status === "Completed") return;
     if (typeof input.showPicker === "function") {
       try {
         input.showPicker();
@@ -419,7 +426,8 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
     ? `${(customer.firstName?.[0] ?? "").toUpperCase()}${(customer.lastName?.[0] ?? "").toUpperCase()}`
     : "?";
 
-  const isCancelled = booking.status === "Cancelled";
+  const isReadOnly =
+    booking.status === "Cancelled" || booking.status === "Completed";
   const canCancel =
     booking.status !== "Cancelled" && booking.status !== "Completed";
 
@@ -479,44 +487,10 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
 
   return (
     <>
-      <AnimatePresence>
-        <motion.div
-          key="edit-booking-modal"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 280, damping: 28 }}
-            className="relative bg-surface rounded-2xl shadow-2xl shadow-black/10 max-h-[90vh] flex flex-col overflow-hidden w-full max-w-xl"
-          >
-            <header className="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
-              <div>
-                <p className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
-                  Booking
-                </p>
-                <h2 className="text-base font-semibold text-text-primary tracking-tight">
-                  Edit booking
-                </h2>
-              </div>
-              <button
-                onClick={onClose}
-                className="inline-flex items-center justify-center h-8 w-8 rounded-lg text-text-tertiary hover:text-text-primary hover:bg-subtle transition-colors"
-                aria-label="Close"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </header>
+      <ModalShell open onClose={onClose} size="xl">
+        <ModalHeader eyebrow="Booking" title="Edit booking" onClose={onClose} />
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5 space-y-5">
+        <ModalBody className="space-y-5">
               {/* Customer summary */}
               <div className="rounded-xl border border-border-subtle bg-subtle/50 px-4 py-3 flex items-center gap-3">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-indigo-100 text-primary-700 text-xs font-semibold">
@@ -547,9 +521,18 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                 </span>
               </div>
 
-              {isCancelled && (
-                <div className="rounded-lg border border-rose-100 bg-rose-50/60 px-3.5 py-2.5 text-sm text-rose-700">
-                  This booking is cancelled. Edits aren&apos;t allowed.
+              {isReadOnly && (
+                <div
+                  className={cn(
+                    "rounded-lg border px-3.5 py-2.5 text-sm",
+                    booking.status === "Cancelled"
+                      ? "border-rose-100 bg-rose-50/60 text-rose-700"
+                      : "border-primary-100 bg-primary-50/60 text-primary-700",
+                  )}
+                >
+                  {booking.status === "Cancelled"
+                    ? "This booking is cancelled. Edits aren't allowed."
+                    : "This booking is completed. Edits aren't allowed."}
                 </div>
               )}
 
@@ -561,10 +544,10 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                 <div className="relative">
                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary pointer-events-none" />
                   <select
-                    disabled={isCancelled}
+                    disabled={isReadOnly}
                     value={serviceId}
                     onChange={(e) => setServiceId(e.target.value)}
-                    className="w-full appearance-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-60"
+                    className="w-full appearance-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary focus:border-primary-400 focus:outline-none disabled:opacity-60"
                   >
                     {services.map((s) => (
                       <option key={s.id} value={s.id}>
@@ -585,7 +568,7 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                     providers={selectedService?.providers ?? []}
                     value={serviceProviderId}
                     onChange={(id) => setServiceProviderId(id)}
-                    disabled={isCancelled}
+                    disabled={isReadOnly}
                   />
                 </div>
               ) : (
@@ -614,7 +597,7 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                     underlying <input> is still keyboard-accessible. */}
                 <div
                   role="button"
-                  tabIndex={isCancelled ? -1 : 0}
+                  tabIndex={isReadOnly ? -1 : 0}
                   onClick={handleOpenDatePicker}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -624,16 +607,16 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                   }}
                   className={cn(
                     "relative w-full flex items-center gap-2.5 rounded-lg border border-border-default bg-surface px-3 py-2.5 text-sm transition-colors",
-                    !isCancelled &&
-                      "cursor-pointer hover:border-border-strong focus-within:border-primary-400 focus-within:ring-2 focus-within:ring-primary-100",
-                    isCancelled && "opacity-60 cursor-not-allowed",
+                    !isReadOnly &&
+                      "cursor-pointer hover:border-border-strong focus-within:border-primary-400 focus-within:outline-none",
+                    isReadOnly && "opacity-60 cursor-not-allowed",
                   )}
                 >
                   <CalendarIcon className="h-4 w-4 text-text-tertiary shrink-0" />
                   <input
                     ref={dateInputRef}
                     type="date"
-                    disabled={isCancelled}
+                    disabled={isReadOnly}
                     min={todayStr}
                     value={date}
                     onChange={(e) => {
@@ -674,14 +657,14 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                         <button
                           key={s.start}
                           type="button"
-                          disabled={disabled || isCancelled}
+                          disabled={disabled || isReadOnly}
                           onClick={() =>
                             setSlot({ start: s.start, end: s.end })
                           }
                           className={cn(
                             "inline-flex items-center justify-center gap-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-colors",
                             isSelected
-                              ? "border-primary-400 bg-primary-50 text-primary-700 ring-2 ring-primary-100"
+                              ? "border-primary-400 bg-primary-50 text-primary-700"
                               : disabled
                                 ? "border-border-subtle bg-subtle/50 text-text-quaternary line-through cursor-not-allowed"
                                 : "border-border-subtle bg-surface text-text-primary hover:border-border-default",
@@ -708,55 +691,53 @@ export function EditBookingModal({ businessId, booking, onClose }: Props) {
                   <FileText className="absolute left-3 top-3 h-4 w-4 text-text-tertiary pointer-events-none" />
                   <textarea
                     rows={3}
-                    disabled={isCancelled}
+                    disabled={isReadOnly}
                     placeholder="Anything the provider should know."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    className="w-full resize-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-100 disabled:opacity-60"
+                    className="w-full resize-none rounded-lg border border-border-default bg-surface pl-9 pr-3 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary focus:border-primary-400 focus:outline-none disabled:opacity-60"
                   />
                 </div>
               </div>
 
               {error && <p className="text-sm text-rose-600">{error}</p>}
-            </div>
+        </ModalBody>
 
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border-subtle bg-subtle/40 gap-3">
-              <button
-                type="button"
-                disabled={!canCancel}
-                onClick={() => setConfirmCancel(true)}
-                title={
-                  !canCancel
-                    ? "This booking can't be cancelled."
-                    : undefined
-                }
-                className={cn(
-                  "text-xs font-semibold transition-colors",
-                  canCancel
-                    ? "text-rose-600 hover:text-rose-700"
-                    : "text-text-quaternary cursor-not-allowed",
-                )}
-              >
-                Cancel booking
-              </button>
-              <Button
-                type="button"
-                size="sm"
-                onClick={handleSave}
-                disabled={isCancelled || !hasChanges}
-                isLoading={updateBooking.isPending}
-                title={
-                  !hasChanges && !isCancelled
-                    ? "Nothing to save yet."
-                    : undefined
-                }
-              >
-                Save changes
-              </Button>
-            </div>
-          </motion.div>
-        </motion.div>
-      </AnimatePresence>
+        <ModalFooter className="justify-between">
+          <button
+            type="button"
+            disabled={!canCancel}
+            onClick={() => setConfirmCancel(true)}
+            title={
+              !canCancel
+                ? "This booking can't be cancelled."
+                : undefined
+            }
+            className={cn(
+              "text-xs font-semibold transition-colors",
+              canCancel
+                ? "text-rose-600 hover:text-rose-700"
+                : "text-text-quaternary cursor-not-allowed",
+            )}
+          >
+            Cancel booking
+          </button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSave}
+            disabled={isReadOnly || !hasChanges}
+            isLoading={updateBooking.isPending}
+            title={
+              !hasChanges && !isReadOnly
+                ? "Nothing to save yet."
+                : undefined
+            }
+          >
+            Save changes
+          </Button>
+        </ModalFooter>
+      </ModalShell>
 
       <CancelBookingDialog
         businessId={businessId}

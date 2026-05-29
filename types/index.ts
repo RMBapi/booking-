@@ -197,6 +197,7 @@ export interface Business {
   address?: string;
   logo?: string;
   image?: string;
+  backupImage?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -209,6 +210,7 @@ export interface CreateBusinessPayload {
   address?: string;
   logo?: string;
   image?: string;
+  backupImage?: string | null;
   slug?: string;
 }
 
@@ -222,6 +224,7 @@ export interface Service {
   id: string;
   name: string;
   description?: string;
+  image?: string | null;
   price: number;
   status: ServiceStatus;
   priceDisplayMode: boolean;
@@ -238,6 +241,7 @@ export interface Service {
 export interface CreateServicePayload {
   name: string;
   description?: string;
+  image?: string | null;
   price: number;
   status: ServiceStatus;
   priceDisplayMode: boolean;
@@ -420,6 +424,10 @@ export interface BookingListQuery extends PaginationParams {
   userId?: string;
   serviceId?: string;
   serviceProviderId?: string;
+  startDate?: string;
+  endDate?: string;
+  excludeStatus?: string;
+  include?: string;
 }
 
 export interface ContactListQuery extends PaginationParams {
@@ -428,6 +436,197 @@ export interface ContactListQuery extends PaginationParams {
   email?: string;
   phone?: string;
   serviceId?: string;
+}
+
+// ─── Review ─────────────────────────────────────────────────────────────────
+
+export interface ReviewUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ReviewBookingService {
+  id: string;
+  name: string;
+}
+
+export interface ReviewBooking {
+  id: string;
+  serviceId: string;
+  serviceProviderId: string;
+  service?: ReviewBookingService;
+}
+
+export interface Review {
+  id: string;
+  bookingId: string;
+  userId: string;
+  businessId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: ReviewUser;
+  booking?: ReviewBooking;
+}
+
+export interface ReviewSummary {
+  businessId: string;
+  total: number;
+  average: number;
+  distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+}
+
+export interface ReviewListQuery extends PaginationParams {
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  rating?: 1 | 2 | 3 | 4 | 5;
+  userId?: string;
+}
+
+// ─── Dashboard & Analytics ───────────────────────────────────────────────────
+
+export type AnalyticsRange = "30d" | "90d" | "year";
+export type AnalyticsMetric = "revenue" | "bookings";
+export type AnalyticsGranularity = "day" | "week" | "month";
+export type AnalyticsBreakdownGroup = "service" | "provider";
+export type AnalyticsBreakdownSort = "bookings" | "revenue";
+
+export interface DashboardSummaryToday {
+  bookingsCount: number;
+  activeProvidersCount: number;
+  pendingCount: number;
+  confirmedCount: number;
+  completedCount: number;
+}
+
+export interface DashboardSummaryComparison {
+  bookingsVsLastWeekPercent: number;
+  bookingsLastWeekSameDay: number;
+}
+
+export interface DashboardSummaryCounts {
+  activeServices: number;
+  teamMembers: number;
+  activeProviders: number;
+  newCustomersLast7Days: number;
+}
+
+export interface DashboardSparklinePoint {
+  date: string;
+  bookings: number;
+}
+
+export interface DashboardWeekHeatmapPoint {
+  date: string;
+  dayOfWeek: number;
+  bookings: number;
+  isToday: boolean;
+}
+
+export interface DashboardSummary {
+  today: DashboardSummaryToday;
+  comparison: DashboardSummaryComparison;
+  counts: DashboardSummaryCounts;
+  sparkline: DashboardSparklinePoint[];
+  weekHeatmap: DashboardWeekHeatmapPoint[];
+}
+
+export interface DashboardSummaryQuery {
+  timezone?: string;
+  includeCancelled?: boolean;
+}
+
+export interface AnalyticsSummary {
+  range: AnalyticsRange;
+  from: string;
+  to: string;
+  revenue: number;
+  currency: string;
+  totalBookings: number;
+  uniqueCustomers: number;
+  avgBookingValue: number;
+  completedBookings: number;
+  cancelledBookings: number;
+  pendingBookings: number;
+}
+
+export interface AnalyticsSummaryQuery {
+  range: AnalyticsRange;
+  timezone?: string;
+}
+
+export interface AnalyticsTimeseriesPoint {
+  periodStart: string;
+  periodEnd: string;
+  value: number;
+}
+
+export interface AnalyticsTimeseries {
+  metric: AnalyticsMetric;
+  granularity: AnalyticsGranularity;
+  points: AnalyticsTimeseriesPoint[];
+}
+
+export interface AnalyticsTimeseriesQuery {
+  metric: AnalyticsMetric;
+  granularity: AnalyticsGranularity;
+  from: string;
+  to: string;
+  timezone?: string;
+}
+
+export interface AnalyticsBreakdownItem {
+  id: string;
+  name: string;
+  bookingsCount: number;
+  revenue: number;
+}
+
+export interface AnalyticsBreakdown {
+  groupBy: AnalyticsBreakdownGroup;
+  items: AnalyticsBreakdownItem[];
+}
+
+export interface AnalyticsBreakdownQuery {
+  groupBy: AnalyticsBreakdownGroup;
+  range: AnalyticsRange;
+  limit?: number;
+  sortBy?: AnalyticsBreakdownSort;
+  timezone?: string;
+}
+
+export interface ActivityActor {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+export interface ActivityEntity {
+  kind: string;
+  id: string;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: string;
+  occurredAt: string;
+  actor?: ActivityActor | null;
+  summary: string;
+  entity?: ActivityEntity;
+  metadata?: Record<string, string | undefined>;
+}
+
+export interface ActivityFeed {
+  items: ActivityItem[];
+  nextCursor?: string | null;
+}
+
+export interface ActivityFeedQuery {
+  limit?: number;
+  cursor?: string;
+  types?: string;
 }
 
 // ─── Service Provider ──────────────────────────────────────────────────────

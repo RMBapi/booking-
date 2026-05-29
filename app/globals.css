@@ -421,6 +421,14 @@
   border-radius: theme(borderRadius.sm);
 }
 
+/* Form controls use border-based focus in components — avoid double highlight */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
 /* Shared page shells */
 .app-shell {
   width: 100%;

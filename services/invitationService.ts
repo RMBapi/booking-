@@ -31,9 +31,7 @@ export const revokeInvitation = async (
 // ─── Public / invitee-side ─────────────────────────────────────────────
 
 const baseURL =
-  typeof window !== "undefined"
-    ? "/api"
-    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+  typeof window !== "undefined" ? "/api" : process.env.NEXT_PUBLIC_API_URL;
 
 export const getInvitationByToken = async (
   token: string,

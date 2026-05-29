@@ -383,8 +383,8 @@ export function OnboardingModal({ open, onSoftDismiss }: OnboardingModalProps) {
                         Optional
                       </span>
                       <p className="text-sm text-text-tertiary mt-2 leading-relaxed">
-                        Upload an icon and a cover image. You can add or replace these
-                        anytime from Settings.
+                        Upload an icon and a cover image or video. You can add or
+                        replace these anytime from Settings.
                       </p>
                     </div>
 
@@ -400,8 +400,8 @@ export function OnboardingModal({ open, onSoftDismiss }: OnboardingModalProps) {
                         variant="cover"
                         value={image}
                         onChange={setImage}
-                        label="Cover image"
-                        hint="Recommended 1600×400px"
+                        label="Cover image or video"
+                        hint="Recommended 1600×400px. MP4 up to 20MB."
                       />
                     </div>
                   </motion.div>

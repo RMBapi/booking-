@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import {
   ELEGANZA,
+  HERO_FALLBACK,
   getImageUrl,
   resolveBusinessHeroImage,
 } from "@/lib/publicBrand";
+import { isVideoUrl } from "@/lib/media";
 import { fetchBusiness, fetchServices } from "./_data";
 import { PublicPageClient } from "./_components/PublicPageClient";
 import { PageFooter } from "./_components/PageFooter";
@@ -59,6 +61,15 @@ export default async function PublicBusinessPage({ params }: PageProps) {
 
   const heroImage = resolveBusinessHeroImage(business);
 
+  // For video heroes the poster is a plain <img> (not next/image), so preload
+  // it as the LCP element. Image heroes are already preloaded by next/image's
+  // `priority`, so we don't double-fetch them here.
+  const heroIsVideo = isVideoUrl(heroImage);
+  const heroPoster =
+    getImageUrl(business.logoUrl) ||
+    getImageUrl(business.logo) ||
+    HERO_FALLBACK;
+
   return (
     <div
       className="min-h-screen text-[#222222]"
@@ -68,6 +79,9 @@ export default async function PublicBusinessPage({ params }: PageProps) {
           "radial-gradient(circle at 12% 8%, rgba(221,211,207,0.45), transparent 55%), radial-gradient(circle at 88% 0%, rgba(239,239,239,0.7), transparent 45%)",
       }}
     >
+      {heroIsVideo && (
+        <link rel="preload" as="image" href={heroPoster} fetchPriority="high" />
+      )}
       {/*
         PublicPageClient handles all interactive state (auth, scroll, mobile menu)
         and renders the client-only sections (nav, hero, services, contact).

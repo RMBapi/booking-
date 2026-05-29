@@ -287,17 +287,22 @@
     padding-inline: 20px;
   }
 
-  .hero-mobile-media video,
-  .hero-mobile-media img {
-    object-position: center top;
+  /* Video heroes: centered framing — motion masks any cropping. Applies to the
+     video and its crossfading poster image. */
+  .hero-video-media video,
+  .hero-video-media img {
+    object-position: center center;
   }
+
+  /* Image heroes use focal-point positioning (.focus-subject → 18% center on
+     mobile) so the model's face stays in frame on portrait screens. */
 
   /* Cinematic bottom fade — improves readability without blurring the image. */
   .hero-overlay-mobile {
     background: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 0.18) 40%,
+      rgba(0, 0, 0, 0.12) 40%,
       rgba(0, 0, 0, 0.72) 100%
     );
   }
@@ -305,16 +310,16 @@
   /* Subtle luxury glassmorphism panel — integrated, soft, premium. */
   .hero-glass-panel {
     padding: 24px;
-    border-radius: 20px;
-    background: rgba(20, 20, 20, 0.38);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-radius: 24px;
+    background: rgba(20, 20, 20, 0.32);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
   }
 
   .hero-content-wrap {
-    max-width: 100%;
+    max-width: 90%;
     margin-bottom: 0;
   }
 

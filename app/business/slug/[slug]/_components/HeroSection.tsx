@@ -73,11 +73,12 @@ export function HeroSection({
           <SmartImage
             src={heroImage}
             alt={`${business.name} hero`}
-            className="hero-mobile-media absolute inset-0 w-full h-full"
+            className="hero-video-media absolute inset-0 w-full h-full"
             placeholderColor={ELEGANZA.inkSoft}
             videoPlayback="autoplay"
             coverTolerance={1}
             poster={heroPoster}
+            deferVideo
           />
         ) : (
           <Image
@@ -85,14 +86,17 @@ export function HeroSection({
             alt={`${business.name} hero`}
             fill
             priority
+            fetchPriority="high"
             sizes="100vw"
-            className="hero-mobile-media object-cover focus-subject"
+            className="hero-image-media object-cover focus-subject"
             style={{
               willChange: "transform",
+              // Desktop focal point (unchanged); mobile shifts toward the
+              // model's face on narrow portrait screens.
               "--focus-x": "20%",
               "--focus-y": "32%",
-              "--focus-x-mobile": "50%",
-              "--focus-y-mobile": "top",
+              "--focus-x-mobile": "18%",
+              "--focus-y-mobile": "50%",
             } as React.CSSProperties}
           />
         )}

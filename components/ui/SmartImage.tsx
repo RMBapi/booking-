@@ -31,6 +31,12 @@ interface SmartImageProps {
    * video fades in over it.
    */
   poster?: string | null;
+  /**
+   * When true (videos only), the poster paints immediately and the MP4 is not
+   * fetched until the page is interactive (after `window load` / idle). The
+   * video then crossfades over the poster. Keeps the hero off the LCP path.
+   */
+  deferVideo?: boolean;
 }
 
 type FitMode = "cover" | "contain";
@@ -49,6 +55,7 @@ export function SmartImage({
   rounded,
   videoPlayback = "autoplay",
   poster,
+  deferVideo = false,
 }: SmartImageProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -57,6 +64,10 @@ export function SmartImage({
   const [containerRatio, setContainerRatio] = useState<number | null>(null);
   const [errored, setErrored] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // Video crossfade state: whether the MP4 has started loading and whether it
+  // has enough data to paint (used to fade the video in over the poster).
+  const [videoActivated, setVideoActivated] = useState(!deferVideo);
+  const [videoVisible, setVideoVisible] = useState(false);
 
   const resolvedSrc = src?.trim() || null;
   const isVideo = isVideoUrl(resolvedSrc);
@@ -65,7 +76,42 @@ export function SmartImage({
     setErrored(false);
     setLoaded(false);
     setNaturalRatio(null);
-  }, [resolvedSrc]);
+    setVideoVisible(false);
+    setVideoActivated(!deferVideo);
+  }, [resolvedSrc, deferVideo]);
+
+  // Defer the MP4 network load until the page is interactive so the hero video
+  // never competes with the LCP poster image.
+  useEffect(() => {
+    if (!isVideo || !deferVideo || videoActivated) return;
+    if (typeof window === "undefined") return;
+
+    let cancelled = false;
+    const activate = () => {
+      if (!cancelled) setVideoActivated(true);
+    };
+
+    const schedule = () => {
+      const ric = (
+        window as unknown as {
+          requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void;
+        }
+      ).requestIdleCallback;
+      if (ric) ric(activate, { timeout: 1500 });
+      else window.setTimeout(activate, 300);
+    };
+
+    if (document.readyState === "complete") {
+      schedule();
+    } else {
+      window.addEventListener("load", schedule, { once: true });
+    }
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", schedule);
+    };
+  }, [isVideo, deferVideo, videoActivated]);
 
   // Cached images may already be decoded by the time the <img> mounts, so the
   // `onLoad` event never fires and the element would stay hidden. Detect the
@@ -98,6 +144,7 @@ export function SmartImage({
   useEffect(() => {
     const video = videoRef.current;
     if (!isVideo || !video || videoPlayback !== "autoplay") return;
+    if (deferVideo && !videoActivated) return;
 
     const play = () => {
       void video.play().catch(() => {
@@ -108,7 +155,7 @@ export function SmartImage({
     play();
     video.addEventListener("loadeddata", play);
     return () => video.removeEventListener("loadeddata", play);
-  }, [isVideo, resolvedSrc, videoPlayback]);
+  }, [isVideo, resolvedSrc, videoPlayback, deferVideo, videoActivated]);
 
   const fitMode: FitMode =
     naturalRatio && containerRatio
@@ -150,24 +197,39 @@ export function SmartImage({
       )}
 
       {hasMedia && isVideo ? (
-        <video
-          ref={videoRef}
-          src={resolvedSrc}
-          poster={poster ?? undefined}
-          aria-label={alt}
-          controls={videoPlayback === "controls"}
-          autoPlay={videoPlayback === "autoplay"}
-          muted={videoPlayback === "autoplay"}
-          loop={videoPlayback === "autoplay"}
-          playsInline
-          preload="metadata"
-          onLoadedMetadata={(e) => {
-            const video = e.currentTarget;
-            handleDimensions(video.videoWidth, video.videoHeight);
-          }}
-          onError={() => setErrored(true)}
-          className={`relative w-full h-full transition-opacity duration-500 ${fitClass} ${visibilityClass}`}
-        />
+        <>
+          {/* Poster paints immediately (LCP-eligible) and stays beneath the
+              video until the MP4 can play, then crossfades out. */}
+          {poster && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={poster}
+              alt=""
+              aria-hidden="true"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${videoVisible ? "opacity-0" : "opacity-100"}`}
+            />
+          )}
+          <video
+            ref={videoRef}
+            src={videoActivated ? resolvedSrc ?? undefined : undefined}
+            poster={poster ?? undefined}
+            aria-label={alt}
+            controls={videoPlayback === "controls"}
+            autoPlay={videoPlayback === "autoplay"}
+            muted={videoPlayback === "autoplay"}
+            loop={videoPlayback === "autoplay"}
+            playsInline
+            preload={deferVideo ? "none" : "metadata"}
+            onLoadedMetadata={(e) => {
+              const video = e.currentTarget;
+              handleDimensions(video.videoWidth, video.videoHeight);
+            }}
+            onLoadedData={() => setVideoVisible(true)}
+            onPlaying={() => setVideoVisible(true)}
+            onError={() => setErrored(true)}
+            className={`absolute inset-0 w-full h-full ${fitClass} transition-opacity duration-700 ${videoVisible ? "opacity-100" : "opacity-0"}`}
+          />
+        </>
       ) : hasMedia ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img

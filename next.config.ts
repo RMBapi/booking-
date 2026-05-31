@@ -58,6 +58,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    // Send first-time visitors landing on "/" straight to the configured
+    // business site at the server/edge — no client JS download, hydration, or
+    // useEffect round-trip required (which the old client-side redirect paid for).
+    const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG;
+    if (!slug) return [];
+    return [
+      {
+        source: "/",
+        destination: `/business/slug/${slug}`,
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     // Prefer explicit backend URL; fall back to localhost:3000
     const backendUrl =

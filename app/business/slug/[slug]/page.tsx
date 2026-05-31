@@ -10,6 +10,7 @@ import { isVideoUrl } from "@/lib/media";
 import { fetchBusiness, fetchServices } from "./_data";
 import { PublicPageClient } from "./_components/PublicPageClient";
 import { PageFooter } from "./_components/PageFooter";
+import { startTimer } from "@/lib/serverTiming";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -49,15 +50,24 @@ export async function generateMetadata({
 /* ── Server Component page ────────────────────────────────────────────── */
 
 export default async function PublicBusinessPage({ params }: PageProps) {
+  const pageTimer = startTimer("PublicBusinessPage total");
   const { slug } = await params;
 
-  // Parallel server-side data fetching — no loading spinner needed
+  // Parallel server-side data fetching — no loading spinner needed.
+  // This window ≈ the slower of the two backend calls (they run concurrently).
+  const dataTimer = startTimer(`data fetch (parallel) ${slug}`);
   const [business, services] = await Promise.all([
     fetchBusiness(slug),
     fetchServices(slug),
   ]);
+  dataTimer();
 
-  if (!business) notFound();
+  if (!business) {
+    pageTimer({ note: `${slug} → notFound` });
+    notFound();
+  }
+
+  pageTimer({ note: slug });
 
   const heroImage = resolveBusinessHeroImage(business);
 

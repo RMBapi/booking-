@@ -1,11 +1,18 @@
 "use client";
 
 import React from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { ArrowRight, MapPin, Phone, Mail } from "lucide-react";
 import { Business, Service } from "@/types";
-import { Modal, BookingForm } from "@/components";
+import { Modal } from "@/components";
 import { ELEGANZA } from "@/lib/publicBrand";
+
+// Lazily loaded — the booking modal contents aren't part of first paint.
+const BookingForm = dynamic(
+  () => import("@/features/booking/BookingForm").then((m) => m.BookingForm),
+  { ssr: false },
+);
 import {
   fadeUp,
   fadeIn,

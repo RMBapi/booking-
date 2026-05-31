@@ -1,13 +1,21 @@
 "use client";
 
 import React, { useRef } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { motion, useScroll, useTransform, type Variants } from "framer-motion";
 import { Business, Service } from "@/types";
-import { Modal, BookingForm, SmartImage } from "@/components";
-import { ELEGANZA, getImageUrl, resolveHeroVideoPoster } from "@/lib/publicBrand";
+import { Modal, SmartImage } from "@/components";
+import { ELEGANZA, resolveHeroVideoPoster } from "@/lib/publicBrand";
 import { isVideoUrl } from "@/lib/media";
 import { EASE_OUT_QUART } from "../_constants";
+
+// The booking flow (~2.5k LOC + calendar/steps) is only needed once the user
+// opens the "Book Now" modal, so it's lazily loaded out of the initial bundle.
+const BookingForm = dynamic(
+  () => import("@/features/booking/BookingForm").then((m) => m.BookingForm),
+  { ssr: false },
+);
 
 interface HeroSectionProps {
   business: Business;

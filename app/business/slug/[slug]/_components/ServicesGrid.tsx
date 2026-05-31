@@ -1,10 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Service, Business } from "@/types";
-import { Modal, BookingForm, SmartImage } from "@/components";
+import { Modal, SmartImage } from "@/components";
 import { ELEGANZA } from "@/lib/publicBrand";
+
+// Lazily loaded — the booking modal contents aren't part of first paint.
+const BookingForm = dynamic(
+  () => import("@/features/booking/BookingForm").then((m) => m.BookingForm),
+  { ssr: false },
+);
 import { isServicePriceVisible } from "@/features/booking/utils";
 import { fadeUp, staggerContainer, scaleUp, VP } from "../_constants";
 import {

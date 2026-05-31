@@ -1,21 +1,14 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { PageLoader } from "@/components";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  const router = useRouter();
   const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG;
 
-  useEffect(() => {
-    if (envSlug) {
-      router.replace(`/business/slug/${envSlug}`);
-    }
-  }, [router, envSlug]);
-
+  // Server-side redirect: resolves before any client JS ships, so first-time
+  // visitors never pay for a bundle download + hydration + useEffect hop just
+  // to be sent to the real business page. (next.config redirects() handles this
+  // at the edge too; this is the runtime fallback.)
   if (envSlug) {
-    return <PageLoader />;
+    redirect(`/business/slug/${envSlug}`);
   }
 
   return (

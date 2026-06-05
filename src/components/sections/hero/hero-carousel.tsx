@@ -72,7 +72,7 @@ export function HeroCarousel({
                 type="button"
                 onClick={() => onOpen(i)}
                 aria-label={`${shot.categoryLabel} — ${shot.title}`}
-                className="mt-2 block w-full rounded-[20px] overflow-hidden"
+                className="relative mt-2 block w-full aspect-[16/10] rounded-[20px] overflow-hidden"
                 style={{
                   border: "1px solid rgba(255,255,255,0.4)",
                   boxShadow: "0 20px 60px rgba(0,0,0,0.12)",
@@ -81,11 +81,12 @@ export function HeroCarousel({
                 <Image
                   src={shot.src}
                   alt={shot.title}
+                  fill
                   priority={i === 0}
                   quality={90}
                   sizes="82vw"
                   placeholder="blur"
-                  className="w-full h-auto block aspect-[16/10] object-cover"
+                  className="object-cover"
                 />
               </button>
             </div>

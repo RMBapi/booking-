@@ -131,6 +131,9 @@
 
   html {
     scroll-behavior: smooth;
+    /* Belt-and-suspenders with body: never allow a stray decorative element
+     * (e.g. the blurred showcase glow) to create a horizontal scrollbar. */
+    overflow-x: clip;
   }
 
   @media (prefers-reduced-motion: reduce) {

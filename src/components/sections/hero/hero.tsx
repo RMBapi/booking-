@@ -24,10 +24,10 @@ const CORNER: Record<
   HeroShot["corner"],
   { cell: string; anchorX: number; anchorY: number; delay: number }
 > = {
-  tl: { cell: "row-start-1 col-start-1 justify-self-start", anchorX: 1, anchorY: 0.2, delay: 0 },
-  tr: { cell: "row-start-1 col-start-2 justify-self-end", anchorX: 0, anchorY: 0.2, delay: 0.1 },
-  bl: { cell: "row-start-2 col-start-1 justify-self-start", anchorX: 1, anchorY: 0.8, delay: 0.2 },
-  br: { cell: "row-start-2 col-start-2 justify-self-end", anchorX: 0, anchorY: 0.8, delay: 0.3 },
+  tl: { cell: "row-start-1 col-start-1", anchorX: 1, anchorY: 0.2, delay: 0 },
+  tr: { cell: "row-start-1 col-start-2", anchorX: 0, anchorY: 0.2, delay: 0.1 },
+  bl: { cell: "row-start-2 col-start-1", anchorX: 1, anchorY: 0.8, delay: 0.2 },
+  br: { cell: "row-start-2 col-start-2", anchorX: 0, anchorY: 0.8, delay: 0.3 },
 };
 
 // Soft brand purple shared by the connector lines and nodes (brand token).

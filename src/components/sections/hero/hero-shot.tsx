@@ -52,7 +52,7 @@ export function HeroShotCard({
       type="button"
       onClick={onOpen}
       aria-label={`${shot.categoryLabel} — ${shot.title}. ${shot.actionHint}`}
-      className="group relative block w-full max-w-[450px] md:max-w-[490px] lg:max-w-[550px] rounded-2xl overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/60"
+      className="group relative block w-full max-w-[450px] md:max-w-[490px] lg:max-w-[550px] aspect-[16/10] rounded-2xl overflow-hidden text-left outline-none focus-visible:ring-2 focus-visible:ring-brand-purple/60"
       style={{
         border: "1px solid rgba(255,255,255,0.4)",
         transformOrigin: `${innerX} ${innerY}`,
@@ -83,11 +83,12 @@ export function HeroShotCard({
       <Image
         src={shot.src}
         alt={shot.title}
+        fill
         priority={priority}
         quality={90}
         sizes="(min-width: 1024px) 550px, (min-width: 768px) 450px, 90vw"
         placeholder="blur"
-        className="w-full h-auto block aspect-[16/10] object-cover"
+        className="object-cover"
       />
 
       {/* Soft accent glow ring, brightening on hover */}

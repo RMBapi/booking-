@@ -3,20 +3,26 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts";
+import { ConnectionError } from "@/components/auth";
 import { postLoginPath } from "@/lib/postLoginRedirect";
 
 export default function Home() {
   const router = useRouter();
-  const { me, isLoading } = useAuth();
+  const { me, isLoading, authError, retry } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
+    if (authError) return; // backend unreachable — show retry, don't redirect
     if (!me) {
       router.replace("/login");
     } else {
       router.replace(postLoginPath(me));
     }
-  }, [me, isLoading, router]);
+  }, [me, isLoading, authError, router]);
+
+  if (authError && !me) {
+    return <ConnectionError onRetry={retry} />;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">

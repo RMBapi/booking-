@@ -230,27 +230,64 @@ export function ImageUploader({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-2 gap-1.5"
+                  className={cn(
+                    "absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5",
+                    // The icon variant is only 96px wide — two text buttons
+                    // overflow and get clipped, so use compact icon-only
+                    // buttons centred in the box. The cover variant has room
+                    // for labelled buttons along the bottom.
+                    variant === "icon"
+                      ? "items-center justify-center"
+                      : "items-end justify-center pb-2",
+                  )}
                 >
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      open();
-                    }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/90 hover:bg-white text-xs font-semibold text-text-primary"
-                  >
-                    <RefreshCw className="h-3 w-3" />
-                    Replace
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onRemove}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/90 hover:bg-white text-xs font-semibold text-rose-600"
-                  >
-                    <X className="h-3 w-3" />
-                    Remove
-                  </button>
+                  {variant === "icon" ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          open();
+                        }}
+                        title="Replace"
+                        aria-label="Replace icon"
+                        className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-white/90 hover:bg-white text-text-primary shadow-sm"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onRemove}
+                        title="Remove"
+                        aria-label="Remove icon"
+                        className="inline-flex items-center justify-center h-7 w-7 rounded-full bg-white/90 hover:bg-white text-rose-600 shadow-sm"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          open();
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/90 hover:bg-white text-xs font-semibold text-text-primary"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Replace
+                      </button>
+                      <button
+                        type="button"
+                        onClick={onRemove}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-white/90 hover:bg-white text-xs font-semibold text-rose-600"
+                      >
+                        <X className="h-3 w-3" />
+                        Remove
+                      </button>
+                    </>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

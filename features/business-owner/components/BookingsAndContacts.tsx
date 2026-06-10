@@ -3,7 +3,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { LayoutGroup, motion } from "framer-motion";
 import {
-  BadgeCheck,
   CalendarDays,
   CheckCircle2,
   ChevronDown,
@@ -28,7 +27,11 @@ import {
   StatusPill,
   type StatusTone,
 } from "@/components/ui";
-import { useGetBookings, useGetContacts, useUpdateBookingStatus } from "../hooks";
+import {
+  useGetBookings,
+  useGetContacts,
+  useUpdateBookingStatus,
+} from "../hooks";
 import { Booking, BookingStatus, Contact } from "@/types";
 import * as toast from "@/lib/toast";
 import { cn } from "@/utils";
@@ -75,11 +78,18 @@ function relativeTime(iso: string): string {
 
   const past = diffMs < 0;
   if (absMin < 1) return "Just now";
-  if (absMin < 60) return past ? `${Math.round(absMin)}m ago` : `in ${Math.round(absMin)}m`;
+  if (absMin < 60)
+    return past ? `${Math.round(absMin)}m ago` : `in ${Math.round(absMin)}m`;
   const absHr = absMin / 60;
-  if (absHr < 24) return past ? `${Math.round(absHr)}h ago` : `in ${Math.round(absHr)}h`;
-  if (absDay < 7) return past ? `${Math.round(absDay)}d ago` : `in ${Math.round(absDay)}d`;
-  return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+  if (absHr < 24)
+    return past ? `${Math.round(absHr)}h ago` : `in ${Math.round(absHr)}h`;
+  if (absDay < 7)
+    return past ? `${Math.round(absDay)}d ago` : `in ${Math.round(absDay)}d`;
+  return d.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  });
 }
 
 function fullDateTime(iso: string): string {
@@ -111,7 +121,9 @@ function shortTime(iso: string): string {
 export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
   businessId,
 }) => {
-  const [activeTab, setActiveTab] = useState<"bookings" | "contacts">("bookings");
+  const [activeTab, setActiveTab] = useState<"bookings" | "contacts">(
+    "bookings",
+  );
   const [statusFilter, setStatusFilter] = useState<BookingStatus | "">("");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
@@ -128,7 +140,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       search: searchTerm.trim() || undefined,
       status: statusFilter || undefined,
     }),
-    [currentPage, pageSize, searchTerm, statusFilter]
+    [currentPage, pageSize, searchTerm, statusFilter],
   );
 
   const contactParams = useMemo(
@@ -137,7 +149,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       limit: pageSize,
       search: searchTerm.trim() || undefined,
     }),
-    [currentPage, pageSize, searchTerm]
+    [currentPage, pageSize, searchTerm],
   );
 
   // Lazy-fetch: only the active tab's data is queried; the inactive tab is
@@ -171,23 +183,7 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
           toast.success("Booking confirmed successfully!");
           refetchBookings();
         },
-      }
-    );
-  };
-
-  const handleCompleteBooking = (bookingId: string) => {
-    updateStatus(
-      {
-        id: bookingId,
-        status: "Completed",
-        businessId,
       },
-      {
-        onSuccess: () => {
-          toast.success("Booking marked as completed!");
-          refetchBookings();
-        },
-      }
     );
   };
 
@@ -225,12 +221,14 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
 
   const totalEntries =
     activeTab === "bookings"
-      ? bookingsMeta?.total ?? bookings.length
-      : contactsMeta?.total ?? contacts.length;
+      ? (bookingsMeta?.total ?? bookings.length)
+      : (contactsMeta?.total ?? contacts.length);
   const totalPages =
     activeTab === "bookings"
-      ? bookingsMeta?.totalPages ?? Math.max(1, Math.ceil(filteredBookings.length / pageSize))
-      : contactsMeta?.totalPages ?? Math.max(1, Math.ceil(filteredContacts.length / pageSize));
+      ? (bookingsMeta?.totalPages ??
+        Math.max(1, Math.ceil(filteredBookings.length / pageSize)))
+      : (contactsMeta?.totalPages ??
+        Math.max(1, Math.ceil(filteredContacts.length / pageSize)));
   const safePage = Math.min(currentPage, totalPages);
 
   // Only show the badge count once that tab's data has actually been fetched.
@@ -238,12 +236,14 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
   const bookingCountLabel = bookingsMeta?.total;
   const contactCountLabel = contactsMeta?.total;
 
-  const currentItems = activeTab === "bookings" ? filteredBookings : filteredContacts;
+  const currentItems =
+    activeTab === "bookings" ? filteredBookings : filteredContacts;
   const start = currentItems.length === 0 ? 0 : (safePage - 1) * pageSize + 1;
   const end = Math.min(safePage * pageSize, totalEntries);
 
   const selectedStatusLabel =
-    STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ?? "All statuses";
+    STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label ??
+    "All statuses";
 
   const bookingColumns: DataTableColumn<Booking>[] = [
     {
@@ -257,7 +257,8 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
               {shortDate(b.bookingTime.start)}
             </p>
             <p className="text-xs text-text-tertiary tabular mt-0.5">
-              {shortTime(b.bookingTime.start)} · {relativeTime(b.bookingTime.start)}
+              {shortTime(b.bookingTime.start)} ·{" "}
+              {relativeTime(b.bookingTime.start)}
             </p>
           </div>
         ) : (
@@ -272,14 +273,18 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       cell: (b) => {
         const u = b.user || b.customer;
         if (!u) return <span className="text-text-quaternary">—</span>;
-        const initials = `${(u.firstName?.[0] ?? "")}${(u.lastName?.[0] ?? "")}`.toUpperCase();
+        const initials =
+          `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase();
         const fullName = `${u.firstName} ${u.lastName ?? ""}`.trim();
         return (
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-indigo-100 text-primary-700 text-[10px] font-semibold shrink-0">
               {initials || "?"}
             </span>
-            <span className="text-sm font-semibold text-text-primary truncate" title={fullName}>
+            <span
+              className="text-sm font-semibold text-text-primary truncate"
+              title={fullName}
+            >
               {fullName}
             </span>
           </div>
@@ -294,7 +299,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       cell: (b) => {
         const u = b.user || b.customer;
         return u?.phone ? (
-          <span className="text-sm text-text-secondary tabular block truncate" title={u.phone}>
+          <span
+            className="text-sm text-text-secondary tabular block truncate"
+            title={u.phone}
+          >
             {u.phone}
           </span>
         ) : (
@@ -310,7 +318,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       cell: (b) => {
         const u = b.user || b.customer;
         return u?.email ? (
-          <span className="text-sm text-text-secondary block truncate" title={u.email}>
+          <span
+            className="text-sm text-text-secondary block truncate"
+            title={u.email}
+          >
             {u.email}
           </span>
         ) : (
@@ -325,7 +336,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       truncate: true,
       cell: (b) =>
         b.service?.name ? (
-          <span className="text-sm text-text-secondary block truncate" title={b.service.name}>
+          <span
+            className="text-sm text-text-secondary block truncate"
+            title={b.service.name}
+          >
             {b.service.name}
           </span>
         ) : (
@@ -342,7 +356,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
         if (!sp) return <span className="text-text-quaternary">—</span>;
         const name = `${sp.firstName ?? ""} ${sp.lastName ?? ""}`.trim();
         return name ? (
-          <span className="text-sm text-text-secondary block truncate" title={name}>
+          <span
+            className="text-sm text-text-secondary block truncate"
+            title={name}
+          >
             {name}
           </span>
         ) : (
@@ -354,7 +371,9 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       key: "status",
       header: "Status",
       width: COL.status,
-      cell: (b) => <StatusPill tone={statusTone(b.status)}>{b.status}</StatusPill>,
+      cell: (b) => (
+        <StatusPill tone={statusTone(b.status)}>{b.status}</StatusPill>
+      ),
     },
     {
       key: "notes",
@@ -389,15 +408,6 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             disabled: isUpdating,
           });
         }
-        if (b.status === "Confirmed") {
-          items.push({
-            key: "complete",
-            label: "Complete booking",
-            icon: <BadgeCheck />,
-            onClick: () => handleCompleteBooking(b.id),
-            disabled: isUpdating,
-          });
-        }
         items.push({
           key: "view",
           label: "View details",
@@ -426,7 +436,12 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             danger: true,
           });
         }
-        return <ActionMenu items={items} triggerLabel={`Actions for booking ${b.id}`} />;
+        return (
+          <ActionMenu
+            items={items}
+            triggerLabel={`Actions for booking ${b.id}`}
+          />
+        );
       },
     },
   ];
@@ -456,14 +471,18 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       width: COL.person,
       truncate: true,
       cell: (c) => {
-        const initials = `${(c.firstName?.[0] ?? "")}${(c.lastName?.[0] ?? "")}`.toUpperCase();
+        const initials =
+          `${c.firstName?.[0] ?? ""}${c.lastName?.[0] ?? ""}`.toUpperCase();
         const fullName = `${c.firstName} ${c.lastName}`.trim();
         return (
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-subtle text-text-secondary text-[10px] font-semibold border border-border-subtle shrink-0">
               {initials || "?"}
             </span>
-            <span className="text-sm font-semibold text-text-primary truncate" title={fullName}>
+            <span
+              className="text-sm font-semibold text-text-primary truncate"
+              title={fullName}
+            >
               {fullName}
             </span>
           </div>
@@ -477,7 +496,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       truncate: true,
       cell: (c) =>
         c.phone ? (
-          <span className="text-sm text-text-secondary tabular block truncate" title={c.phone}>
+          <span
+            className="text-sm text-text-secondary tabular block truncate"
+            title={c.phone}
+          >
             {c.phone}
           </span>
         ) : (
@@ -491,7 +513,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       truncate: true,
       cell: (c) =>
         c.email ? (
-          <span className="text-sm text-text-secondary block truncate" title={c.email}>
+          <span
+            className="text-sm text-text-secondary block truncate"
+            title={c.email}
+          >
             {c.email}
           </span>
         ) : (
@@ -505,7 +530,10 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
       truncate: true,
       cell: (c) =>
         c.service?.name ? (
-          <span className="text-sm text-text-secondary block truncate" title={c.service.name}>
+          <span
+            className="text-sm text-text-secondary block truncate"
+            title={c.service.name}
+          >
             {c.service.name}
           </span>
         ) : (
@@ -554,51 +582,67 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
     <div className="space-y-5">
       {/* Tab segmented control + primary action */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-      <LayoutGroup id="bookings-tabs">
-        <div className="inline-flex items-center rounded-xl border border-border-subtle bg-subtle/60 p-1 gap-1">
-          {(
-            [
-              { k: "bookings" as const, label: "User", count: bookingCountLabel },
-              { k: "contacts" as const, label: "Guest", count: contactCountLabel },
-            ] as const
-          ).map((t) => {
-            const active = activeTab === t.k;
-            return (
-              <button
-                key={t.k}
-                type="button"
-                onClick={() => {
-                  setActiveTab(t.k);
-                  setCurrentPage(1);
-                }}
-                className={cn(
-                  "relative inline-flex items-center gap-2 rounded-lg px-4 h-9 text-sm font-medium transition-colors",
-                  active ? "text-text-primary" : "text-text-tertiary hover:text-text-secondary",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="bookings-tab"
-                    transition={{ type: "spring", stiffness: 320, damping: 28 }}
-                    className="absolute inset-0 rounded-lg bg-surface shadow-[0_2px_8px_rgba(15,15,14,0.06)] border border-border-subtle"
-                  />
-                )}
-                <span className="relative z-10">{t.label}</span>
-                {t.count !== undefined && (
-                  <span
-                    className={cn(
-                      "relative z-10 inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular",
-                      active ? "bg-primary-50 text-primary-700" : "bg-surface/80 text-text-tertiary",
-                    )}
-                  >
-                    {t.count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </LayoutGroup>
+        <LayoutGroup id="bookings-tabs">
+          <div className="inline-flex items-center rounded-xl border border-border-subtle bg-subtle/60 p-1 gap-1">
+            {(
+              [
+                {
+                  k: "bookings" as const,
+                  label: "User",
+                  count: bookingCountLabel,
+                },
+                {
+                  k: "contacts" as const,
+                  label: "Guest",
+                  count: contactCountLabel,
+                },
+              ] as const
+            ).map((t) => {
+              const active = activeTab === t.k;
+              return (
+                <button
+                  key={t.k}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(t.k);
+                    setCurrentPage(1);
+                  }}
+                  className={cn(
+                    "relative inline-flex items-center gap-2 rounded-lg px-4 h-9 text-sm font-medium transition-colors",
+                    active
+                      ? "text-text-primary"
+                      : "text-text-tertiary hover:text-text-secondary",
+                  )}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="bookings-tab"
+                      transition={{
+                        type: "spring",
+                        stiffness: 320,
+                        damping: 28,
+                      }}
+                      className="absolute inset-0 rounded-lg bg-surface shadow-[0_2px_8px_rgba(15,15,14,0.06)] border border-border-subtle"
+                    />
+                  )}
+                  <span className="relative z-10">{t.label}</span>
+                  {t.count !== undefined && (
+                    <span
+                      className={cn(
+                        "relative z-10 inline-flex items-center justify-center min-w-[22px] h-5 px-1.5 rounded-full text-[11px] font-semibold tabular",
+                        active
+                          ? "bg-primary-50 text-primary-700"
+                          : "bg-surface/80 text-text-tertiary",
+                      )}
+                    >
+                      {t.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </LayoutGroup>
         <Button
           size="sm"
           onClick={() => setCreateBookingOpen(true)}
@@ -663,12 +707,20 @@ export const BookingsAndContacts: React.FC<BookingsAndContactsProps> = ({
             <label
               className={cn(
                 "inline-flex items-center gap-2 h-10 rounded-lg bg-surface border border-border-subtle px-3 text-sm cursor-pointer transition-colors",
-                selectedDate ? "text-text-primary" : "text-text-secondary hover:bg-subtle/70",
+                selectedDate
+                  ? "text-text-primary"
+                  : "text-text-secondary hover:bg-subtle/70",
               )}
             >
               <CalendarDays className="h-3.5 w-3.5 text-text-tertiary" />
               <span className="font-medium">
-                {selectedDate ? new Date(selectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Filter by date"}
+                {selectedDate
+                  ? new Date(selectedDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
+                  : "Filter by date"}
               </span>
               <input
                 type="date"

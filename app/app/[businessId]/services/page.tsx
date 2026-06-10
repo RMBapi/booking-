@@ -68,7 +68,9 @@ const STATUS_OPTIONS = [
   { label: "Archived", value: "Archived" },
 ] as const;
 
-function statusToneFor(status: Service["status"]): "success" | "warning" | "muted" {
+function statusToneFor(
+  status: Service["status"],
+): "success" | "warning" | "muted" {
   if (status === "Active") return "success";
   if (status === "Inactive") return "warning";
   return "muted";
@@ -272,7 +274,10 @@ export default function BusinessServicesPage() {
       width: COL.person,
       truncate: true,
       cell: (s) => (
-        <span className="text-sm font-semibold text-text-primary block truncate" title={s.name}>
+        <span
+          className="text-sm font-semibold text-text-primary block truncate"
+          title={s.name}
+        >
           {s.name}
         </span>
       ),
@@ -309,7 +314,10 @@ export default function BusinessServicesPage() {
       header: "Visibility",
       width: COL.short,
       cell: (s) => (
-        <StatusPill tone={s.priceDisplayMode ? "info" : "muted"} withDot={false}>
+        <StatusPill
+          tone={s.priceDisplayMode ? "info" : "muted"}
+          withDot={false}
+        >
           {s.priceDisplayMode ? "Visible" : "Hidden"}
         </StatusPill>
       ),
@@ -318,7 +326,9 @@ export default function BusinessServicesPage() {
       key: "status",
       header: "Status",
       width: COL.status,
-      cell: (s) => <StatusPill tone={statusToneFor(s.status)}>{s.status}</StatusPill>,
+      cell: (s) => (
+        <StatusPill tone={statusToneFor(s.status)}>{s.status}</StatusPill>
+      ),
     },
     {
       key: "actions",
@@ -339,7 +349,10 @@ export default function BusinessServicesPage() {
               key: "providers",
               label: "Manage providers",
               icon: <Users />,
-              onClick: () => router.push(`/business-owner/${businessId}/services/${s.id}/providers`),
+              onClick: () =>
+                router.push(
+                  `/business-owner/${businessId}/services/${s.id}/providers`,
+                ),
             },
             {
               key: "schedule",
@@ -368,7 +381,9 @@ export default function BusinessServicesPage() {
         className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8"
       >
         <div>
-          <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">Catalog</p>
+          <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+            Catalog
+          </p>
           <h1 className="text-3xl font-bold text-text-primary tracking-display mt-1">
             Services
           </h1>

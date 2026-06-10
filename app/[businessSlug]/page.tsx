@@ -1,8 +1,13 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import Link from "next/link";
 import { getBusinessBySlug } from "@/services/businessService";
+import {
+  DAY_LABELS,
+  DAY_ORDER,
+  formatOpeningHoursRow,
+} from "@/lib/openingHours";
+import type { OpeningHours } from "@/types";
 
 interface BusinessPublic {
   id?: string;
@@ -10,6 +15,7 @@ interface BusinessPublic {
   slug?: string;
   description?: string;
   logo?: string | null;
+  openingHours?: OpeningHours | null;
 }
 
 export default function BusinessPublicPage({
@@ -59,20 +65,26 @@ export default function BusinessPublicPage({
         {biz.description && (
           <p className="text-sm text-stone-500 mb-6">{biz.description}</p>
         )}
-        <div className="flex justify-center gap-2">
-          <Link
-            href={`/${businessSlug}/login`}
-            className="inline-block rounded-lg bg-stone-900 text-white text-sm font-semibold px-4 py-2.5 hover:bg-stone-800"
-          >
-            Customer sign in
-          </Link>
-          <Link
-            href={`/register?slug=${encodeURIComponent(businessSlug)}`}
-            className="inline-block rounded-lg border border-stone-300 text-stone-900 text-sm font-semibold px-4 py-2.5 hover:bg-stone-50"
-          >
-            Sign up
-          </Link>
-        </div>
+        {biz.openingHours && (
+          <div className="mb-6 text-left">
+            <p className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-2">
+              Opening hours
+            </p>
+            <dl className="divide-y divide-stone-100">
+              {DAY_ORDER.map((day) => (
+                <div
+                  key={day}
+                  className="flex items-center justify-between py-1.5 text-sm"
+                >
+                  <dt className="text-stone-600">{DAY_LABELS[day]}</dt>
+                  <dd className="font-medium text-stone-900 tabular-nums">
+                    {formatOpeningHoursRow(biz.openingHours![day])}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        )}
       </div>
     </div>
   );

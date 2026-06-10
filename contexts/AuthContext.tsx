@@ -18,7 +18,7 @@ import {
   setActiveBusinessId as setActiveBusinessIdLS,
   setSessionMarker,
 } from "@/lib/api/accessToken";
-import { refreshAccess } from "@/lib/api/refresh";
+import { refreshAccess, isTransientError } from "@/lib/api/refresh";
 import { getMe, logout as logoutApi } from "@/services/authService";
 import type { BusinessMembership, MeResponse } from "@/types";
 
@@ -27,6 +27,13 @@ const STALE_AFTER_MS = 5 * 60 * 1000;
 interface AuthContextValue {
   me: MeResponse | null;
   isLoading: boolean;
+  /**
+   * True when bootstrap couldn't reach/verify the backend (network/5xx) — the
+   * session is NOT necessarily over. Guards should show "something went wrong"
+   * + Retry instead of redirecting to /login.
+   */
+  authError: boolean;
+  retry: () => void;
   activeBusinessId: string | null;
   setActiveBusinessId: (id: string | null) => void;
   activeMembership: BusinessMembership | null;
@@ -59,6 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const [me, setMe] = useState<StoredMe | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
   const [activeBusinessIdState, setActiveBusinessIdState] = useState<
     string | null
   >(null);
@@ -111,40 +119,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchAndStoreMe]);
 
-  // ─── Bootstrap on mount ────────────────────────────────────────────────
-  useEffect(() => {
-    if (bootstrappedRef.current) return;
-    bootstrappedRef.current = true;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        await refreshAccess();
-        const fresh = await getMe();
-        if (cancelled) return;
-        const stored: StoredMe = { ...fresh, fetchedAt: Date.now() };
-        setMe(stored);
-        setSessionMarker(true);
-        const lsId = getActiveBusinessId();
-        if (lsId && fresh.businesses.some((b) => b.id === lsId)) {
-          setActiveBusinessIdState(lsId);
-        } else if (fresh.businesses.length >= 1) {
-          updateActiveBusinessId(fresh.businesses[0].id);
-        }
-      } catch {
-        if (cancelled) return;
+  // ─── Bootstrap ─────────────────────────────────────────────────────────
+  // Restore the session from the refresh cookie, then load /auth/me. A
+  // transient failure (backend down / 5xx) sets `authError` but KEEPS the
+  // session — we don't log the user out over a server blip. Only a genuine
+  // auth failure (refresh 401/403) clears the session.
+  const bootstrap = useCallback(async () => {
+    setIsLoading(true);
+    setAuthError(false);
+    try {
+      await refreshAccess();
+      const fresh = await getMe();
+      const stored: StoredMe = { ...fresh, fetchedAt: Date.now() };
+      setMe(stored);
+      setSessionMarker(true);
+      const lsId = getActiveBusinessId();
+      if (lsId && fresh.businesses.some((b) => b.id === lsId)) {
+        setActiveBusinessIdState(lsId);
+      } else if (fresh.businesses.length >= 1) {
+        updateActiveBusinessId(fresh.businesses[0].id);
+      }
+    } catch (err) {
+      if (isTransientError(err)) {
+        // Backend unreachable/broken — surface an error, keep the session.
+        setAuthError(true);
+      } else {
+        // Genuinely logged out (expired/invalid refresh token).
         setAccessToken(null);
         setSessionMarker(false);
         setMe(null);
-      } finally {
-        if (!cancelled) setIsLoading(false);
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    } finally {
+      setIsLoading(false);
+    }
   }, [updateActiveBusinessId]);
+
+  useEffect(() => {
+    if (bootstrappedRef.current) return;
+    bootstrappedRef.current = true;
+    void bootstrap();
+  }, [bootstrap]);
 
   // ─── auth:unauthenticated → clear + redirect to /login ────────────────
   useEffect(() => {
@@ -229,6 +243,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       me,
       isLoading,
+      authError,
+      retry: () => void bootstrap(),
       activeBusinessId: activeBusinessIdState,
       setActiveBusinessId: updateActiveBusinessId,
       activeMembership,
@@ -239,6 +255,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [
       me,
       isLoading,
+      authError,
+      bootstrap,
       activeBusinessIdState,
       updateActiveBusinessId,
       activeMembership,

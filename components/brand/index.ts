@@ -1,0 +1,1 @@
+export { BookbitesLogo } from "./BookbitesLogo";

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, Building2, Cog, Users, Wrench } from "lucide-react";
+import { ArrowRight, Building2, Clock, Cog, Users, Wrench } from "lucide-react";
 import { FeatureGate } from "@/components/auth";
 import { AccessDenied } from "@/components/auth/AccessDenied";
 
@@ -20,6 +20,13 @@ const SETTINGS_GROUPS: SettingItem[] = [
     title: "Business information",
     description: "Name, contact details, branding and cover image.",
     icon: Building2,
+    enabled: true,
+  },
+  {
+    href: (id) => `/app/${id}/settings/opening-hours`,
+    title: "Opening hours",
+    description: "Set your weekly hours shown to customers on your public page.",
+    icon: Clock,
     enabled: true,
   },
   {

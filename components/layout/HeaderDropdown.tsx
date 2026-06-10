@@ -29,7 +29,7 @@ export function HeaderDropdown({
 }: HeaderDropdownProps) {
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useLayoutEffect(() => {
     if (!open || !triggerRef.current) {
@@ -40,14 +40,16 @@ export function HeaderDropdown({
     const updatePosition = () => {
       if (!triggerRef.current) return;
       const rect = triggerRef.current.getBoundingClientRect();
-      const top = rect.bottom + MENU_GAP;
-      let left = align === "right" ? rect.right - width : rect.left;
+      const viewportWidth = window.innerWidth;
+      const menuWidth = Math.min(width, viewportWidth - VIEWPORT_PADDING * 2);
+      const top = Math.min(rect.bottom + MENU_GAP, window.innerHeight - VIEWPORT_PADDING);
+      let left = align === "right" ? rect.right - menuWidth : rect.left;
 
-      const maxLeft = window.innerWidth - width - VIEWPORT_PADDING;
+      const maxLeft = viewportWidth - menuWidth - VIEWPORT_PADDING;
       if (left > maxLeft) left = maxLeft;
       if (left < VIEWPORT_PADDING) left = VIEWPORT_PADDING;
 
-      setPos({ top, left });
+      setPos({ top, left, width: menuWidth });
     };
 
     updatePosition();
@@ -110,7 +112,8 @@ export function HeaderDropdown({
                 position: "fixed",
                 top: pos.top,
                 left: pos.left,
-                width,
+                width: pos.width,
+                maxWidth: `calc(100vw - ${VIEWPORT_PADDING * 2}px)`,
               }}
               className={cn(
                 "z-[70] rounded-xl border border-border-subtle bg-surface shadow-xl shadow-black/10 overflow-hidden",

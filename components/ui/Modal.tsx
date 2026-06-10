@@ -104,7 +104,7 @@ function ModalBody({
   return createPortal(
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200",
+        "fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in-0 duration-200",
         overlayClassName,
       )}
       onClick={close}
@@ -112,9 +112,10 @@ function ModalBody({
       <div
         className={cn(
           "relative w-full bg-white dark:bg-gray-800",
-          "rounded-2xl shadow-2xl",
-          "max-h-[90vh] overflow-y-auto custom-scrollbar",
+          "rounded-t-2xl sm:rounded-2xl shadow-2xl",
+          "max-h-[92dvh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar",
           "animate-in zoom-in-95 fade-in-0 duration-200",
+          "pb-[env(safe-area-inset-bottom,0px)]",
           sizeStyles[size],
           className,
         )}

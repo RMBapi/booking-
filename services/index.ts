@@ -15,4 +15,5 @@ export * from "./invitationService";
 export * from "./dashboardService";
 export * from "./analyticsService";
 export * from "./activityService";
+export * from "./supportService";
 export type { ServiceProviderFilters } from "./serviceProviderService";

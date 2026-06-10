@@ -109,6 +109,8 @@ export const FEATURES = {
   VIEW_SETTINGS: "view_settings",
   MANAGE_TEAM: "manage_team",
   MANAGE_BUSINESS: "manage_business",
+  VIEW_TICKETS: "view_tickets",
+  MANAGE_TICKETS: "manage_tickets",
 } as const;
 
 export type FeatureCode = (typeof FEATURES)[keyof typeof FEATURES];
@@ -187,6 +189,44 @@ export interface CreateInvitationPayload {
 
 // ─── Business ───────────────────────────────────────────────────────────────
 
+// ─── Opening hours ──────────────────────────────────────────────────────────
+// Per-business weekly schedule, stored as JSONB on the business. `null` until
+// the owner configures it. Times are 24-hour "HH:mm"; format for display on
+// the client (see lib/openingHours.ts).
+
+export type DayKey =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+export interface DayOpeningHours {
+  isOpen: boolean;
+  /** Required when isOpen is true. 24-hour HH:mm, e.g. "07:00". */
+  open?: string;
+  /** Required when isOpen is true. 24-hour HH:mm, e.g. "18:00". */
+  close?: string;
+}
+
+export type OpeningHours = Record<DayKey, DayOpeningHours>;
+
+// ─── Social accounts ────────────────────────────────────────────────────────
+// Per-business social links, stored as a JSONB array. `null` until configured.
+// Saving replaces the whole array. See lib/socialAccounts.ts.
+
+export type SocialPlatform = "facebook" | "instagram";
+
+export interface SocialAccount {
+  platform: SocialPlatform;
+  /** Public profile link. ≤ 500 chars. */
+  url: string;
+}
+
+export type SocialAccounts = SocialAccount[];
+
 export interface Business {
   id: string;
   name: string;
@@ -197,7 +237,10 @@ export interface Business {
   address?: string;
   logo?: string;
   image?: string;
-  backupImage?: string | null;
+  /** Artwork shown on this business's login page. null until configured. */
+  loginImage?: string | null;
+  openingHours?: OpeningHours | null;
+  socialAccounts?: SocialAccounts | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -210,8 +253,10 @@ export interface CreateBusinessPayload {
   address?: string;
   logo?: string;
   image?: string;
-  backupImage?: string | null;
+  loginImage?: string;
   slug?: string;
+  openingHours?: OpeningHours;
+  socialAccounts?: SocialAccounts;
 }
 
 export interface UpdateBusinessPayload extends Partial<CreateBusinessPayload> {}
@@ -256,12 +301,7 @@ export interface UpdateServicePayload extends Partial<CreateServicePayload> {}
 
 export type BookingStatus = "Pending" | "Confirmed" | "Completed" | "Cancelled";
 export type ConfirmationMethod = "Email" | "SMS" | "Phone" | "None";
-export type BookingSource =
-  | "Website"
-  | "Phone"
-  | "WalkIn"
-  | "Mobile"
-  | "CRM";
+export type BookingSource = "Website" | "Phone" | "WalkIn" | "Mobile" | "CRM";
 
 export interface BookingTime {
   start: string;
@@ -424,10 +464,6 @@ export interface BookingListQuery extends PaginationParams {
   userId?: string;
   serviceId?: string;
   serviceProviderId?: string;
-  startDate?: string;
-  endDate?: string;
-  excludeStatus?: string;
-  include?: string;
 }
 
 export interface ContactListQuery extends PaginationParams {
@@ -438,195 +474,73 @@ export interface ContactListQuery extends PaginationParams {
   serviceId?: string;
 }
 
-// ─── Review ─────────────────────────────────────────────────────────────────
+// ─── Support tickets (Contact Center) ───────────────────────────────────────
+// Ticket-based Contact Us. CRM staff manage their business's tickets via
+// /support/admin/tickets. See docs: contact-us-integration.md.
 
-export interface ReviewUser {
+export type TicketType = "Business" | "Platform";
+
+export type TicketStatus =
+  | "Open"
+  | "InProgress"
+  | "WaitingForCustomer"
+  | "Resolved"
+  | "Closed";
+
+export type MessageAuthor = "Customer" | "Staff" | "System";
+
+export interface TicketMessage {
   id: string;
-  firstName: string;
-  lastName: string;
+  authorType: MessageAuthor;
+  authorName: string;
+  body: string;
+  viaEmail: boolean;
+  createdAt: string;
 }
 
-export interface ReviewBookingService {
+export interface PersonBrief {
   id: string;
   name: string;
+  email: string | null;
 }
 
-export interface ReviewBooking {
+export interface Ticket {
   id: string;
-  serviceId: string;
-  serviceProviderId: string;
-  service?: ReviewBookingService;
-}
-
-export interface Review {
-  id: string;
-  bookingId: string;
-  userId: string;
-  businessId: string;
-  rating: number;
-  comment: string | null;
+  ticketNumber: number;
+  type: TicketType;
+  businessId: string | null;
+  status: TicketStatus;
+  subject: string;
+  requesterName: string;
+  requesterEmail: string;
+  requesterPhone: string | null;
+  requesterUserId: string | null;
+  assignedTo: PersonBrief | null;
+  lastReplyAt: string | null;
   createdAt: string;
   updatedAt: string;
-  user?: ReviewUser;
-  booking?: ReviewBooking;
 }
 
-export interface ReviewSummary {
-  businessId: string;
-  total: number;
-  average: number;
-  distribution: Record<"1" | "2" | "3" | "4" | "5", number>;
+export interface TicketDetail extends Ticket {
+  messages: TicketMessage[];
 }
 
-export interface ReviewListQuery extends PaginationParams {
+export interface TicketListQuery extends PaginationParams {
+  status?: TicketStatus;
+  assignedToUserId?: string;
+  unassigned?: boolean;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
-  rating?: 1 | 2 | 3 | 4 | 5;
-  userId?: string;
 }
 
-// ─── Dashboard & Analytics ───────────────────────────────────────────────────
-
-export type AnalyticsRange = "30d" | "90d" | "year";
-export type AnalyticsMetric = "revenue" | "bookings";
-export type AnalyticsGranularity = "day" | "week" | "month";
-export type AnalyticsBreakdownGroup = "service" | "provider";
-export type AnalyticsBreakdownSort = "bookings" | "revenue";
-
-export interface DashboardSummaryToday {
-  bookingsCount: number;
-  activeProvidersCount: number;
-  pendingCount: number;
-  confirmedCount: number;
-  completedCount: number;
+export interface UpdateTicketPayload {
+  status?: TicketStatus;
+  /** Active member's user id, or null to unassign. */
+  assignedToUserId?: string | null;
 }
 
-export interface DashboardSummaryComparison {
-  bookingsVsLastWeekPercent: number;
-  bookingsLastWeekSameDay: number;
-}
-
-export interface DashboardSummaryCounts {
-  activeServices: number;
-  teamMembers: number;
-  activeProviders: number;
-  newCustomersLast7Days: number;
-}
-
-export interface DashboardSparklinePoint {
-  date: string;
-  bookings: number;
-}
-
-export interface DashboardWeekHeatmapPoint {
-  date: string;
-  dayOfWeek: number;
-  bookings: number;
-  isToday: boolean;
-}
-
-export interface DashboardSummary {
-  today: DashboardSummaryToday;
-  comparison: DashboardSummaryComparison;
-  counts: DashboardSummaryCounts;
-  sparkline: DashboardSparklinePoint[];
-  weekHeatmap: DashboardWeekHeatmapPoint[];
-}
-
-export interface DashboardSummaryQuery {
-  timezone?: string;
-  includeCancelled?: boolean;
-}
-
-export interface AnalyticsSummary {
-  range: AnalyticsRange;
-  from: string;
-  to: string;
-  revenue: number;
-  currency: string;
-  totalBookings: number;
-  uniqueCustomers: number;
-  avgBookingValue: number;
-  completedBookings: number;
-  cancelledBookings: number;
-  pendingBookings: number;
-}
-
-export interface AnalyticsSummaryQuery {
-  range: AnalyticsRange;
-  timezone?: string;
-}
-
-export interface AnalyticsTimeseriesPoint {
-  periodStart: string;
-  periodEnd: string;
-  value: number;
-}
-
-export interface AnalyticsTimeseries {
-  metric: AnalyticsMetric;
-  granularity: AnalyticsGranularity;
-  points: AnalyticsTimeseriesPoint[];
-}
-
-export interface AnalyticsTimeseriesQuery {
-  metric: AnalyticsMetric;
-  granularity: AnalyticsGranularity;
-  from: string;
-  to: string;
-  timezone?: string;
-}
-
-export interface AnalyticsBreakdownItem {
-  id: string;
-  name: string;
-  bookingsCount: number;
-  revenue: number;
-}
-
-export interface AnalyticsBreakdown {
-  groupBy: AnalyticsBreakdownGroup;
-  items: AnalyticsBreakdownItem[];
-}
-
-export interface AnalyticsBreakdownQuery {
-  groupBy: AnalyticsBreakdownGroup;
-  range: AnalyticsRange;
-  limit?: number;
-  sortBy?: AnalyticsBreakdownSort;
-  timezone?: string;
-}
-
-export interface ActivityActor {
-  id: string;
-  firstName: string;
-  lastName: string;
-}
-
-export interface ActivityEntity {
-  kind: string;
-  id: string;
-}
-
-export interface ActivityItem {
-  id: string;
-  type: string;
-  occurredAt: string;
-  actor?: ActivityActor | null;
-  summary: string;
-  entity?: ActivityEntity;
-  metadata?: Record<string, string | undefined>;
-}
-
-export interface ActivityFeed {
-  items: ActivityItem[];
-  nextCursor?: string | null;
-}
-
-export interface ActivityFeedQuery {
-  limit?: number;
-  cursor?: string;
-  types?: string;
+export interface TicketReplyPayload {
+  message: string;
 }
 
 // ─── Service Provider ──────────────────────────────────────────────────────
@@ -659,8 +573,7 @@ export interface CreateServiceProviderPayload {
   impUrl?: string;
 }
 
-export interface UpdateServiceProviderPayload
-  extends Partial<CreateServiceProviderPayload> {}
+export interface UpdateServiceProviderPayload extends Partial<CreateServiceProviderPayload> {}
 
 // ─── Super_Admin ────────────────────────────────────────────────────────────
 
@@ -724,6 +637,9 @@ export interface CreateOwnBusinessDto {
   description?: string;
   logo?: string;
   image?: string;
+  loginImage?: string;
+  openingHours?: OpeningHours;
+  socialAccounts?: SocialAccounts;
 }
 
 // ─── Scheduler ──────────────────────────────────────────────────────────────

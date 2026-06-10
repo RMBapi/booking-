@@ -28,7 +28,7 @@ export const useLogin = () => {
       return loginApi(variables);
     },
     onSuccess: (response, variables) => {
-      const { accessToken, user } = response.data || {};
+      const { accessToken, user, businessId } = response.data || {};
 
       if (!user || !accessToken) {
         handleError(new Error("Invalid response: missing user or token"));
@@ -40,6 +40,9 @@ export const useLogin = () => {
 
       if (variables.businessSiteSlug) {
         additionalData.businessSiteSlug = variables.businessSiteSlug;
+      }
+      if (businessId) {
+        additionalData.businessId = businessId;
       }
 
       setSession(loginRole, accessToken, user, additionalData);
@@ -59,6 +62,19 @@ export const useLogin = () => {
         normalizedMessage.includes("invalid password")
       ) {
         setErrorMessage("Invalid email or password. Please try again.");
+      } else if (normalizedMessage.includes("already registered")) {
+        // User is already registered with this business — redirect to login
+        setErrorMessage(
+          "You are already registered with this business. Please log in.",
+        );
+      } else if (normalizedMessage.includes("deactivated")) {
+        setErrorMessage(
+          "Your account has been deactivated by this business. Please contact support.",
+        );
+      } else if (normalizedMessage.includes("pending activation")) {
+        setErrorMessage(
+          "Your account is pending activation by this business. Please check back soon.",
+        );
       } else {
         setErrorMessage(parsedMessage);
       }

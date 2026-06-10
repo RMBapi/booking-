@@ -139,7 +139,7 @@ http.interceptors.response.use(
     const status = error.response?.status;
     const url = config?.url ?? "";
 
-    // ── 401: session invalid → clear that role, redirect to login ──────────
+    // ── 401: attempt token refresh, then logout if it fails ──────────────────
     if (status === 401 && !config?._retry) {
       if (config) config._retry = true;
 
@@ -151,6 +151,33 @@ http.interceptors.response.use(
         return Promise.reject(error);
       }
 
+      // Attempt token refresh to extend session
+      try {
+        const refreshResponse = await http.post("/auth/refresh", {});
+        const newToken = refreshResponse.data?.accessToken;
+
+        if (newToken) {
+          // Update stored token while preserving businessId and businessSiteSlug
+          const { getRoleSession, saveRoleSession } =
+            await import("./roleBasedAuth");
+          const { user, additionalData } = getRoleSession("Customer");
+          if (user) {
+            saveRoleSession("Customer", newToken, user, additionalData);
+          }
+
+          // Retry the original request with new token
+          if (config) {
+            config.headers.Authorization = `Bearer ${newToken}`;
+            return http(config);
+          }
+        }
+      } catch (refreshError) {
+        // Refresh failed; will proceed to session clear and redirect to login
+        // eslint-disable-next-line no-console
+        console.debug("Token refresh failed:", refreshError);
+      }
+
+      // Refresh failed or returned invalid token → logout
       const role = resolveRoleForLogout({
         pagePath: window.location.pathname,
         requestUrl: url,

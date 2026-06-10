@@ -21,6 +21,7 @@ export interface RoleSession {
   user: User | null;
   token: string | null;
   businessSiteSlug: string | null;
+  businessId: string | null;
 }
 
 interface RoleAuthContextType {
@@ -64,6 +65,7 @@ export const RoleAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       token,
       user,
       businessSiteSlug: additionalData?.businessSiteSlug ?? null,
+      businessId: additionalData?.businessId ?? null,
     };
   }, []);
 
@@ -75,9 +77,7 @@ export const RoleAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       additionalData?: Record<string, string>,
     ) => {
       saveRoleSession(role, token, user, additionalData);
-      setActiveRoles((prev) =>
-        prev.includes(role) ? prev : [...prev, role],
-      );
+      setActiveRoles((prev) => (prev.includes(role) ? prev : [...prev, role]));
     },
     [],
   );

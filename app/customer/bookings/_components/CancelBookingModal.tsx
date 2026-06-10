@@ -139,7 +139,10 @@ export function CancelBookingModal({
                   className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
                   style={{ backgroundColor: "rgba(185, 28, 28, 0.12)" }}
                 >
-                  <AlertTriangle className="w-5 h-5" style={{ color: "#B91C1C" }} />
+                  <AlertTriangle
+                    className="w-5 h-5"
+                    style={{ color: "#B91C1C" }}
+                  />
                 </div>
                 <div className="min-w-0 pr-6">
                   <p
@@ -189,11 +192,9 @@ export function CancelBookingModal({
             </div>
 
             <form onSubmit={handleSubmit} className="px-6 py-6">
-              <p
-                className="text-sm mb-5"
-                style={{ color: ELEGANZA.inkMuted }}
-              >
-                This will cancel your booking. Please tell us why so we can improve the experience.
+              <p className="text-sm mb-5" style={{ color: ELEGANZA.inkMuted }}>
+                This will cancel your booking. Please tell us why so we can
+                improve the experience.
               </p>
 
               <label
@@ -293,7 +294,8 @@ export function CancelBookingModal({
                   }}
                   onMouseEnter={(e) => {
                     if (!submitting)
-                      e.currentTarget.style.backgroundColor = ELEGANZA.surfaceMuted;
+                      e.currentTarget.style.backgroundColor =
+                        ELEGANZA.surfaceMuted;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -307,7 +309,8 @@ export function CancelBookingModal({
                   className="px-5 py-2.5 rounded text-white text-xs font-bold uppercase tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ backgroundColor: "#B91C1C" }}
                   onMouseEnter={(e) => {
-                    if (canSubmit) e.currentTarget.style.backgroundColor = "#991B1B";
+                    if (canSubmit)
+                      e.currentTarget.style.backgroundColor = "#991B1B";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "#B91C1C";

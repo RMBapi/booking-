@@ -7,6 +7,7 @@ import {
   ChevronDown,
   LogOut,
   Mail,
+  MessageSquare,
   User as UserIcon,
 } from "lucide-react";
 import { User } from "@/types";
@@ -16,9 +17,15 @@ interface UserMenuProps {
   user: User;
   onLogout: () => void;
   onMyBookings: () => void;
+  onContacts: () => void;
 }
 
-export function UserMenu({ user, onLogout, onMyBookings }: UserMenuProps) {
+export function UserMenu({
+  user,
+  onLogout,
+  onMyBookings,
+  onContacts,
+}: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -136,6 +143,21 @@ export function UserMenu({ user, onLogout, onMyBookings }: UserMenuProps) {
               >
                 <Calendar className="w-4 h-4" style={{ color: ELEGANZA.ink }} />
                 My Bookings
+              </button>
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  onContacts();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition-colors"
+                style={{ color: ELEGANZA.ink }}
+                role="menuitem"
+              >
+                <MessageSquare
+                  className="w-4 h-4"
+                  style={{ color: ELEGANZA.ink }}
+                />
+                Contact Us
               </button>
               <button
                 onClick={() => {

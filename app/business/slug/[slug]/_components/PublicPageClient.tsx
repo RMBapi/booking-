@@ -143,6 +143,7 @@ export function PublicPageClient({
           window.location.assign(logoutTarget);
         }}
         onMyBookings={() => router.push("/customer/bookings")}
+        onContacts={() => router.push("/customer/contacts")}
         onLogoClick={() => scrollToSection("home")}
       />
 

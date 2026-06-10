@@ -2,23 +2,14 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
-import {
-  ArrowRight,
-  ChevronLeft,
-  Eye,
-  EyeOff,
-  Lock,
-  Mail,
-} from "lucide-react";
+import { ArrowRight, ChevronLeft, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useRoleAuth } from "@/contexts";
-import { PageLoader, SmartImage } from "@/components";
+import { PageLoader } from "@/components";
 import { useLogin } from "@/features/authentication/hooks";
 import { useBusinessHeroImage } from "@/hooks";
 import { motion } from "framer-motion";
-import { getRoleRedirectPath } from "@/lib";
+import { ELEGANZA, HERO_FALLBACK } from "@/lib/publicBrand";
 import { isVideoUrl } from "@/lib/media";
-import { ELEGANZA } from "@/lib/publicBrand";
 
 const formatBusinessName = (slug: string | null) => {
   if (!slug) return "";
@@ -43,13 +34,24 @@ function CustomerLoginContent() {
 
   const returnUrl = searchParams.get("returnUrl");
   const resolvedSlug = businessSiteSlug || envSlug;
-  const { heroImage, businessName: fetchedBusinessName, loading: heroLoading } =
-    useBusinessHeroImage(resolvedSlug);
-  const businessName =
-    fetchedBusinessName || formatBusinessName(resolvedSlug);
+  const {
+    heroImage,
+    loginImage,
+    businessName: fetchedBusinessName,
+    loading: heroLoading,
+  } = useBusinessHeroImage(resolvedSlug);
+  const businessName = fetchedBusinessName || formatBusinessName(resolvedSlug);
+  // Login artwork must be a still image inside an <img>. Prefer the business's
+  // dedicated login image, then the hero image only if it isn't a video, then a
+  // safe default — so a video-hero business never renders a broken <img>.
+  const safeHero = heroImage && !isVideoUrl(heroImage) ? heroImage : null;
+  const artworkImage = loginImage || safeHero || HERO_FALLBACK;
 
   useEffect(() => {
-    const slug = searchParams.get("businessSiteSlug") || searchParams.get("slug") || envSlug;
+    const slug =
+      searchParams.get("businessSiteSlug") ||
+      searchParams.get("slug") ||
+      envSlug;
     setBusinessSiteSlug(slug);
   }, [searchParams, envSlug]);
 
@@ -57,10 +59,16 @@ function CustomerLoginContent() {
     if (!authLoading) {
       const { user, token } = getSession("Customer");
       if (user && token) {
-        router.replace(returnUrl || getRoleRedirectPath("Customer"));
+        // `/customer/dashboard` has no page (404 → no navbar); fall back to the
+        // business homepage so the customer always lands on a real, navigable
+        // page with the site navbar.
+        const fallback = resolvedSlug
+          ? `/business/slug/${resolvedSlug}`
+          : "/customer/bookings";
+        router.replace(returnUrl || fallback);
       }
     }
-  }, [authLoading, getSession, router, returnUrl]);
+  }, [authLoading, getSession, router, returnUrl, resolvedSlug]);
 
   if (authLoading) return <PageLoader />;
 
@@ -92,9 +100,11 @@ function CustomerLoginContent() {
 
   const handleSignUp = () => {
     if (resolvedSlug) {
-      const next = returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : "";
+      const next = returnUrl
+        ? `&returnUrl=${encodeURIComponent(returnUrl)}`
+        : "";
       router.push(
-        `/auth/register?businessSiteSlug=${encodeURIComponent(resolvedSlug)}${next}`
+        `/auth/register?businessSiteSlug=${encodeURIComponent(resolvedSlug)}${next}`,
       );
       return;
     }
@@ -102,7 +112,8 @@ function CustomerLoginContent() {
   };
 
   const updateField =
-    (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    (field: keyof typeof formData) =>
+    (e: React.ChangeEvent<HTMLInputElement>) => {
       setFormData((prev) => ({ ...prev, [field]: e.target.value }));
       if (formError) setFormError(null);
       if (errorMessage) clearError();
@@ -116,32 +127,29 @@ function CustomerLoginContent() {
       {/* Left visual panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
         <div className="absolute inset-0">
-          {heroImage && !heroLoading ? (
-            isVideoUrl(heroImage) ? (
-              <SmartImage
-                src={heroImage}
-                alt={businessName ? `${businessName} background` : "Business background"}
-                className="absolute inset-0 w-full h-full object-cover"
-                videoPlayback="autoplay"
-                forceCover
-              />
-            ) : (
-              <Image
-                src={heroImage}
-                alt={businessName ? `${businessName} background` : "Business background"}
-                fill
-                sizes="50vw"
-                className="object-cover focus-subject"
-                style={{
+          {artworkImage && !heroLoading ? (
+            <img
+              src={artworkImage}
+              alt={
+                businessName
+                  ? `${businessName} background`
+                  : "Business background"
+              }
+              className="w-full h-full object-cover focus-subject"
+              style={
+                {
                   "--focus-x": "12%",
                   "--focus-y": "35%",
                   "--focus-x-mobile": "18%",
                   "--focus-y-mobile": "32%",
-                } as React.CSSProperties}
-              />
-            )
+                } as React.CSSProperties
+              }
+            />
           ) : (
-            <div className="w-full h-full" style={{ backgroundColor: ELEGANZA.inkSoft }} />
+            <div
+              className="w-full h-full"
+              style={{ backgroundColor: ELEGANZA.inkSoft }}
+            />
           )}
           <div
             className="absolute inset-0"
@@ -169,8 +177,12 @@ function CustomerLoginContent() {
               borderColor: "rgba(255,255,255,0.2)",
             }}
           >
-            <p style={{ color: "rgba(255,255,255,0.85)" }} className="text-lg font-medium leading-relaxed">
-              &ldquo;The booking process is seamless. I can schedule my appointments in seconds.&rdquo;
+            <p
+              style={{ color: "rgba(255,255,255,0.85)" }}
+              className="text-lg font-medium leading-relaxed"
+            >
+              &ldquo;The booking process is seamless. I can schedule my
+              appointments in seconds.&rdquo;
             </p>
             <div className="flex items-center gap-4">
               <div
@@ -179,7 +191,10 @@ function CustomerLoginContent() {
               />
               <div>
                 <p className="text-white font-bold text-sm">Regular Customer</p>
-                <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <p
+                  className="text-xs"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                >
                   Member since 2024
                 </p>
               </div>
@@ -223,7 +238,11 @@ function CustomerLoginContent() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6" autoComplete="on">
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              autoComplete="on"
+            >
               {(formError || errorMessage) && (
                 <div
                   className="rounded-lg border px-4 py-3 text-sm font-medium"
@@ -300,7 +319,11 @@ function CustomerLoginContent() {
                     className="absolute right-5 top-1/2 -translate-y-1/2 transition-colors"
                     style={{ color: ELEGANZA.inkMuted }}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -312,7 +335,8 @@ function CustomerLoginContent() {
                   className="w-full py-5 rounded-lg text-[15px] font-bold text-white uppercase tracking-widest flex items-center justify-center gap-3 group disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   style={{ backgroundColor: ELEGANZA.cta }}
                   onMouseEnter={(e) => {
-                    if (!isLogging) e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
+                    if (!isLogging)
+                      e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = ELEGANZA.cta;

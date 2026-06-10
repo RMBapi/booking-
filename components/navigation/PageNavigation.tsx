@@ -27,6 +27,7 @@ interface PageNavigationProps {
   onSignup: () => void;
   onLogout: () => void;
   onMyBookings: () => void;
+  onContacts: () => void;
   /** Logo click — defaults to Home navigation. */
   onLogoClick?: () => void;
   /** When set, Home/Contact use route navigation instead of in-page scroll. */
@@ -51,6 +52,7 @@ export function PageNavigation({
   onSignup,
   onLogout,
   onMyBookings,
+  onContacts,
   onLogoClick,
   onNavigateHome,
   onNavigateContact,
@@ -203,6 +205,7 @@ export function PageNavigation({
               user={customerUser}
               onLogout={onLogout}
               onMyBookings={onMyBookings}
+              onContacts={onContacts}
             />
           ) : (
             <button
@@ -295,6 +298,17 @@ export function PageNavigation({
                   style={{ color: ELEGANZA.ink, borderColor: ELEGANZA.ink }}
                 >
                   My Bookings
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onContacts();
+                    setMobileMenuOpen(false);
+                  }}
+                  className="mt-2 py-3 rounded text-sm font-semibold uppercase tracking-[0.2em] border"
+                  style={{ color: ELEGANZA.ink, borderColor: ELEGANZA.ink }}
+                >
+                  Contact Us
                 </button>
                 <button
                   type="button"

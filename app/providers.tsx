@@ -5,13 +5,11 @@ import { Toaster } from "react-hot-toast";
 import { queryClient } from "@/lib";
 import { ELEGANZA } from "@/lib/publicBrand";
 import { RoleAuthProvider } from "@/contexts";
-import { ChunkRecovery } from "@/components/errors";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <RoleAuthProvider>
-        <ChunkRecovery />
         {children}
         <Toaster
           position="top-right"

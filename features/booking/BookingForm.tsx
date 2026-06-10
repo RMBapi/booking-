@@ -158,6 +158,26 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [forbiddenError, setForbiddenError] = useState<string | null>(null);
+
+  // Listen for auth:forbidden event (403 from API)
+  useEffect(() => {
+    const handleForbidden = (event: Event) => {
+      const customEvent = event as CustomEvent<{
+        url?: string;
+        message?: string;
+      }>;
+      const message =
+        customEvent.detail?.message ||
+        "You must be a registered customer of this business to book";
+      setForbiddenError(message);
+      setSubmitError(null);
+      setSubmitting(false);
+    };
+
+    window.addEventListener("auth:forbidden", handleForbidden);
+    return () => window.removeEventListener("auth:forbidden", handleForbidden);
+  }, []);
 
   const handleServiceSwitch = useCallback(
     (direction: "prev" | "next") => {
@@ -491,6 +511,36 @@ export const BookingForm: React.FC<BookingFormProps> = ({
       className="flex flex-col"
       style={{ backgroundColor: B.paper, color: B.ink }}
     >
+      {/* Forbidden error message */}
+      {forbiddenError && (
+        <div
+          className="p-4 m-4 rounded-lg border text-sm font-medium flex items-start gap-3 justify-between"
+          style={{
+            borderColor: "rgba(185,28,28,0.25)",
+            backgroundColor: "rgba(185,28,28,0.08)",
+            color: "#b91c1c",
+          }}
+        >
+          <div>
+            <p className="font-bold mb-1">Access Required</p>
+            <p>{forbiddenError}</p>
+            <p className="text-xs mt-2 opacity-75">
+              Please log in or register to continue
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setForbiddenError(null);
+              setIsLogin(true);
+              setStep("client");
+            }}
+            className="flex-shrink-0 text-sm font-bold hover:underline"
+          >
+            Sign In
+          </button>
+        </div>
+      )}
+
       <div ref={topRef}>
         <StepBar
           steps={stepsMeta}

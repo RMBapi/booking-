@@ -39,7 +39,7 @@ export function ServicesGrid({
   return (
     <section
       id="services-section"
-      className="py-16 px-6 lg:px-16"
+      className="py-16 px-6 lg:px-16 scroll-mt-24 lg:scroll-mt-28"
       style={{
         backgroundColor: ELEGANZA.background,
         backgroundImage: "linear-gradient(180deg, #fafafa 0%, #efefef 100%)",

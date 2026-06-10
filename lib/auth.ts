@@ -57,10 +57,7 @@ export function getLoginPathForRole(_role: UserRole): string {
  * endpoints may return 401 for permission/validation issues — those should be
  * handled by the calling UI instead of clearing the session.
  */
-export function shouldForceLogoutOn401(
-  url: string,
-  method?: string,
-): boolean {
+export function shouldForceLogoutOn401(url: string, method?: string): boolean {
   if (url.includes("/review")) return false;
 
   const normalizedMethod = (method ?? "get").toLowerCase();
@@ -74,6 +71,7 @@ export function shouldForceLogoutOn401(
 const PUBLIC_ENDPOINT_FRAGMENTS = [
   "/auth/login",
   "/auth/register",
+  "/auth/refresh",
   "/contact",
   "/business/slug",
   "/scheduler/available-slots",

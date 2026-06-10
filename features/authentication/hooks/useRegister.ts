@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AxiosResponse } from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -6,6 +7,7 @@ import { useApiResponse } from "@/hooks";
 import { useRoleAuth } from "@/contexts";
 import { AuthResponse, RegisterPayload, User } from "@/types";
 import { getRoleRedirectPath, saveRoleSession } from "@/lib";
+import { extractApiErrorMessage } from "@/hooks/api-response";
 
 type MutationResponse = AxiosResponse<AuthResponse>;
 
@@ -14,6 +16,9 @@ export const useRegister = () => {
   const { setSession } = useRoleAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [registrationError, setRegistrationError] = useState<string | null>(
+    null,
+  );
 
   const { isPending: isRegistering, mutate: register } = useMutation<
     MutationResponse,
@@ -23,6 +28,7 @@ export const useRegister = () => {
     mutationFn: registerApi,
     onSuccess: async (response, variables) => {
       const accessToken = response.data?.accessToken;
+      const businessId = response.data?.businessId;
       let user = response.data?.user;
 
       if (accessToken && (!user || Object.keys(user).length === 0)) {
@@ -71,6 +77,9 @@ export const useRegister = () => {
       if (registrationRole === "Customer" && variables.businessSiteSlug) {
         additionalData.businessSiteSlug = variables.businessSiteSlug;
       }
+      if (businessId) {
+        additionalData.businessId = businessId;
+      }
 
       setSession(registrationRole, accessToken, user, additionalData);
       handleSuccess("Registration successful!");
@@ -82,8 +91,32 @@ export const useRegister = () => {
         router.replace(redirectPath);
       }, 100);
     },
-    onError: handleError,
+    onError: (error: Error) => {
+      const parsedMessage = extractApiErrorMessage(error);
+      const normalizedMessage = parsedMessage.toLowerCase();
+
+      if (normalizedMessage.includes("already registered")) {
+        // User already registered with this business — redirect to login
+        const businessSiteSlug = searchParams?.get("businessSiteSlug");
+        setRegistrationError(
+          "You are already registered with this business. Redirecting to login...",
+        );
+        setTimeout(() => {
+          const loginUrl = businessSiteSlug
+            ? `/auth/login/customer?businessSiteSlug=${encodeURIComponent(
+                businessSiteSlug,
+              )}`
+            : "/auth/login/customer";
+          router.replace(loginUrl);
+        }, 1500);
+      } else {
+        setRegistrationError(null);
+        handleError(error);
+      }
+    },
   });
 
-  return { register, isRegistering };
+  const clearError = () => setRegistrationError(null);
+
+  return { register, isRegistering, registrationError, clearError };
 };

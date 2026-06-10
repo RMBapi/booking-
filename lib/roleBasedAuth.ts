@@ -10,13 +10,14 @@ const STORAGE_KEYS = {
   token: "customer_token",
   user: "customer_user",
   businessSiteSlug: "customer_businessSiteSlug",
+  businessId: "customer_businessId",
 } as const;
 
 export const saveRoleSession = (
   _role: UserRole,
   token: string,
   user: User,
-  additionalData?: Record<string, string>
+  additionalData?: Record<string, string>,
 ) => {
   if (typeof window === "undefined") return;
 
@@ -31,7 +32,7 @@ export const saveRoleSession = (
 };
 
 export const getRoleSession = (
-  _role: UserRole
+  _role: UserRole,
 ): {
   token: string | null;
   user: User | null;
@@ -50,6 +51,10 @@ export const getRoleSession = (
   if (businessSiteSlug) {
     additionalData.businessSiteSlug = businessSiteSlug;
   }
+  const businessId = localStorage.getItem(STORAGE_KEYS.businessId);
+  if (businessId) {
+    additionalData.businessId = businessId;
+  }
 
   return { token, user, additionalData };
 };
@@ -60,6 +65,7 @@ export const clearRoleSession = (_role: UserRole) => {
   localStorage.removeItem(STORAGE_KEYS.token);
   localStorage.removeItem(STORAGE_KEYS.user);
   localStorage.removeItem(STORAGE_KEYS.businessSiteSlug);
+  localStorage.removeItem(STORAGE_KEYS.businessId);
 };
 
 export const isLoggedInAs = (_role: UserRole): boolean => {

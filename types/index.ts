@@ -39,11 +39,40 @@ export interface RegisterPayload {
 export interface AuthResponse {
   accessToken: string;
   user: User;
+  businessId?: string;
 }
 
 /**
  * Business Types (read-only for public site)
  */
+export type DayKey =
+  | "monday"
+  | "tuesday"
+  | "wednesday"
+  | "thursday"
+  | "friday"
+  | "saturday"
+  | "sunday";
+
+export interface DayOpeningHours {
+  isOpen: boolean;
+  /** Required when isOpen is true. 24-hour HH:mm */
+  open?: string;
+  /** Required when isOpen is true. 24-hour HH:mm */
+  close?: string;
+}
+
+export type OpeningHours = Record<DayKey, DayOpeningHours>;
+
+/** Supported social platforms; the `platform` value drives which icon renders. */
+export type SocialPlatform = "facebook" | "instagram";
+
+export interface SocialAccount {
+  platform: SocialPlatform;
+  /** Public profile link. */
+  url: string;
+}
+
 export interface Business {
   id: string;
   name: string;
@@ -54,8 +83,15 @@ export interface Business {
   address?: string;
   logo?: string;
   image?: string;
-  backupImage?: string | null;
   logoUrl?: string;
+  /** Optional fallback still shown before a hero video plays. */
+  backupImage?: string | null;
+  /** Artwork for this business's login page; `null` until the owner sets it. */
+  loginImage?: string | null;
+  /** Per-business weekly schedule; `null` until the owner configures it in CRM. */
+  openingHours?: OpeningHours | null;
+  /** Per-business social links; `null` until the owner adds them in CRM. */
+  socialAccounts?: SocialAccount[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -183,6 +219,69 @@ export interface CreateContactPayload {
   phone: string;
   bookingTime?: BookingTime;
   notes?: string;
+}
+
+/**
+ * Support Ticket / Contact Us Types (customer-facing)
+ */
+export type TicketType = "Business" | "Platform";
+
+export type TicketStatus =
+  | "Open"
+  | "InProgress"
+  | "WaitingForCustomer"
+  | "Resolved"
+  | "Closed";
+
+export type MessageAuthor = "Customer" | "Staff" | "System";
+
+export interface TicketMessage {
+  id: string;
+  authorType: MessageAuthor;
+  authorName: string;
+  body: string;
+  viaEmail: boolean;
+  createdAt: string;
+}
+
+export interface PersonBrief {
+  id: string;
+  name: string;
+  email: string | null;
+}
+
+export interface Ticket {
+  id: string;
+  ticketNumber: number;
+  type: TicketType;
+  businessId: string | null;
+  status: TicketStatus;
+  subject: string;
+  requesterName: string;
+  requesterEmail: string;
+  requesterPhone: string | null;
+  requesterUserId: string | null;
+  assignedTo: PersonBrief | null;
+  lastReplyAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TicketDetail extends Ticket {
+  messages: TicketMessage[];
+}
+
+/** Logged-in customers send only subject/message (+ optional businessSlug). */
+export interface CreateTicketPayload {
+  subject: string;
+  message: string;
+  businessSlug?: string;
+}
+
+export interface MyTicketsQuery {
+  page?: number;
+  limit?: number;
+  status?: TicketStatus;
 }
 
 /**

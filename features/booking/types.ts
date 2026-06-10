@@ -2,7 +2,7 @@ import { Service, ServiceProviderSummary } from "@/types";
 
 export interface ServiceInfo {
   name: string;
-  price: string | null;
+  price: string;
   duration: string;
   description?: string;
   imageUrl?: string;
@@ -56,7 +56,8 @@ export interface BookingState {
 export function mapServiceProviderToProvider(
   sp: ServiceProviderSummary,
 ): Provider {
-  const name = [sp.firstName, sp.lastName].filter(Boolean).join(" ") || "Provider";
+  const name =
+    [sp.firstName, sp.lastName].filter(Boolean).join(" ") || "Provider";
   return {
     id: sp.id,
     name,

@@ -229,6 +229,21 @@ export function SmartImage({
             }}
             onLoadedData={() => setVideoVisible(true)}
             onPlaying={() => setVideoVisible(true)}
+            onTimeUpdate={(e) => {
+              // Smooth the loop: jump back a beat before the true end so the
+              // decoder never paints the end-of-stream black frame that reads
+              // as a flicker when a native `loop` restarts. timeupdate fires
+              // ~4×/sec, so a 0.3s lead is reliably caught.
+              if (videoPlayback !== "autoplay") return;
+              const v = e.currentTarget;
+              if (
+                Number.isFinite(v.duration) &&
+                v.duration > 0.6 &&
+                v.duration - v.currentTime <= 0.3
+              ) {
+                v.currentTime = 0;
+              }
+            }}
             onError={() => setErrored(true)}
             className={`absolute inset-0 w-full h-full ${fitClass} transition-opacity duration-700 ${videoVisible ? "opacity-100" : "opacity-0"}`}
           />

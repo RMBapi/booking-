@@ -22,8 +22,20 @@ export const createBooking = async (
   return http.post(url, payload, headers ? { headers } : undefined);
 };
 
-export const getMyBookings = async () => {
-  return http.get("/user/my-bookings");
+export const getMyBookings = async (
+  businessSlug?: string,
+  businessId?: string,
+) => {
+  // Pass the business context so the API can scope the bookings; without it the
+  // backend may respond 400 "missing business context".
+  const query = businessSlug
+    ? `?businessSlug=${encodeURIComponent(businessSlug)}`
+    : "";
+  const headers = businessId ? { "x-business-id": businessId } : undefined;
+  return http.get(
+    `/user/my-bookings${query}`,
+    headers ? { headers } : undefined,
+  );
 };
 
 export const getBookingById = async (id: string) => {

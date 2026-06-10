@@ -2,7 +2,6 @@
 
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Image from "next/image";
 import {
   ArrowRight,
   ChevronLeft,
@@ -15,11 +14,11 @@ import {
   User,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import { PageLoader, SmartImage } from "@/components";
+import { PageLoader } from "@/components";
 import { useRegister } from "@/features/authentication/hooks";
 import { useBusinessHeroImage } from "@/hooks";
+import { ELEGANZA, HERO_FALLBACK } from "@/lib/publicBrand";
 import { isVideoUrl } from "@/lib/media";
-import { ELEGANZA } from "@/lib/publicBrand";
 
 const formatBusinessName = (slug: string | null) => {
   if (!slug) return "";
@@ -49,15 +48,25 @@ function RegisterContent() {
 
   const returnUrl = searchParams.get("returnUrl");
   const resolvedSlug = businessSiteSlug || envSlug;
-  const { heroImage, businessName: fetchedBusinessName, loading: heroLoading } =
-    useBusinessHeroImage(resolvedSlug);
+  const {
+    heroImage,
+    loginImage,
+    businessName: fetchedBusinessName,
+    loading: heroLoading,
+  } = useBusinessHeroImage(resolvedSlug);
+  // Same video-safe artwork resolution as the login page.
+  const safeHero = heroImage && !isVideoUrl(heroImage) ? heroImage : null;
+  const artworkImage = loginImage || safeHero || HERO_FALLBACK;
   const businessName = useMemo(
     () => fetchedBusinessName || formatBusinessName(resolvedSlug),
     [fetchedBusinessName, resolvedSlug],
   );
 
   useEffect(() => {
-    const slug = searchParams.get("businessSiteSlug") || searchParams.get("slug") || envSlug;
+    const slug =
+      searchParams.get("businessSiteSlug") ||
+      searchParams.get("slug") ||
+      envSlug;
     setBusinessSiteSlug(slug);
   }, [searchParams, envSlug]);
 
@@ -67,13 +76,22 @@ function RegisterContent() {
 
     if (!resolvedSlug) {
       setFormError(
-        "Customer registration requires a business site. Please access this page from a business site."
+        "Customer registration requires a business site. Please access this page from a business site.",
       );
       return;
     }
 
+    // Normalise the phone to a single E.164 AU number. The "+61" is a fixed
+    // prefix in the UI, so strip any digits the user may have duplicated
+    // (leading 0, or a re-typed 61/+61) before prepending it once.
+    let digits = formData.phone.replace(/\D/g, "");
+    if (digits.startsWith("61")) digits = digits.slice(2);
+    digits = digits.replace(/^0+/, "");
+    const phone = digits ? `+61${digits}` : "";
+
     register({
       ...formData,
+      phone,
       role: "Customer",
       businessSiteSlug: resolvedSlug,
     });
@@ -93,9 +111,11 @@ function RegisterContent() {
 
   const handleSignIn = () => {
     if (resolvedSlug) {
-      const next = returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : "";
+      const next = returnUrl
+        ? `&returnUrl=${encodeURIComponent(returnUrl)}`
+        : "";
       router.push(
-        `/auth/login/customer?businessSiteSlug=${encodeURIComponent(resolvedSlug)}${next}`
+        `/auth/login/customer?businessSiteSlug=${encodeURIComponent(resolvedSlug)}${next}`,
       );
       return;
     }
@@ -110,7 +130,11 @@ function RegisterContent() {
 
   const inputClass =
     "w-full pl-12 pr-6 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2";
-  const inputStyle = { backgroundColor: ELEGANZA.surface, borderColor: ELEGANZA.border, color: ELEGANZA.ink };
+  const inputStyle = {
+    backgroundColor: ELEGANZA.surface,
+    borderColor: ELEGANZA.border,
+    color: ELEGANZA.ink,
+  };
   const labelClass = "text-[11px] font-bold uppercase tracking-widest ml-1";
   const labelStyle = { color: ELEGANZA.inkMuted };
   const iconClass = "absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4";
@@ -124,32 +148,29 @@ function RegisterContent() {
       {/* Left visual panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden flex-col p-20 justify-between">
         <div className="absolute inset-0">
-          {heroImage && !heroLoading ? (
-            isVideoUrl(heroImage) ? (
-              <SmartImage
-                src={heroImage}
-                alt={businessName ? `${businessName} background` : "Business background"}
-                className="absolute inset-0 w-full h-full object-cover"
-                videoPlayback="autoplay"
-                forceCover
-              />
-            ) : (
-              <Image
-                src={heroImage}
-                alt={businessName ? `${businessName} background` : "Business background"}
-                fill
-                sizes="50vw"
-                className="object-cover focus-subject"
-                style={{
+          {artworkImage && !heroLoading ? (
+            <img
+              src={artworkImage}
+              alt={
+                businessName
+                  ? `${businessName} background`
+                  : "Business background"
+              }
+              className="w-full h-full object-cover focus-subject"
+              style={
+                {
                   "--focus-x": "12%",
                   "--focus-y": "35%",
                   "--focus-x-mobile": "18%",
                   "--focus-y-mobile": "32%",
-                } as React.CSSProperties}
-              />
-            )
+                } as React.CSSProperties
+              }
+            />
           ) : (
-            <div className="w-full h-full" style={{ backgroundColor: ELEGANZA.inkSoft }} />
+            <div
+              className="w-full h-full"
+              style={{ backgroundColor: ELEGANZA.inkSoft }}
+            />
           )}
           <div
             className="absolute inset-0"
@@ -181,14 +202,19 @@ function RegisterContent() {
               className="text-lg font-medium leading-relaxed"
               style={{ color: "rgba(255,255,255,0.85)" }}
             >
-              &ldquo;Joining was the best decision for my personal routine. The ease of booking
-              is unmatched.&rdquo;
+              &ldquo;Joining was the best decision for my personal routine. The
+              ease of booking is unmatched.&rdquo;
             </p>
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-white/20" />
               <div>
-                <p className="text-white font-bold text-sm tracking-wide">Sarah Jenkins</p>
-                <p className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <p className="text-white font-bold text-sm tracking-wide">
+                  Sarah Jenkins
+                </p>
+                <p
+                  className="text-xs font-medium"
+                  style={{ color: "rgba(255,255,255,0.5)" }}
+                >
                   Member since 2024
                 </p>
               </div>
@@ -225,17 +251,38 @@ function RegisterContent() {
                 className="font-medium text-lg"
                 style={{ color: ELEGANZA.inkMuted }}
               >
-                Join {businessName} to book services and manage your appointments.
+                Join {businessName} to book services and manage your
+                appointments.
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-              <input type="text" name="username" autoComplete="username" className="hidden" tabIndex={-1} aria-hidden="true" />
-              <input type="password" name="fake_password" autoComplete="new-password" className="hidden" tabIndex={-1} aria-hidden="true" />
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              autoComplete="off"
+            >
+              <input
+                type="text"
+                name="username"
+                autoComplete="username"
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
+              <input
+                type="password"
+                name="fake_password"
+                autoComplete="new-password"
+                className="hidden"
+                tabIndex={-1}
+                aria-hidden="true"
+              />
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className={labelClass} style={labelStyle}>First Name</label>
+                  <label className={labelClass} style={labelStyle}>
+                    First Name
+                  </label>
                   <div className="relative">
                     <User className={iconClass} style={iconStyle} />
                     <input
@@ -252,7 +299,9 @@ function RegisterContent() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className={labelClass} style={labelStyle}>Last Name</label>
+                  <label className={labelClass} style={labelStyle}>
+                    Last Name
+                  </label>
                   <input
                     required
                     name="lastName"
@@ -267,7 +316,9 @@ function RegisterContent() {
               </div>
 
               <div className="space-y-2">
-                <label className={labelClass} style={labelStyle}>Email Address</label>
+                <label className={labelClass} style={labelStyle}>
+                  Email Address
+                </label>
                 <div className="relative">
                   <Mail className={iconClass} style={iconStyle} />
                   <input
@@ -285,15 +336,25 @@ function RegisterContent() {
               </div>
 
               <div className="space-y-2">
-                <label className={labelClass} style={labelStyle}>Phone Number</label>
+                <label className={labelClass} style={labelStyle}>
+                  Phone Number
+                </label>
                 <div className="relative">
                   <Phone className={iconClass} style={iconStyle} />
+                  <span
+                    className="absolute left-12 top-1/2 -translate-y-1/2 text-sm font-semibold pointer-events-none select-none"
+                    style={{ color: ELEGANZA.ink }}
+                  >
+                    +61
+                  </span>
                   <input
                     required
                     name="phone"
                     type="tel"
-                    placeholder="+61 00000 00000"
-                    className={inputClass}
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    placeholder="412 345 678"
+                    className="w-full pl-[4.75rem] pr-6 py-4 rounded-lg font-medium border outline-none transition-all focus:ring-2"
                     style={inputStyle}
                     value={formData.phone}
                     onChange={updateField("phone")}
@@ -302,7 +363,9 @@ function RegisterContent() {
               </div>
 
               <div className="space-y-2">
-                <label className={labelClass} style={labelStyle}>Password</label>
+                <label className={labelClass} style={labelStyle}>
+                  Password
+                </label>
                 <div className="relative">
                   <Lock className={iconClass} style={iconStyle} />
                   <input
@@ -323,7 +386,11 @@ function RegisterContent() {
                     className="absolute right-5 top-1/2 -translate-y-1/2 transition-colors"
                     style={{ color: ELEGANZA.inkMuted }}
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -337,7 +404,10 @@ function RegisterContent() {
               >
                 <div
                   className="mt-0.5 p-1.5 rounded-lg"
-                  style={{ backgroundColor: ELEGANZA.surface, color: ELEGANZA.inkMuted }}
+                  style={{
+                    backgroundColor: ELEGANZA.surface,
+                    color: ELEGANZA.inkMuted,
+                  }}
                 >
                   <Info className="w-4 h-4" />
                 </div>

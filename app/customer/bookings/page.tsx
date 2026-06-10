@@ -12,26 +12,23 @@ import {
   Receipt,
   Search,
   Star,
+  Trash2,
   User as UserIcon,
   X,
 } from "lucide-react";
 import { useRoleAuth } from "@/contexts";
-import { PageLoader, SmartImage } from "@/components";
+import { PageLoader } from "@/components";
 import { CustomerSiteNavigation } from "@/components/navigation";
 import { ELEGANZA, getImageUrl } from "@/lib/publicBrand";
 import {
   cancelBooking,
+  deleteReview,
   getMyBookings,
   getPublicServicesByBusinessSlug,
   submitReview,
   updateReview,
 } from "@/services";
-import { Booking, BookingStatus, Service } from "@/types";
-import {
-  formatPrice,
-  resolveServicePriceVisibility,
-} from "@/features/booking/utils";
-import { readSiteCache } from "@/lib/publicCache";
+import { Booking, BookingStatus } from "@/types";
 import { ReviewModal, ReviewSubmitPayload } from "./_components/ReviewModal";
 import { CancelBookingModal } from "./_components/CancelBookingModal";
 
@@ -111,7 +108,9 @@ export default function MyBookingsPage() {
 
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [cancelingId, setCancelingId] = useState<string | null>(null);
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -123,31 +122,44 @@ export default function MyBookingsPage() {
   // Cancel modal state
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelTarget, setCancelTarget] = useState<Booking | null>(null);
-  const [serviceCatalogById, setServiceCatalogById] = useState<
-    Record<string, Pick<Service, "priceDisplayMode" | "image">>
+  const [serviceImagesById, setServiceImagesById] = useState<
+    Record<string, string>
   >({});
 
   useEffect(() => {
-    if (authLoading) return;
-    if (token) return;
-
-    const returnUrl = encodeURIComponent("/customer/bookings");
-    router.replace(`/auth/login/customer?returnUrl=${returnUrl}`);
+    if (!authLoading && !token) {
+      router.replace("/auth/login/customer");
+    }
   }, [authLoading, token, router]);
 
   const fetchBookings = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await getMyBookings();
-      const list = unwrapBookings(res?.data);
-      setBookings(list);
+      setLoadError(false);
+      const slug =
+        (typeof window !== "undefined"
+          ? localStorage.getItem("customer_businessSiteSlug")
+          : null) ||
+        process.env.NEXT_PUBLIC_BUSINESS_SLUG ||
+        undefined;
+      const businessId = getSession("Customer").businessId ?? undefined;
+      const res = await getMyBookings(slug ?? undefined, businessId);
+      setBookings(unwrapBookings(res?.data));
     } catch (err) {
-      toast.error("Failed to load bookings. Please try again.");
+      // A failed load (server error, missing business context, or an
+      // unreachable backend) must NOT log the customer out — their session is
+      // still valid. Show a clear error and let them retry. Genuine token
+      // failures (401) are handled centrally by the http client interceptor.
+      setLoadError(true);
+      toast.error(
+        "Something went wrong loading your bookings. Please try again.",
+      );
+      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getSession]);
 
   useEffect(() => {
     if (token) fetchBookings();
@@ -160,21 +172,7 @@ export default function MyBookingsPage() {
   const envSlug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || null;
   const resolvedSlug = businessSlug || envSlug;
 
-  const buildCatalog = useCallback((list: Service[]) => {
-    const catalog: Record<string, Pick<Service, "priceDisplayMode" | "image">> =
-      {};
-    list.forEach((service) => {
-      if (service?.id) {
-        catalog[service.id] = {
-          priceDisplayMode: service.priceDisplayMode,
-          image: service.image,
-        };
-      }
-    });
-    return catalog;
-  }, []);
-
-  const fetchServiceCatalog = useCallback(async () => {
+  const fetchServiceImages = useCallback(async () => {
     if (!resolvedSlug) return;
     try {
       const res = await getPublicServicesByBusinessSlug(resolvedSlug);
@@ -183,25 +181,25 @@ export default function MyBookingsPage() {
         : Array.isArray(res?.data?.data)
           ? res.data.data
           : [];
-      setServiceCatalogById(buildCatalog(list));
+      const imageMap: Record<string, string> = {};
+      list.forEach((service: { id?: string; image?: string | null }) => {
+        if (service?.id && service.image) {
+          imageMap[service.id] = service.image;
+        }
+      });
+      setServiceImagesById(imageMap);
     } catch {
-      // Ignore catalog hydration failures; bookings still render.
+      // Ignore image hydration failures; bookings still render without thumbnails.
     }
-  }, [resolvedSlug, buildCatalog]);
+  }, [resolvedSlug]);
 
   useEffect(() => {
-    if (!resolvedSlug) return;
-    // Hydrate instantly from the shared cache (set by the public site / navbar)
-    // so prices and thumbnails render without waiting on a fetch.
-    const cached = readSiteCache(resolvedSlug);
-    if (cached?.services?.length) {
-      setServiceCatalogById(buildCatalog(cached.services));
-    }
-    fetchServiceCatalog();
-  }, [resolvedSlug, fetchServiceCatalog, buildCatalog]);
+    if (resolvedSlug) fetchServiceImages();
+  }, [resolvedSlug, fetchServiceImages]);
 
   const handleBrowseServices = () => {
-    if (resolvedSlug) router.push(`/business/slug/${resolvedSlug}#services-section`);
+    if (resolvedSlug)
+      router.push(`/business/slug/${resolvedSlug}#services-section`);
     else router.push("/");
   };
 
@@ -239,6 +237,7 @@ export default function MyBookingsPage() {
       await fetchBookings();
     } catch (err) {
       toast.error("Could not cancel the booking. Please try again.");
+      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setCancelingId(null);
@@ -282,31 +281,49 @@ export default function MyBookingsPage() {
           ? "Could not update review. Please try again."
           : "Could not submit review. Please try again.",
       );
+      // eslint-disable-next-line no-console
       console.error(err);
     } finally {
       setReviewSubmitting(false);
     }
   };
 
+  const handleDeleteReview = async (booking: Booking) => {
+    if (!booking.review) return;
+    const confirmed =
+      typeof window !== "undefined"
+        ? window.confirm(
+            "Delete this review? You can submit a new one afterwards.",
+          )
+        : false;
+    if (!confirmed) return;
+
+    try {
+      setDeletingReviewId(booking.id);
+      await deleteReview(booking.id);
+      toast.success("Review deleted.");
+      await fetchBookings();
+    } catch (err) {
+      toast.error("Could not delete review. Please try again.");
+      // eslint-disable-next-line no-console
+      console.error(err);
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
+
   const stats = useMemo(() => {
-    const upcoming = bookings.filter((b) => statusToFilter(b.status) === "upcoming").length;
-    const completed = bookings.filter((b) => statusToFilter(b.status) === "completed").length;
-    let totalSpent = 0;
-    let hasVisiblePrices = false;
-
-    bookings
+    const upcoming = bookings.filter(
+      (b) => statusToFilter(b.status) === "upcoming",
+    ).length;
+    const completed = bookings.filter(
+      (b) => statusToFilter(b.status) === "completed",
+    ).length;
+    const totalSpent = bookings
       .filter((b) => statusToFilter(b.status) === "completed")
-      .forEach((b) => {
-        if (
-          resolveServicePriceVisibility(b.serviceId, b.service, serviceCatalogById)
-        ) {
-          hasVisiblePrices = true;
-          totalSpent += priceNumber(b.service?.price);
-        }
-      });
-
-    return { upcoming, completed, totalSpent, hasVisiblePrices };
-  }, [bookings, serviceCatalogById]);
+      .reduce((sum, b) => sum + priceNumber(b.service?.price), 0);
+    return { upcoming, completed, totalSpent };
+  }, [bookings]);
 
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -327,14 +344,14 @@ export default function MyBookingsPage() {
   }, [bookings, filter, searchQuery]);
 
   if (authLoading) return <PageLoader />;
-  if (!token) return <PageLoader />;
-  if (!user) return <PageLoader />;
+  if (!user || !token) return null;
 
   return (
     <div
       className="min-h-screen text-[#222222]"
       style={{ backgroundColor: ELEGANZA.background }}
     >
+      {/* Shared site navigation — keeps Home / Contact / My Bookings reachable */}
       <CustomerSiteNavigation />
 
       <main className="pt-18 md:pt-20 lg:pt-22">
@@ -382,15 +399,11 @@ export default function MyBookingsPage() {
                   label: "Completed",
                   value: String(stats.completed),
                 },
-                ...(stats.hasVisiblePrices
-                  ? [
-                      {
-                        icon: Receipt,
-                        label: "Total Spent",
-                        value: formatPrice(stats.totalSpent),
-                      },
-                    ]
-                  : []),
+                {
+                  icon: Receipt,
+                  label: "Total Spent",
+                  value: `$${stats.totalSpent.toFixed(2)}`,
+                },
               ].map((s) => (
                 <div
                   key={s.label}
@@ -404,7 +417,10 @@ export default function MyBookingsPage() {
                     className="w-11 h-11 rounded flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: ELEGANZA.surfaceMuted }}
                   >
-                    <s.icon className="w-5 h-5" style={{ color: ELEGANZA.ink }} />
+                    <s.icon
+                      className="w-5 h-5"
+                      style={{ color: ELEGANZA.ink }}
+                    />
                   </div>
                   <div>
                     <p
@@ -413,7 +429,10 @@ export default function MyBookingsPage() {
                     >
                       {s.label}
                     </p>
-                    <p className="text-xl font-bold mt-0.5" style={{ color: ELEGANZA.ink }}>
+                    <p
+                      className="text-xl font-bold mt-0.5"
+                      style={{ color: ELEGANZA.ink }}
+                    >
                       {s.value}
                     </p>
                   </div>
@@ -425,7 +444,7 @@ export default function MyBookingsPage() {
 
         {/* Filters & Search */}
         <section
-          className="sticky top-16 z-30 border-b"
+          className="sticky top-18 md:top-20 lg:top-22 z-30 border-b"
           style={{
             backgroundColor: ELEGANZA.surface,
             borderColor: ELEGANZA.border,
@@ -497,6 +516,41 @@ export default function MyBookingsPage() {
                   Loading your bookings...
                 </p>
               </div>
+            ) : loadError ? (
+              <div
+                className="rounded p-16 text-center"
+                style={{
+                  backgroundColor: ELEGANZA.surface,
+                  border: `1px solid ${ELEGANZA.border}`,
+                }}
+              >
+                <h3
+                  className="text-xl font-bold mb-2"
+                  style={{ color: ELEGANZA.ink }}
+                >
+                  Something went wrong
+                </h3>
+                <p
+                  className="text-sm mb-8"
+                  style={{ color: ELEGANZA.inkMuted }}
+                >
+                  We couldn&apos;t load your bookings right now. Please check
+                  your connection and try again.
+                </p>
+                <button
+                  onClick={() => fetchBookings()}
+                  className="px-6 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
+                  style={{ backgroundColor: ELEGANZA.cta }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = ELEGANZA.cta)
+                  }
+                >
+                  Try Again
+                </button>
+              </div>
             ) : filtered.length === 0 ? (
               <div
                 className="rounded p-16 text-center"
@@ -514,7 +568,10 @@ export default function MyBookingsPage() {
                     style={{ color: ELEGANZA.inkMuted }}
                   />
                 </div>
-                <h3 className="text-xl font-bold mb-2" style={{ color: ELEGANZA.ink }}>
+                <h3
+                  className="text-xl font-bold mb-2"
+                  style={{ color: ELEGANZA.ink }}
+                >
                   No bookings found
                 </h3>
                 <p
@@ -531,7 +588,8 @@ export default function MyBookingsPage() {
                     className="px-6 py-3 rounded text-white text-sm font-semibold uppercase tracking-[0.2em] transition-colors"
                     style={{ backgroundColor: ELEGANZA.cta }}
                     onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover)
+                      (e.currentTarget.style.backgroundColor =
+                        ELEGANZA.ctaHover)
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.backgroundColor = ELEGANZA.cta)
@@ -549,10 +607,12 @@ export default function MyBookingsPage() {
                     booking={booking}
                     index={idx}
                     canceling={cancelingId === booking.id}
+                    deletingReview={deletingReviewId === booking.id}
                     onCancel={openCancelModal}
                     onCreateReview={openCreateReview}
                     onEditReview={openEditReview}
-                    serviceCatalogById={serviceCatalogById}
+                    onDeleteReview={handleDeleteReview}
+                    serviceImagesById={serviceImagesById}
                   />
                 ))}
               </div>
@@ -565,7 +625,9 @@ export default function MyBookingsPage() {
         isOpen={reviewModalOpen && !!activeBooking}
         mode={activeBooking?.review ? "edit" : "create"}
         serviceName={activeBooking?.service?.name ?? "Service"}
-        providerName={activeBooking ? providerFullName(activeBooking) : undefined}
+        providerName={
+          activeBooking ? providerFullName(activeBooking) : undefined
+        }
         initialRating={activeBooking?.review?.rating ?? 0}
         initialComment={activeBooking?.review?.comment ?? ""}
         submitting={reviewSubmitting}
@@ -595,31 +657,33 @@ interface BookingRowProps {
   booking: Booking;
   index: number;
   canceling: boolean;
-  serviceCatalogById: Record<string, Pick<Service, "priceDisplayMode" | "image">>;
+  deletingReview: boolean;
+  serviceImagesById: Record<string, string>;
   onCancel: (b: Booking) => void;
   onCreateReview: (b: Booking) => void;
   onEditReview: (b: Booking) => void;
+  onDeleteReview: (b: Booking) => void;
 }
 
 function BookingRow({
   booking,
   index,
   canceling,
-  serviceCatalogById,
+  deletingReview,
+  serviceImagesById,
   onCancel,
   onCreateReview,
   onEditReview,
+  onDeleteReview,
 }: BookingRowProps) {
   const bucket = statusToFilter(booking.status);
   const serviceName = booking.service?.name ?? "Service";
   const providerName = providerFullName(booking);
-  const duration = computeDuration(booking.bookingTime?.start, booking.bookingTime?.end);
-  const showPrice = resolveServicePriceVisibility(
-    booking.serviceId,
-    booking.service,
-    serviceCatalogById,
+  const duration = computeDuration(
+    booking.bookingTime?.start,
+    booking.bookingTime?.end,
   );
-  const priceLabel = showPrice ? formatPrice(booking.service?.price) : null;
+  const price = priceNumber(booking.service?.price);
   const businessName = booking.business?.name;
 
   // Thumbnails
@@ -627,9 +691,11 @@ function BookingRow({
   const thumbnailUrl =
     getImageUrl(booking.service?.image) ||
     getImageUrl(bookingService?.imageUrl) ||
-    getImageUrl(serviceCatalogById[booking.serviceId]?.image) ||
+    getImageUrl(serviceImagesById[booking.serviceId]) ||
     null;
-  const providerAvatarUrl = getImageUrl(booking.serviceProvider?.impUrl ?? null);
+  const providerAvatarUrl = getImageUrl(
+    booking.serviceProvider?.impUrl ?? null,
+  );
 
   const statusLabel =
     bucket === "upcoming"
@@ -658,54 +724,63 @@ function BookingRow({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: Math.min(index * 0.03, 0.3) }}
-      className="rounded-lg p-5 transition-all"
+      className="rounded-xl p-5 sm:p-6 transition-all hover:shadow-sm"
       style={{
         backgroundColor: ELEGANZA.surface,
         border: `1px solid ${ELEGANZA.border}`,
       }}
     >
-      {/* Top-right status badge — consistent placement across all states */}
-      <div className="mb-4 flex justify-end">
-        <span
-          className="inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest"
-          style={{ backgroundColor: sStyle.bg, color: sStyle.color }}
-        >
-          {statusLabel}
-        </span>
-      </div>
-
-      <div className="flex flex-col md:flex-row md:items-start gap-4">
-        {/* Thumbnail */}
+      {/* ── Header: thumbnail · service info · status ── */}
+      <div className="flex items-start gap-4">
         <div
-          className="w-full md:w-20 h-40 md:h-20 rounded-lg overflow-hidden flex-shrink-0"
+          className="w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-xl overflow-hidden flex-shrink-0"
           style={{ backgroundColor: ELEGANZA.surfaceMuted }}
         >
           {thumbnailUrl ? (
-            <SmartImage
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
               src={thumbnailUrl}
               alt={serviceName}
-              className="w-full h-full"
-              placeholderColor={ELEGANZA.surfaceMuted}
-              videoPlayback="autoplay"
+              className="w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Calendar
-                className="w-8 h-8"
+                className="w-7 h-7"
                 style={{ color: ELEGANZA.inkMuted }}
               />
             </div>
           )}
         </div>
 
-        {/* Main content */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-bold truncate" style={{ color: ELEGANZA.ink }}>
-            {serviceName}
-          </h3>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3
+                className="text-base sm:text-lg font-bold leading-snug truncate"
+                style={{ color: ELEGANZA.ink }}
+              >
+                {serviceName}
+              </h3>
+              {businessName && (
+                <p
+                  className="text-xs mt-0.5 truncate"
+                  style={{ color: ELEGANZA.inkMuted }}
+                >
+                  {businessName}
+                </p>
+              )}
+            </div>
+            <span
+              className="inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex-shrink-0"
+              style={{ backgroundColor: sStyle.bg, color: sStyle.color }}
+            >
+              {statusLabel}
+            </span>
+          </div>
 
           {providerName && (
-            <div className="flex items-center gap-2 mt-1.5">
+            <div className="flex items-center gap-2 mt-2.5">
               <div
                 className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0"
                 style={{ backgroundColor: ELEGANZA.surfaceMuted }}
@@ -726,124 +801,147 @@ function BookingRow({
                   </div>
                 )}
               </div>
-              <span
-                className="text-xs"
-                style={{ color: ELEGANZA.inkMuted }}
-              >
+              <span className="text-xs" style={{ color: ELEGANZA.inkMuted }}>
                 with <span className="font-semibold">{providerName}</span>
               </span>
             </div>
           )}
-          {businessName && (
-            <p
-              className="text-[11px] mt-1"
-              style={{ color: ELEGANZA.inkMuted }}
-            >
-              {businessName}
-            </p>
-          )}
 
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-3">
+          {/* Meta: date · time · price */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3">
             <div
               className="flex items-center gap-1.5 text-xs"
               style={{ color: ELEGANZA.inkMuted }}
             >
-              <Calendar className="w-3.5 h-3.5" style={{ color: ELEGANZA.accent }} />
+              <Calendar
+                className="w-3.5 h-3.5"
+                style={{ color: ELEGANZA.accent }}
+              />
               <span>{formatDate(booking.bookingTime?.start)}</span>
             </div>
             <div
               className="flex items-center gap-1.5 text-xs"
               style={{ color: ELEGANZA.inkMuted }}
             >
-              <Clock className="w-3.5 h-3.5" style={{ color: ELEGANZA.accent }} />
+              <Clock
+                className="w-3.5 h-3.5"
+                style={{ color: ELEGANZA.accent }}
+              />
               <span>
                 {formatTime(booking.bookingTime?.start)}
                 {duration ? ` · ${duration}` : ""}
               </span>
             </div>
-            {priceLabel && (
-              <div className="text-sm font-bold" style={{ color: ELEGANZA.ink }}>
-                {priceLabel}
+            {price > 0 && (
+              <div
+                className="text-sm font-bold ml-auto"
+                style={{ color: ELEGANZA.ink }}
+              >
+                ${price.toFixed(2)}
               </div>
             )}
           </div>
-
-          {/* Existing review display */}
-          {review && (
-            <div
-              className="mt-4 pt-3"
-              style={{ borderTop: `1px solid ${ELEGANZA.border}` }}
-            >
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-0.5">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star
-                      key={i}
-                      className="w-3.5 h-3.5"
-                      style={{
-                        color: i <= review.rating ? ELEGANZA.accent : ELEGANZA.border,
-                        fill: i <= review.rating ? ELEGANZA.accent : "transparent",
-                      }}
-                    />
-                  ))}
-                </div>
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest"
-                  style={{ color: ELEGANZA.inkMuted }}
-                >
-                  Your review
-                </span>
-              </div>
-              {review.comment && (
-                <p
-                  className="mt-2 text-xs italic line-clamp-2"
-                  style={{ color: ELEGANZA.ink }}
-                >
-                  &ldquo;{review.comment}&rdquo;
-                </p>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Bottom-right actions — cancel for upcoming, review for completed */}
-      {isUpcoming && (
+      {/* ── Review block: stars + actions on one row, comment below ── */}
+      {!isUpcoming && review && (
         <div
-          className="mt-5 pt-4 flex justify-end"
+          className="mt-5 pt-4"
           style={{ borderTop: `1px solid ${ELEGANZA.border}` }}
         >
-          <button
-            onClick={() => onCancel(booking)}
-            disabled={canceling}
-            className="flex items-center justify-center gap-2 px-5 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{
-              borderColor: "rgba(185, 28, 28, 0.4)",
-              color: "#B91C1C",
-              backgroundColor: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              if (!canceling)
-                e.currentTarget.style.backgroundColor = "rgba(185, 28, 28, 0.08)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            <X className="w-3.5 h-3.5" />
-            {canceling ? "Cancelling..." : "Cancel Booking"}
-          </button>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-0.5">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    className="w-4 h-4"
+                    style={{
+                      color:
+                        i <= review.rating ? ELEGANZA.accent : ELEGANZA.border,
+                      fill:
+                        i <= review.rating ? ELEGANZA.accent : "transparent",
+                    }}
+                  />
+                ))}
+              </div>
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: ELEGANZA.inkMuted }}
+              >
+                Your review
+              </span>
+            </div>
+
+            {canEditReview && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => onEditReview(booking)}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-[0.15em] border transition-colors"
+                  style={{
+                    borderColor: ELEGANZA.border,
+                    color: ELEGANZA.ink,
+                    backgroundColor: "transparent",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      ELEGANZA.surfaceMuted)
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
+                  <Star className="w-3.5 h-3.5" />
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDeleteReview(booking)}
+                  disabled={deletingReview}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[11px] font-semibold uppercase tracking-[0.15em] border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    borderColor: "rgba(185, 28, 28, 0.35)",
+                    color: "#B91C1C",
+                    backgroundColor: "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!deletingReview)
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(185, 28, 28, 0.08)";
+                  }}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  {deletingReview ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            )}
+          </div>
+          {review.comment && (
+            <p
+              className="mt-2.5 text-sm italic line-clamp-3"
+              style={{ color: ELEGANZA.ink }}
+            >
+              &ldquo;{review.comment}&rdquo;
+            </p>
+          )}
         </div>
       )}
 
+      {/* ── Footer action bar: leave-review / cancel ── */}
       {!isUpcoming && canReview && (
         <div
-          className="mt-5 pt-4 flex justify-end"
+          className="mt-5 pt-4 flex items-center justify-between gap-3"
           style={{ borderTop: `1px solid ${ELEGANZA.border}` }}
         >
+          <span className="text-xs" style={{ color: ELEGANZA.inkMuted }}>
+            How was your experience?
+          </span>
           <button
             onClick={() => onCreateReview(booking)}
-            className="flex items-center justify-center gap-2 px-5 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] transition-colors"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.15em] transition-colors"
             style={{ backgroundColor: ELEGANZA.cta, color: "white" }}
             onMouseEnter={(e) =>
               (e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover)
@@ -853,37 +951,39 @@ function BookingRow({
             }
           >
             <Star className="w-3.5 h-3.5" />
-            Review
+            Leave Review
           </button>
         </div>
       )}
 
-      {!isUpcoming && canEditReview && (
+      {isUpcoming && (
         <div
-          className="mt-5 pt-4 flex justify-end"
+          className="mt-5 pt-4 flex items-center justify-between gap-3"
           style={{ borderTop: `1px solid ${ELEGANZA.border}` }}
         >
+          <span className="text-xs" style={{ color: ELEGANZA.inkMuted }}>
+            Need to make a change?
+          </span>
           <button
-            onClick={() => onEditReview(booking)}
-            className="flex items-center justify-center gap-2 px-5 py-2 rounded text-xs font-semibold uppercase tracking-[0.2em] border transition-colors"
+            onClick={() => onCancel(booking)}
+            disabled={canceling}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-[0.15em] border transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             style={{
-              borderColor: ELEGANZA.border,
-              color: ELEGANZA.ink,
+              borderColor: "rgba(185, 28, 28, 0.35)",
+              color: "#B91C1C",
               backgroundColor: "transparent",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = ELEGANZA.ink;
-              e.currentTarget.style.borderColor = ELEGANZA.ink;
-              e.currentTarget.style.color = "white";
+              if (!canceling)
+                e.currentTarget.style.backgroundColor =
+                  "rgba(185, 28, 28, 0.08)";
             }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-              e.currentTarget.style.borderColor = ELEGANZA.border;
-              e.currentTarget.style.color = ELEGANZA.ink;
-            }}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.backgroundColor = "transparent")
+            }
           >
-            <Star className="w-3.5 h-3.5" />
-            Edit Review
+            <X className="w-3.5 h-3.5" />
+            {canceling ? "Cancelling..." : "Cancel Booking"}
           </button>
         </div>
       )}

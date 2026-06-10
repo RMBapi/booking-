@@ -159,25 +159,21 @@ function BookingSummaryCard({
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {service.price ? (
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: B.surfaceMuted }}
-              >
-                <DollarSign className="w-4 h-4" style={{ color: B.ink }} />
-              </div>
-            ) : null}
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: B.surfaceMuted }}
+            >
+              <DollarSign className="w-4 h-4" style={{ color: B.ink }} />
+            </div>
             <div>
               <p className="text-[11px]" style={{ color: B.muted }}>
                 {service.duration}
               </p>
             </div>
           </div>
-          {service.price && (
-            <p className="text-sm font-semibold" style={{ color: B.ink }}>
-              {service.price}
-            </p>
-          )}
+          <p className="text-sm font-semibold" style={{ color: B.ink }}>
+            {service.price}
+          </p>
         </div>
       </div>
     </div>
@@ -405,7 +401,10 @@ export const ClientStep = React.memo(function ClientStep({
                             className="w-12 h-12 rounded-full flex items-center justify-center"
                             style={{ backgroundColor: B.ink }}
                           >
-                            <User className="w-5 h-5" style={{ color: B.white }} />
+                            <User
+                              className="w-5 h-5"
+                              style={{ color: B.white }}
+                            />
                           </div>
                           <div>
                             <h3
@@ -415,7 +414,8 @@ export const ClientStep = React.memo(function ClientStep({
                               Continue as Guest
                             </h3>
                             <p className="text-xs" style={{ color: B.muted }}>
-                              No account needed — just your name and contact info
+                              No account needed — just your name and contact
+                              info
                             </p>
                           </div>
                         </div>
@@ -435,7 +435,10 @@ export const ClientStep = React.memo(function ClientStep({
                       >
                         Continue as Guest
                       </div>
-                      <p className="text-[11px] text-center mt-3" style={{ color: B.muted }}>
+                      <p
+                        className="text-[11px] text-center mt-3"
+                        style={{ color: B.muted }}
+                      >
                         Takes less than 30 seconds
                       </p>
                     </div>
@@ -496,7 +499,8 @@ export const ClientStep = React.memo(function ClientStep({
                           Sign In
                         </h3>
                         <p className="text-xs" style={{ color: B.muted }}>
-                          Already have an account? Sign in for a faster experience
+                          Already have an account? Sign in for a faster
+                          experience
                         </p>
                       </div>
                     </div>
@@ -544,7 +548,10 @@ export const ClientStep = React.memo(function ClientStep({
                       }}
                     >
                       <GoogleIcon />
-                      <span className="text-xs font-semibold" style={{ color: B.ink }}>
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: B.ink }}
+                      >
                         Google
                       </span>
                     </button>
@@ -564,7 +571,10 @@ export const ClientStep = React.memo(function ClientStep({
                       }}
                     >
                       <FacebookIcon />
-                      <span className="text-xs font-semibold" style={{ color: B.ink }}>
+                      <span
+                        className="text-xs font-semibold"
+                        style={{ color: B.ink }}
+                      >
                         Facebook
                       </span>
                     </button>
@@ -574,7 +584,11 @@ export const ClientStep = React.memo(function ClientStep({
 
               {/* ── PHASE: GUEST FORM ── */}
               {clientPhase === "guest" && (
-                <motion.div key="guest" {...phaseTransition} className="space-y-5">
+                <motion.div
+                  key="guest"
+                  {...phaseTransition}
+                  className="space-y-5"
+                >
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => setClientPhase("choose")}
@@ -722,10 +736,16 @@ export const ClientStep = React.memo(function ClientStep({
                         }}
                       >
                         {agreed && (
-                          <Check className="w-3 h-3" style={{ color: B.white }} />
+                          <Check
+                            className="w-3 h-3"
+                            style={{ color: B.white }}
+                          />
                         )}
                       </div>
-                      <span className="text-xs leading-relaxed" style={{ color: B.muted }}>
+                      <span
+                        className="text-xs leading-relaxed"
+                        style={{ color: B.muted }}
+                      >
                         I agree with the{" "}
                         <span
                           style={{ color: B.ink }}
@@ -741,7 +761,9 @@ export const ClientStep = React.memo(function ClientStep({
                       disabled={submitting || !guestFormValid}
                       className="w-full py-4 rounded font-semibold text-sm uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2"
                       style={{
-                        backgroundColor: guestFormValid ? B.cta : B.surfaceMuted,
+                        backgroundColor: guestFormValid
+                          ? B.cta
+                          : B.surfaceMuted,
                         color: guestFormValid ? B.white : B.muted,
                         cursor: guestFormValid ? "pointer" : "not-allowed",
                       }}
@@ -770,8 +792,12 @@ export const ClientStep = React.memo(function ClientStep({
                       )}
                     </button>
 
-                    <p className="text-[11px] text-center" style={{ color: B.muted }}>
-                      Your information is secure and will only be used for this booking.
+                    <p
+                      className="text-[11px] text-center"
+                      style={{ color: B.muted }}
+                    >
+                      Your information is secure and will only be used for this
+                      booking.
                     </p>
                   </div>
                 </motion.div>
@@ -779,7 +805,11 @@ export const ClientStep = React.memo(function ClientStep({
 
               {/* ── PHASE: LOGIN FORM ── */}
               {clientPhase === "login" && (
-                <motion.div key="login" {...phaseTransition} className="space-y-5">
+                <motion.div
+                  key="login"
+                  {...phaseTransition}
+                  className="space-y-5"
+                >
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => setClientPhase("choose")}
@@ -855,7 +885,9 @@ export const ClientStep = React.memo(function ClientStep({
                             type={showPass ? "text" : "password"}
                             placeholder="Enter your password"
                             value={loginPassword}
-                            onChange={(e) => onLoginPasswordChange(e.target.value)}
+                            onChange={(e) =>
+                              onLoginPasswordChange(e.target.value)
+                            }
                             className="w-full px-4 py-3.5 rounded-lg border text-sm outline-none pr-12 transition-all"
                             style={inputStyle}
                             onFocus={onInputFocus}
@@ -890,7 +922,9 @@ export const ClientStep = React.memo(function ClientStep({
                       disabled={submitting || !loginFormValid}
                       className="w-full py-4 rounded font-semibold text-sm uppercase tracking-[0.2em] transition-colors flex items-center justify-center gap-2"
                       style={{
-                        backgroundColor: loginFormValid ? B.cta : B.surfaceMuted,
+                        backgroundColor: loginFormValid
+                          ? B.cta
+                          : B.surfaceMuted,
                         color: loginFormValid ? B.white : B.muted,
                         cursor: loginFormValid ? "pointer" : "not-allowed",
                       }}

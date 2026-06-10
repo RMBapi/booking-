@@ -20,6 +20,17 @@ function resolveBusinessSlug(): string | null {
   );
 }
 
+/** Human-readable business name from a slug, used only as a transient fallback. */
+function slugToTitle(slug: string): string {
+  return (
+    slug
+      .split(/[-_]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ") || slug
+  );
+}
+
 function extractServices(servicesRes: unknown): Service[] {
   const res = servicesRes as
     | { data?: Service[] | { data?: Service[] } }
@@ -137,15 +148,30 @@ export function CustomerSiteNavigation() {
     [business],
   );
 
-  if (!business || !slug) return null;
+  // Without a slug we can't build any navigation links, so render nothing.
+  if (!slug) return null;
+
+  // The business normally arrives from cache (instant) or a quick fetch. If it
+  // hasn't yet (cold cache + slow/failed fetch), fall back to a minimal
+  // business derived from the slug so the navbar is *always* visible rather
+  // than disappearing entirely on the bookings/contacts pages.
+  const navBusiness: Business =
+    business ??
+    ({
+      id: "",
+      name: slugToTitle(slug),
+      slug,
+      createdAt: "",
+      updatedAt: "",
+    } as Business);
 
   return (
     <PageNavigation
-      business={business}
+      business={navBusiness}
       slug={slug}
       heroImage={resolvedHeroImage}
-      featuredService={featuredService}
-      services={services}
+      featuredService={business ? featuredService : undefined}
+      services={business ? services : []}
       activeSection={null}
       mobileMenuOpen={mobileMenuOpen}
       setMobileMenuOpen={setMobileMenuOpen}
@@ -160,6 +186,7 @@ export function CustomerSiteNavigation() {
         router.push(homePath);
       }}
       onMyBookings={() => router.push("/customer/bookings")}
+      onContacts={() => router.push("/customer/contacts")}
       onLogoClick={() => router.push(homePath)}
       onNavigateHome={() => router.push(homePath)}
       onNavigateContact={() => router.push(`${homePath}#bookings`)}

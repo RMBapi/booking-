@@ -81,7 +81,7 @@ export function HeroSection({
     <section
       ref={heroRef}
       id="home"
-      className={`hero-section relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden${isVideoHero ? " hero-section--video" : ""}`}
+      className={`hero-section relative min-h-[85vh] w-full flex items-end pb-16 md:pb-20 px-6 md:px-12 lg:px-20 overflow-hidden scroll-mt-24 lg:scroll-mt-28${isVideoHero ? " hero-section--video" : ""}`}
     >
       {/* Sharp hero media — slight brightness reduction only */}
       {isVideoHero ? (

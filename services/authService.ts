@@ -18,6 +18,10 @@ export const getProfile = async () => {
   return http.get("/user/me");
 };
 
+export const refreshToken = async () => {
+  return http.post("/auth/refresh", {});
+};
+
 export const logout = async () => {
   clearRoleSession("Customer");
 };

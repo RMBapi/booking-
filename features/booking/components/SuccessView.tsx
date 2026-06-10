@@ -111,9 +111,7 @@ export const SuccessView = React.memo(function SuccessView({
             <>
               {" "}
               with{" "}
-              <strong style={{ color: B.ink }}>
-                {selectedProvider.name}
-              </strong>
+              <strong style={{ color: B.ink }}>{selectedProvider.name}</strong>
             </>
           )}{" "}
           for <strong style={{ color: B.ink }}>{service.name}</strong> on

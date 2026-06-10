@@ -9,7 +9,7 @@ type ApiSuccess = {
 export const useApiSuccess = () => {
   function handleSuccess(
     apiResponse: AxiosResponse<ApiSuccess> | string,
-    options?: { duration?: number }
+    options?: { duration?: number },
   ) {
     const toastOptions = { duration: options?.duration ?? 2500 };
 

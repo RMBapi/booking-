@@ -64,9 +64,7 @@ export function ReviewModal({
 
   const ratingLabel = useMemo(() => {
     const active = hoverRating || rating;
-    return (
-      ["", "Poor", "Fair", "Good", "Great", "Excellent"][active] ?? ""
-    );
+    return ["", "Poor", "Fair", "Good", "Great", "Excellent"][active] ?? "";
   }, [rating, hoverRating]);
 
   if (!mounted) return null;
@@ -91,7 +89,10 @@ export function ReviewModal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
           className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}
+          style={{
+            backgroundColor: "rgba(0,0,0,0.45)",
+            backdropFilter: "blur(4px)",
+          }}
           onClick={onClose}
         >
           <motion.div
@@ -100,7 +101,10 @@ export function ReviewModal({
             exit={{ opacity: 0, y: 16, scale: 0.97 }}
             transition={{ duration: 0.18 }}
             className="relative w-full max-w-lg rounded-2xl overflow-hidden"
-            style={{ backgroundColor: ELEGANZA.surface, border: `1px solid ${ELEGANZA.border}` }}
+            style={{
+              backgroundColor: ELEGANZA.surface,
+              border: `1px solid ${ELEGANZA.border}`,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -122,7 +126,10 @@ export function ReviewModal({
               >
                 {mode === "edit" ? "Update Review" : "Leave a Review"}
               </p>
-              <h2 className="mt-2 text-xl font-bold" style={{ color: ELEGANZA.ink }}>
+              <h2
+                className="mt-2 text-xl font-bold"
+                style={{ color: ELEGANZA.ink }}
+              >
                 {serviceName}
               </h2>
               {providerName && (
@@ -181,7 +188,10 @@ export function ReviewModal({
                   className="block text-[10px] font-bold uppercase tracking-widest mb-2"
                   style={{ color: ELEGANZA.inkMuted }}
                 >
-                  Comment <span className="normal-case tracking-normal opacity-70">(optional)</span>
+                  Comment{" "}
+                  <span className="normal-case tracking-normal opacity-70">
+                    (optional)
+                  </span>
                 </label>
                 <textarea
                   id="review-comment"
@@ -218,7 +228,8 @@ export function ReviewModal({
                   }}
                   onMouseEnter={(e) => {
                     if (!submitting)
-                      e.currentTarget.style.backgroundColor = ELEGANZA.surfaceMuted;
+                      e.currentTarget.style.backgroundColor =
+                        ELEGANZA.surfaceMuted;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "transparent";
@@ -232,7 +243,8 @@ export function ReviewModal({
                   className="px-5 py-2.5 rounded text-white text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                   style={{ backgroundColor: ELEGANZA.cta }}
                   onMouseEnter={(e) => {
-                    if (canSubmit) e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
+                    if (canSubmit)
+                      e.currentTarget.style.backgroundColor = ELEGANZA.ctaHover;
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = ELEGANZA.cta;

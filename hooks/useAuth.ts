@@ -51,7 +51,7 @@ export function useAuth(): UseAuthReturn {
 
   const session: RoleSession = role
     ? getSession(role)
-    : { user: null, token: null, businessSiteSlug: null };
+    : { user: null, token: null, businessSiteSlug: null, businessId: null };
 
   const logout = useCallback(
     (overrideRole?: UserRole) => {

@@ -217,7 +217,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   const serviceInfo = useMemo<ServiceInfo>(
     () => ({
       name: activeService.name || "Service",
-      price: getServicePriceLabel(activeService),
+      price: getServicePriceLabel(activeService) ?? "",
       duration: getServiceDuration(activeService),
       description: serviceDescription(activeService),
       imageUrl: activeService.image?.trim() || undefined,

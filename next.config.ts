@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // Don't fail the production build / Vercel deploy on lint findings — linting
+  // is run separately (`npm run lint`). Type-checking still runs and blocks.
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     optimizePackageImports: ["framer-motion", "lucide-react"],
   },

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Logo } from "@/components/shared/logo";
-import { NAV_LINKS } from "@/constants/site";
+import { NAV_LINKS, NAV_ACTIONS } from "@/constants/site";
 
 export function Nav() {
   const [open, setOpen] = useState(false);
@@ -36,7 +37,7 @@ export function Nav() {
         >
           {NAV_LINKS.map((item) => (
             <a
-              key={item.href}
+              key={item.label}
               href={item.href}
               className="relative hover:text-brand-blue transition-colors duration-200 after:absolute after:left-0 after:-bottom-1 after:h-px after:w-0 after:bg-gradient-to-r after:from-brand-blue after:to-brand-purple hover:after:w-full after:transition-all after:duration-300"
             >
@@ -44,6 +45,23 @@ export function Nav() {
             </a>
           ))}
         </nav>
+
+        {/* Account actions — Log in + one high-contrast CTA (desktop) */}
+        <div className="hidden md:flex items-center gap-4">
+          <a
+            href={NAV_ACTIONS.login.href}
+            className="text-subtle text-sm hover:text-brand-blue transition-colors"
+          >
+            {NAV_ACTIONS.login.label}
+          </a>
+          <a
+            href={NAV_ACTIONS.cta.href}
+            className="group inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-gradient-to-r from-brand-blue via-brand-indigo to-brand-purple text-white text-sm font-medium transition-all duration-300 hover:shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--color-brand-blue)_50%,transparent)] hover:-translate-y-0.5"
+          >
+            {NAV_ACTIONS.cta.label}
+            <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          </a>
+        </div>
 
         {/* Mobile menu toggle (≥44px tap target) */}
         <button
@@ -69,7 +87,7 @@ export function Nav() {
       >
         <ul className="px-6 py-1.5">
           {NAV_LINKS.map((item) => (
-            <li key={item.href}>
+            <li key={item.label}>
               <a
                 href={item.href}
                 onClick={() => setOpen(false)}
@@ -79,6 +97,22 @@ export function Nav() {
               </a>
             </li>
           ))}
+          <li className="flex items-center gap-3 py-3">
+            <a
+              href={NAV_ACTIONS.login.href}
+              onClick={() => setOpen(false)}
+              className="flex-1 text-center py-2.5 rounded-md border border-line text-ink text-sm font-medium"
+            >
+              {NAV_ACTIONS.login.label}
+            </a>
+            <a
+              href={NAV_ACTIONS.cta.href}
+              onClick={() => setOpen(false)}
+              className="flex-1 text-center py-2.5 rounded-md bg-gradient-to-r from-brand-blue via-brand-indigo to-brand-purple text-white text-sm font-medium"
+            >
+              {NAV_ACTIONS.cta.label}
+            </a>
+          </li>
         </ul>
       </nav>
     </header>

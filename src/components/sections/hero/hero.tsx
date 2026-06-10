@@ -177,17 +177,28 @@ export function Hero() {
           two halves of one connected platform.
         </p>
         <div className="mt-7 flex flex-wrap items-center justify-center gap-3 animate-[fadeUp_0.9s_ease-out]">
-          <Button className="h-10 px-5 rounded-md bg-gradient-to-r from-brand-blue via-brand-indigo to-brand-purple text-white shadow-none transition-all duration-300 hover:shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--color-brand-blue)_50%,transparent)] hover:-translate-y-0.5 group text-sm font-medium">
-            Book a demo
-            <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-0.5" />
+          <Button
+            asChild
+            className="h-10 px-5 rounded-md bg-gradient-to-r from-brand-blue via-brand-indigo to-brand-purple text-white shadow-none transition-all duration-300 hover:shadow-[0_8px_24px_-8px_color-mix(in_srgb,var(--color-brand-blue)_50%,transparent)] hover:-translate-y-0.5 group text-sm font-medium"
+          >
+            <a href="#pricing">
+              Start free — build your site
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 transition-transform group-hover:translate-x-0.5" />
+            </a>
           </Button>
           <Button
+            asChild
             variant="outline"
             className="h-10 px-5 rounded-md border border-line bg-white shadow-none hover:bg-[#fafafa] hover:border-brand-purple/40 transition-colors text-sm font-medium"
           >
-            Watch tour
+            <a href="#journey">See how it works</a>
           </Button>
         </div>
+        <p className="mt-4 text-subtle text-[13px] animate-[fadeUp_1s_ease-out]">
+          <span className="text-ink">✓ No credit card required</span>
+          <span className="mx-2 text-line">·</span>
+          <span className="text-ink">✓ 14-day free trial</span>
+        </p>
       </div>
 
       {/* Desktop (lg+) — 2×2 ecosystem grid with connectors around the center

@@ -7,10 +7,9 @@ import type { MeResponse } from "@/types";
  */
 export function postLoginPath(me: MeResponse): string {
   if (me.user.systemRole === "Super_Admin") return "/super-admin";
-  if (me.user.systemRole === "Customer") {
-    const slug = me.businesses[0]?.slug;
-    return slug ? `/${slug}/dashboard` : "/login";
-  }
+  // Customers belong in the separate customer app — this CRM has no customer
+  // surface, so send them to /login.
+  if (me.user.systemRole === "Customer") return "/login";
   // Business_owner or Service_Provider
   const firstBusinessId = me.businesses[0]?.id;
   return firstBusinessId ? `/app/${firstBusinessId}` : "/app";

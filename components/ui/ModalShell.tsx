@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { cn } from "@/utils";
 
 const sizeClasses = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  "2xl": "max-w-2xl",
-  full: "max-w-5xl",
+  sm: "sm:max-w-sm",
+  md: "sm:max-w-md",
+  lg: "sm:max-w-lg",
+  xl: "sm:max-w-xl",
+  "2xl": "sm:max-w-2xl",
+  full: "sm:max-w-5xl",
 } as const;
 
 export type ModalShellSize = keyof typeof sizeClasses;
@@ -42,42 +43,54 @@ export function ModalShell({
 }: ModalShellProps) {
   useEffect(() => {
     if (!open) return;
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", onKey);
     };
   }, [open, onClose]);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
       {open && (
         <motion.div
-          className={cn("fixed inset-0 flex items-center justify-center p-4", className)}
+          className={cn(
+            "fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4",
+            className,
+          )}
           style={{ zIndex }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           />
           <motion.div
             role="dialog"
             aria-modal="true"
-            initial={{ opacity: 0, scale: 0.96, y: 8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 280, damping: 28 }}
+            initial={{ opacity: 0, y: 48 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 48 }}
+            transition={{ type: "spring", stiffness: 320, damping: 32 }}
             style={panelStyle}
             className={cn(
-              "relative bg-surface rounded-2xl shadow-2xl shadow-black/10 max-h-[90vh] flex flex-col overflow-hidden w-full",
+              "relative bg-surface shadow-2xl shadow-black/10 flex flex-col overflow-hidden",
+              "w-full max-w-[100vw] max-h-[92dvh] sm:max-h-[90vh]",
+              "rounded-t-2xl sm:rounded-2xl border-t sm:border border-border-subtle",
+              "pb-[env(safe-area-inset-bottom,0px)]",
               sizeClasses[size],
               panelClassName,
             )}
@@ -87,7 +100,8 @@ export function ModalShell({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }
 
@@ -111,7 +125,7 @@ export function ModalHeader({
   return (
     <header
       className={cn(
-        "flex items-start justify-between gap-3 px-6 py-4 border-b border-border-subtle shrink-0",
+        "flex items-start justify-between gap-3 px-4 sm:px-6 py-4 border-b border-border-subtle shrink-0",
         className,
       )}
     >
@@ -144,7 +158,7 @@ export function ModalBody({
   className?: string;
 }) {
   return (
-    <div className={cn("flex-1 overflow-y-auto custom-scrollbar px-6 py-5", className)}>
+    <div className={cn("flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 py-5", className)}>
       {children}
     </div>
   );
@@ -160,7 +174,7 @@ export function ModalFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-end px-6 py-4 border-t border-border-subtle bg-subtle/40 gap-3 shrink-0",
+        "flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end px-4 sm:px-6 py-4 border-t border-border-subtle bg-subtle/40 gap-3 shrink-0",
         className,
       )}
     >
@@ -183,8 +197,8 @@ export const modalCancelButtonClass =
 
 /** Shared destructive confirm button in dialogs. */
 export const modalDestructiveButtonClass =
-  "rounded-lg bg-rose-600 text-white text-sm font-semibold px-4 py-2 hover:bg-rose-700 disabled:opacity-50";
+  "rounded-lg bg-rose-600 text-white text-sm font-semibold px-4 py-2 hover:bg-rose-700 disabled:opacity-50 w-full sm:w-auto text-center";
 
 /** Shared outline button in dialogs. */
 export const modalOutlineButtonClass =
-  "rounded-lg border border-border-default text-text-primary text-sm font-semibold px-4 py-2 hover:bg-subtle transition-colors";
+  "rounded-lg border border-border-default text-text-primary text-sm font-semibold px-4 py-2 hover:bg-subtle transition-colors w-full sm:w-auto text-center";

@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ChevronLeft } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { Service } from "@/types";
@@ -45,7 +51,9 @@ export const BookingForm: React.FC<BookingFormProps> = ({
   const [completedSteps, setCompletedSteps] = useState<Step[]>(
     hasProviders ? [] : ["provider"],
   );
-  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
+    null,
+  );
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [sydneyTime, setSydneyTime] = useState(getSydneyTime);

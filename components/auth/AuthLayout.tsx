@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CalendarCheck2, Sparkles, ShieldCheck } from "lucide-react";
+import { BookbitesLogo } from "@/components/brand";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -45,24 +46,15 @@ export function AuthLayout({
     <div className="min-h-screen flex flex-col lg:grid lg:grid-cols-2">
       {/* Mobile header (visible <lg) */}
       <header className="lg:hidden bg-gradient-to-br from-primary-600 to-primary-800 text-white px-6 py-5">
-        <Link href="/" className="inline-flex items-center gap-2 font-semibold">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/15 backdrop-blur">
-            <CalendarCheck2 className="h-4 w-4" />
-          </span>
-          Booking CRM
+        <Link href="/" className="inline-flex items-center">
+          <BookbitesLogo size="lg" className="brightness-0 invert" />
         </Link>
       </header>
 
       {/* Form column */}
       <main className="flex-1 flex flex-col px-6 py-8 sm:px-10 lg:px-16 lg:py-12">
-        <Link
-          href="/"
-          className="hidden lg:inline-flex items-center gap-2 font-semibold text-gray-900"
-        >
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-primary-600 text-white">
-            <CalendarCheck2 className="h-4 w-4" />
-          </span>
-          Booking CRM
+        <Link href="/" className="hidden lg:inline-flex items-center">
+          <BookbitesLogo size="lg" />
         </Link>
 
         <motion.div
@@ -109,7 +101,7 @@ export function AuthLayout({
           </ul>
 
           <p className="text-xs text-primary-100/70">
-            © {new Date().getFullYear()} Booking CRM. All rights reserved.
+            © {new Date().getFullYear()} bookbites. All rights reserved.
           </p>
         </div>
       </aside>

@@ -163,11 +163,9 @@ function RegisterContent() {
 
       const fresh = await login(accessToken);
 
-      if (role === "Customer" && (slugParam || businessSiteSlug)) {
-        router.replace(`/${slugParam || businessSiteSlug}/dashboard`);
-      } else {
-        router.replace(postLoginPath(fresh));
-      }
+      // The CRM has no customer surface (customers use the separate app), so
+      // everyone routes via postLoginPath — customers land on /login.
+      router.replace(postLoginPath(fresh));
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??

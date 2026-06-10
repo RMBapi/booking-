@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/utils";
 import type { Booking, BookingStatus, Service, ServiceProvider } from "@/types";
 import {
@@ -39,7 +39,6 @@ interface CalendarSidebarProps {
   onSelectAllProviders: (visible: boolean) => void;
   providerToneMap: Map<string, ProviderTone>;
   serviceToneMap: Map<string, ProviderTone>;
-  onCreateBooking: () => void;
 }
 
 export function CalendarSidebar({
@@ -65,7 +64,6 @@ export function CalendarSidebar({
   onSelectAllProviders,
   providerToneMap,
   serviceToneMap,
-  onCreateBooking,
 }: CalendarSidebarProps) {
   const [viewMonth, setViewMonth] = useState(
     () => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1),
@@ -116,17 +114,6 @@ export function CalendarSidebar({
 
   return (
     <aside className="w-[260px] shrink-0 border-r border-border-subtle bg-surface/50 h-full overflow-y-auto custom-scrollbar">
-      <div className="p-3 border-b border-border-subtle sticky top-0 bg-surface/95 backdrop-blur z-10">
-        <button
-          type="button"
-          onClick={onCreateBooking}
-          className="w-full inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-text-primary text-white text-sm font-semibold hover:bg-text-primary/90 transition-colors shadow-sm"
-        >
-          <Plus className="h-4 w-4" />
-          Create booking
-        </button>
-      </div>
-
       <div className="p-3 border-b border-border-subtle">
         <div className="flex items-center justify-between mb-2">
           <button

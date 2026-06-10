@@ -8,6 +8,7 @@ import {
   AtSign,
   Building2,
   CheckCircle2,
+  Clock,
   FileText,
   Globe,
   LogOut,
@@ -17,12 +18,19 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/buttons";
-import { Card, Input, TextArea } from "@/components/ui";
+import { Card, Input, Switch, TextArea } from "@/components/ui";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { OpeningHoursEditor } from "@/components/business/OpeningHoursEditor";
 import { useAuth } from "@/contexts";
 import { onboardBusiness } from "@/services/businessService";
+import {
+  defaultOpeningHours,
+  hasOpeningHoursErrors,
+  toOpeningHoursPayload,
+  validateOpeningHours,
+} from "@/lib/openingHours";
 import { cn } from "@/utils";
-import type { CreateOwnBusinessDto } from "@/types";
+import type { CreateOwnBusinessDto, OpeningHours } from "@/types";
 
 interface FieldErrors {
   name?: string;
@@ -57,6 +65,10 @@ export default function OnboardBusinessPage() {
   const [bizPhone, setBizPhone] = useState("");
   const [address, setAddress] = useState("");
   const [description, setDescription] = useState("");
+  const [setHoursNow, setSetHoursNow] = useState(false);
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(() =>
+    defaultOpeningHours(),
+  );
 
   const [submitting, setSubmitting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -97,6 +109,11 @@ export default function OnboardBusinessPage() {
       return;
     }
 
+    if (setHoursNow && hasOpeningHoursErrors(validateOpeningHours(openingHours))) {
+      setTopError("Fix the highlighted opening hours, or turn them off for now.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const dto: CreateOwnBusinessDto = {
@@ -106,6 +123,9 @@ export default function OnboardBusinessPage() {
         phone: undef(bizPhone),
         address: undef(address),
         description: undef(description),
+        openingHours: setHoursNow
+          ? toOpeningHoursPayload(openingHours)
+          : undefined,
       };
       const business = await onboardBusiness(dto);
 
@@ -277,6 +297,38 @@ export default function OnboardBusinessPage() {
                 {description.length} / {DESCRIPTION_MAX}
               </p>
             </div>
+          </div>
+
+          {/* Opening hours — optional at onboarding; can be set later in settings. */}
+          <div className="rounded-xl border border-gray-200 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-2.5">
+                <Clock className="h-4 w-4 text-gray-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Opening hours
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Optional — you can set these now or later in settings.
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={setHoursNow}
+                onCheckedChange={setSetHoursNow}
+                label="Set opening hours now"
+              />
+            </div>
+            {setHoursNow && (
+              <div className="mt-4 border-t border-gray-100 pt-4">
+                <OpeningHoursEditor
+                  value={openingHours}
+                  onChange={setOpeningHours}
+                  errors={validateOpeningHours(openingHours)}
+                  disabled={submitting}
+                />
+              </div>
+            )}
           </div>
 
           <Button

@@ -354,14 +354,13 @@ export function CalendarView({ businessId }: CalendarViewProps) {
     onSelectAllProviders: selectAllProviders,
     providerToneMap,
     serviceToneMap,
-    onCreateBooking: () => openCreateBooking(),
   };
 
   return (
-    <div className="-mx-4 lg:-mx-8 -my-6 lg:-my-10 flex flex-col h-[calc(100vh-3.5rem)] overflow-hidden">
-      <header className="sticky top-14 z-10 bg-canvas/90 backdrop-blur-xl border-b border-border-subtle">
-        <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-14">
-          <div className="flex items-center gap-2 min-w-0">
+    <div className="flex flex-col min-h-0 overflow-hidden lg:-mx-8 lg:-my-10 h-[calc(100dvh-3.5rem)]">
+      <header className="relative z-10 bg-canvas/90 backdrop-blur-xl border-b border-border-subtle shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3 sm:px-4 lg:px-6 min-h-14 py-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={() => setMobileSidebarOpen(true)}
@@ -404,12 +403,12 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
-            <h2 className="text-sm md:text-base font-semibold text-text-primary truncate">
+            <h2 className="hidden sm:block text-sm md:text-base font-semibold text-text-primary truncate min-w-0">
               {headerLabel}
             </h2>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap justify-end">
             <button
               type="button"
               onClick={() => openCreateBooking()}

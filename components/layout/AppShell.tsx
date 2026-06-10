@@ -7,7 +7,6 @@ import { LayoutGroup, motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   Calendar,
-  CalendarCheck2,
   ChartBar,
   ChevronDown,
   ChevronsLeft,
@@ -18,6 +17,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessageSquare,
   Star,
   Settings as SettingsIcon,
   UserCircle,
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts";
 import { FeatureGate } from "@/components/auth/FeatureGate";
+import { BookbitesLogo } from "@/components/brand";
 import type { BusinessMembership, FeatureCode } from "@/types";
 import { cn } from "@/utils";
 import { HeaderDropdown } from "./HeaderDropdown";
@@ -69,6 +70,12 @@ const NAV_ITEMS: NavItem[] = [
     label: "Reviews",
     feature: "view_contacts",
     icon: Star,
+  },
+  {
+    href: (id) => `/app/${id}/contacts`,
+    label: "Contacts",
+    feature: "view_tickets",
+    icon: MessageSquare,
   },
   {
     href: (id) => `/app/${id}/providers`,
@@ -168,12 +175,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const business = useMemo<BusinessMembership | null>(() => {
     if (!me) return null;
+    // Prefer staff memberships only (exclude Customer roles) for the CRM
+    // switcher and header. This prevents rare staff+customer users from
+    // seeing customer memberships in the CRM switcher.
+    const staff = me.businesses.filter((b) => b.role !== "Customer");
     return (
-      me.businesses.find((b) => b.id === urlBusinessId) ??
-      activeMembership ??
+      staff.find((b) => b.id === urlBusinessId) ??
+      // If activeMembership is a staff membership, prefer it.
+      (activeMembership && activeMembership.role !== "Customer"
+        ? activeMembership
+        : staff[0]) ??
       null
     );
   }, [me, urlBusinessId, activeMembership]);
+
+  const staffBusinesses = useMemo(() => {
+    if (!me) return [] as BusinessMembership[];
+    return me.businesses.filter((b) => b.role !== "Customer");
+  }, [me]);
 
   useEffect(() => {
     if (!business?.id) return;
@@ -206,27 +225,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         transition={sidebarSpring}
         className="hidden lg:flex fixed inset-y-0 left-0 z-30 flex-col border-r border-border-subtle bg-surface/80 backdrop-blur-xl overflow-hidden"
       >
-        <div className="h-14 flex items-center px-4 border-b border-border-subtle gap-2.5">
+        <div className="h-14 flex items-center justify-center border-b border-border-subtle px-4">
           <Link
             href={`/app/${business.id}`}
-            className="inline-flex items-center gap-2.5 font-semibold text-text-primary"
+            className="inline-flex items-center justify-center"
           >
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-indigo-500 text-white shrink-0 shadow-[0_2px_8px_rgba(14,165,233,0.25)]">
-              <CalendarCheck2 className="h-4 w-4" />
-            </span>
-            <AnimatePresence initial={false}>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  transition={{ duration: 0.18 }}
-                  className="truncate tracking-tight"
-                >
-                  Booking CRM
-                </motion.span>
-              )}
-            </AnimatePresence>
+            <BookbitesLogo compact={collapsed} size="md" />
           </Link>
         </div>
 
@@ -325,12 +329,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               transition={{ type: "spring", damping: 30, stiffness: 280 }}
             >
               <div className="h-14 flex items-center justify-between px-4 border-b border-border-subtle">
-                <span className="inline-flex items-center gap-2.5 font-semibold text-text-primary tracking-tight">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-indigo-500 text-white">
-                    <CalendarCheck2 className="h-4 w-4" />
-                  </span>
-                  Booking CRM
-                </span>
+                <BookbitesLogo size="md" />
                 <button
                   onClick={() => setMobileOpen(false)}
                   className="text-text-tertiary hover:text-text-primary transition-colors"
@@ -393,7 +392,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main column */}
       <div
         className={cn(
-          "min-h-screen flex flex-col transition-[padding] duration-200",
+          "min-h-screen flex flex-col transition-[padding] duration-200 overflow-x-hidden min-w-0",
           collapsed ? "lg:pl-16" : "lg:pl-64",
         )}
       >
@@ -438,9 +437,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   </button>
                 }
               >
-                {me.businesses.length > 1 && (
+                {staffBusinesses.length > 1 && (
                   <div className="py-1.5 text-sm">
-                    {me.businesses.map((b) => {
+                    {staffBusinesses.map((b) => {
                       const inactive = b.status !== "Active";
                       return (
                         <button
@@ -636,7 +635,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 px-4 lg:px-8 py-6 lg:py-10 max-w-[1400px] w-full mx-auto">
+        <main className="flex-1 px-4 lg:px-8 py-4 lg:py-10 max-w-[1400px] w-full mx-auto min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>

@@ -57,13 +57,6 @@ export default function ProvidersPage() {
       iconColor: "text-[#D4A574]",
     },
     {
-      label: "Average Rating",
-      value: "4.8",
-      icon: Star,
-      gradient: "from-amber-100/80 to-amber-50/40",
-      iconColor: "text-amber-500",
-    },
-    {
       label: "Total Bookings",
       value: "—",
       icon: CalendarCheck,
@@ -106,7 +99,7 @@ export default function ProvidersPage() {
         </motion.div>
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {stats.map((stat, i) => (
             <motion.div
               key={stat.label}

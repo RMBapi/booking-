@@ -6,7 +6,7 @@ import axios, {
 import { httpLogger } from "./logger";
 import { isPublicEndpoint } from "./auth";
 import { getAccessToken, getActiveBusinessId } from "./api/accessToken";
-import { refreshAccess } from "./api/refresh";
+import { refreshAccess, isTransientError } from "./api/refresh";
 
 const getBaseURL = () => {
   if (typeof window !== "undefined") return "/api";
@@ -146,7 +146,14 @@ http.interceptors.response.use(
           config.headers.Authorization = `Bearer ${fresh}`;
         }
         return http.request(config);
-      } catch {
+      } catch (refreshErr) {
+        // Only force logout when the session is genuinely invalid. Covers both
+        // the refresh itself (RefreshError) and the retried request (axios
+        // error) failing transiently — backend down / 5xx must NOT log out;
+        // only a real 401/403 does.
+        if (isTransientError(refreshErr)) {
+          return Promise.reject(error);
+        }
         window.dispatchEvent(new CustomEvent("auth:unauthenticated"));
       }
     }

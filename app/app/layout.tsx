@@ -3,17 +3,19 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts";
+import { ConnectionError } from "@/components/auth";
 
 export default function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { me, isLoading } = useAuth();
+  const { me, isLoading, authError, retry } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (isLoading) return;
+    if (authError) return; // backend unreachable — show retry, don't redirect
     if (!me) {
       router.replace("/login");
       return;
@@ -23,10 +25,14 @@ export default function AppLayout({
       return;
     }
     if (me.user.systemRole === "Customer") {
-      const slug = me.businesses[0]?.slug;
-      router.replace(slug ? `/${slug}/dashboard` : "/login");
+      // No customer surface in the CRM — customers use the separate app.
+      router.replace("/login");
     }
-  }, [me, isLoading, router]);
+  }, [me, isLoading, authError, router]);
+
+  if (authError && !me) {
+    return <ConnectionError onRetry={retry} />;
+  }
 
   if (isLoading || !me) {
     return (

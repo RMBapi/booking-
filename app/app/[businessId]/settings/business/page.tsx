@@ -5,15 +5,50 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-hot-toast";
-import { ArrowLeft, AtSign, Building2, FileText, Globe, MapPin, Phone } from "lucide-react";
+import {
+  ArrowLeft,
+  AtSign,
+  Building2,
+  Facebook,
+  FileText,
+  Globe,
+  Instagram,
+  MapPin,
+  Phone,
+} from "lucide-react";
 import { FeatureGate } from "@/components/auth";
 import { AccessDenied } from "@/components/auth/AccessDenied";
 import { useAuth } from "@/contexts";
 import { Button } from "@/components/buttons";
-import { Input, TextArea, ImageUploader } from "@/components/ui";
+import { Input, TextArea, ImageUploader, Label } from "@/components/ui";
 import { getBusinessById, updateBusiness } from "@/services/businessService";
-import type { Business, UpdateBusinessPayload } from "@/types";
+import {
+  SOCIAL_URL_MAX,
+  buildSocialAccounts,
+  getSocialUrl,
+} from "@/lib/socialAccounts";
+import type { Business, SocialPlatform, UpdateBusinessPayload } from "@/types";
 import { cn, isVideoUrl } from "@/utils";
+
+const PLATFORM_ICON: Record<SocialPlatform, React.ReactNode> = {
+  facebook: <Facebook className="h-4 w-4" />,
+  instagram: <Instagram className="h-4 w-4" />,
+};
+
+// Business phone is an Australian number behind a fixed +61 prefix. We edit the
+// national part (so the "+61" box never doubles up) and store it E.164.
+function toNationalAu(stored: string | null | undefined): string {
+  if (!stored) return "";
+  let v = stored.replace(/\s+/g, "");
+  if (v.startsWith("+61")) v = v.slice(3);
+  else if (v.startsWith("0061")) v = v.slice(4);
+  return v.replace(/^0/, "");
+}
+
+function toE164Au(national: string): string {
+  const digits = national.replace(/\D/g, "").replace(/^0/, "");
+  return digits ? `+61${digits}` : "";
+}
 
 const DESCRIPTION_MAX = 500;
 
@@ -52,6 +87,9 @@ function BusinessSettingsContent() {
   const [logo, setLogo] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
   const [backupImage, setBackupImage] = useState<string | null>(null);
+  const [loginImage, setLoginImage] = useState<string | null>(null);
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -59,11 +97,14 @@ function BusinessSettingsContent() {
     setName(business.name ?? "");
     setDescription(business.description ?? "");
     setEmail(business.email ?? "");
-    setPhone(business.phone ?? "");
+    setPhone(toNationalAu(business.phone));
     setAddress(business.address ?? "");
     setLogo(business.logo ?? null);
     setImage(business.image ?? null);
     setBackupImage(business.backupImage ?? null);
+    setLoginImage(business.loginImage ?? null);
+    setFacebookUrl(getSocialUrl(business.socialAccounts, "facebook"));
+    setInstagramUrl(getSocialUrl(business.socialAccounts, "instagram"));
     setHydrated(true);
   }, [business, hydrated]);
 
@@ -73,13 +114,29 @@ function BusinessSettingsContent() {
       (business.name ?? "") !== name ||
       (business.description ?? "") !== description ||
       (business.email ?? "") !== email ||
-      (business.phone ?? "") !== phone ||
+      toNationalAu(business.phone) !== phone.replace(/\s+/g, "") ||
       (business.address ?? "") !== address ||
       (business.logo ?? null) !== logo ||
       (business.image ?? null) !== image ||
-      (business.backupImage ?? null) !== backupImage
+      (business.backupImage ?? null) !== backupImage ||
+      (business.loginImage ?? null) !== loginImage ||
+      getSocialUrl(business.socialAccounts, "facebook") !== facebookUrl.trim() ||
+      getSocialUrl(business.socialAccounts, "instagram") !== instagramUrl.trim()
     );
-  }, [business, name, description, email, phone, address, logo, image, backupImage]);
+  }, [
+    business,
+    name,
+    description,
+    email,
+    phone,
+    address,
+    logo,
+    image,
+    backupImage,
+    loginImage,
+    facebookUrl,
+    instagramUrl,
+  ]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: UpdateBusinessPayload) => {
@@ -106,11 +163,16 @@ function BusinessSettingsContent() {
       name: name.trim(),
       description: description.trim() || undefined,
       email: email.trim() || undefined,
-      phone: phone.trim() || undefined,
+      phone: toE164Au(phone) || undefined,
       address: address.trim() || undefined,
       logo: logo || undefined,
       image: image || undefined,
       backupImage: isVideoUrl(image) ? backupImage || undefined : null,
+      loginImage: loginImage || undefined,
+      socialAccounts: buildSocialAccounts({
+        facebook: facebookUrl,
+        instagram: instagramUrl,
+      }),
     };
     saveMutation.mutate(payload);
   };
@@ -120,11 +182,14 @@ function BusinessSettingsContent() {
     setName(business.name ?? "");
     setDescription(business.description ?? "");
     setEmail(business.email ?? "");
-    setPhone(business.phone ?? "");
+    setPhone(toNationalAu(business.phone));
     setAddress(business.address ?? "");
     setLogo(business.logo ?? null);
     setImage(business.image ?? null);
     setBackupImage(business.backupImage ?? null);
+    setLoginImage(business.loginImage ?? null);
+    setFacebookUrl(getSocialUrl(business.socialAccounts, "facebook"));
+    setInstagramUrl(getSocialUrl(business.socialAccounts, "instagram"));
   };
 
   if (businessQuery.isLoading) {
@@ -194,6 +259,14 @@ function BusinessSettingsContent() {
                   hint="Optional. Shown if the video fails to load. JPG or PNG up to 20MB."
                 />
               )}
+              <ImageUploader
+                variant="cover"
+                acceptVideo={false}
+                value={loginImage}
+                onChange={setLoginImage}
+                label="Login page image"
+                hint="Artwork shown on your business login screen. JPG or PNG up to 20MB."
+              />
             </div>
           </div>
         </Section>
@@ -254,18 +327,63 @@ function BusinessSettingsContent() {
               leftIcon={<AtSign className="h-4 w-4" />}
               helperText="Customer-facing email — leave blank to use your account email."
             />
-            <Input
-              label="Business phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              leftIcon={<Phone className="h-4 w-4" />}
-            />
+            <div className="w-full space-y-2">
+              <Label htmlFor="business-phone">Business phone</Label>
+              <div className="flex">
+                <span className="inline-flex items-center gap-1.5 h-10 shrink-0 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 px-3 text-sm font-medium text-gray-500">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  +61
+                </span>
+                <input
+                  id="business-phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel-national"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="412 345 678"
+                  className={cn(
+                    "flex h-10 w-full rounded-r-lg border border-gray-300 bg-white px-4 py-2",
+                    "text-sm text-gray-900 placeholder:text-gray-400 transition-colors",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2",
+                  )}
+                />
+              </div>
+            </div>
             <Input
               label="Address"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               leftIcon={<MapPin className="h-4 w-4" />}
+            />
+          </div>
+        </Section>
+
+        {/* Socials */}
+        <Section
+          title="Social accounts"
+          subtitle="Links to your social profiles. They appear on your public page — leave a field blank to hide it."
+        >
+          <div className="space-y-4">
+            <Input
+              label="Facebook"
+              type="url"
+              inputMode="url"
+              value={facebookUrl}
+              onChange={(e) => setFacebookUrl(e.target.value.slice(0, SOCIAL_URL_MAX))}
+              leftIcon={PLATFORM_ICON.facebook}
+              placeholder="https://facebook.com/yourbusiness"
+            />
+            <Input
+              label="Instagram"
+              type="url"
+              inputMode="url"
+              value={instagramUrl}
+              onChange={(e) =>
+                setInstagramUrl(e.target.value.slice(0, SOCIAL_URL_MAX))
+              }
+              leftIcon={PLATFORM_ICON.instagram}
+              placeholder="https://instagram.com/yourbusiness"
             />
           </div>
         </Section>

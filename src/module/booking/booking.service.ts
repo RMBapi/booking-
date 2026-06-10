@@ -11,7 +11,7 @@ import { PaginationService } from '../../common/services/pagination.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { BookingQueryDto } from './dto/booking-query.dto';
-import { BookingStatus } from '../../types/enums';
+import { BookingSource, BookingStatus } from '../../types/enums';
 import { Prisma } from '@prisma/client';
 
 const BOOKING_INCLUDE = {
@@ -144,6 +144,23 @@ export class BookingService {
           throw new NotFoundException(
             `User with ID ${resolvedUserId} not found`,
           );
+        }
+
+        if (createBookingDto.bookingSource !== BookingSource.CRM) {
+          const membership = await this.prisma.businessCustomer.findUnique({
+            where: {
+              userId_businessId: {
+                userId: resolvedUserId,
+                businessId,
+              },
+            },
+            select: { status: true },
+          });
+          if (!membership || membership.status !== 'Active') {
+            throw new ForbiddenException(
+              'You must be a registered customer of this business to book',
+            );
+          }
         }
       } else if (createBookingDto.guest) {
         const existingByEmail = await this.prisma.user.findFirst({

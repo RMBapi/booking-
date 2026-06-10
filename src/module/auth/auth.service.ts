@@ -92,18 +92,103 @@ export class AuthService {
       throw new ConflictException(`Unknown role '${registerDto.role}'`);
     }
 
-    const existing = await this.prisma.user.findFirst({
-      where: { email: registerDto.email, deletedAt: null },
-      select: { id: true },
-    });
-    if (existing) {
-      throw new ConflictException('Email already registered');
+    if (registerDto.role !== SYSTEM_ROLES.CUSTOMER) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email: registerDto.email, deletedAt: null },
+        select: { id: true },
+      });
+      if (existing) {
+        throw new ConflictException('Email already registered');
+      }
     }
 
     const passwordHash = await bcrypt.hash(registerDto.password, 10);
     const isActive = registerDto.role === SYSTEM_ROLES.CUSTOMER;
 
+    const userProjection = {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      systemRole: true,
+      passwordChangeRequired: true,
+    } as const;
+
+    let customerBusinessId: string | undefined;
+
     const user = await this.prisma.$transaction(async (tx) => {
+      if (registerDto.role === SYSTEM_ROLES.CUSTOMER) {
+        if (!registerDto.businessSiteSlug) {
+          throw new ConflictException(
+            'businessSiteSlug is required when registering a Customer',
+          );
+        }
+        const business = await tx.business.findFirst({
+          where: { slug: registerDto.businessSiteSlug, deletedAt: null },
+          select: { id: true },
+        });
+        if (!business) {
+          throw new ConflictException('Business not found for provided slug');
+        }
+        customerBusinessId = business.id;
+
+        const existingUser = await tx.user.findFirst({
+          where: { email: registerDto.email, deletedAt: null },
+          select: { ...userProjection, passwordHash: true },
+        });
+
+        if (existingUser) {
+          const passwordOk = await bcrypt.compare(
+            registerDto.password,
+            existingUser.passwordHash,
+          );
+          if (!passwordOk) {
+            throw new UnauthorizedException('Invalid credentials');
+          }
+
+          const existingMembership = await tx.businessCustomer.findUnique({
+            where: {
+              userId_businessId: {
+                userId: existingUser.id,
+                businessId: business.id,
+              },
+            },
+            select: { id: true },
+          });
+          if (existingMembership) {
+            throw new ConflictException(
+              'Already registered with this business',
+            );
+          }
+
+          await tx.businessCustomer.create({
+            data: { userId: existingUser.id, businessId: business.id },
+          });
+
+          const { passwordHash: _pw, ...profile } = existingUser;
+          return profile;
+        }
+
+        const created = await tx.user.create({
+          data: {
+            firstName: registerDto.firstName,
+            lastName: registerDto.lastName,
+            email: registerDto.email,
+            phone: registerDto.phone,
+            passwordHash,
+            isActive,
+            systemRole: registerDto.role,
+          },
+          select: userProjection,
+        });
+
+        await tx.businessCustomer.create({
+          data: { userId: created.id, businessId: business.id },
+        });
+
+        return created;
+      }
+
       const created = await tx.user.create({
         data: {
           firstName: registerDto.firstName,
@@ -114,14 +199,7 @@ export class AuthService {
           isActive,
           systemRole: registerDto.role,
         },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          systemRole: true,
-          passwordChangeRequired: true,
-        },
+        select: userProjection,
       });
 
       if (registerDto.role === SYSTEM_ROLES.BUSINESS_OWNER) {
@@ -144,40 +222,6 @@ export class AuthService {
             role: SYSTEM_ROLES.BUSINESS_OWNER,
           },
         });
-      } else if (registerDto.role === SYSTEM_ROLES.CUSTOMER) {
-        if (!registerDto.businessSiteSlug) {
-          throw new ConflictException(
-            'businessSiteSlug is required when registering a Customer',
-          );
-        }
-        const business = await tx.business.findFirst({
-          where: { slug: registerDto.businessSiteSlug, deletedAt: null },
-          select: { id: true, name: true, slug: true },
-        });
-        if (!business) {
-          throw new ConflictException('Business not found for provided slug');
-        }
-        let site = await tx.businessSite.findFirst({
-          where: {
-            businessId: business.id,
-            slug: registerDto.businessSiteSlug,
-            deletedAt: null,
-          },
-          select: { id: true },
-        });
-        if (!site) {
-          site = await tx.businessSite.create({
-            data: {
-              businessId: business.id,
-              name: `${business.name} Site`,
-              slug: business.slug,
-            },
-            select: { id: true },
-          });
-        }
-        await tx.customerBusinessSite.create({
-          data: { userId: created.id, businessSiteId: site.id },
-        });
       }
 
       return created;
@@ -197,14 +241,11 @@ export class AuthService {
       }
     }
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      systemRole: user.systemRole,
-    });
+    const accessToken = this.signAccessToken(user, customerBusinessId);
 
     return {
       accessToken,
+      businessId: customerBusinessId,
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -244,18 +285,38 @@ export class AuthService {
       );
     }
 
+    let customerBusinessId: string | undefined;
+
     if (user.systemRole === SYSTEM_ROLES.CUSTOMER) {
       if (!loginDto.businessSiteSlug) {
         throw new UnauthorizedException('Invalid credentials');
       }
-      const customerSite = await this.prisma.customerBusinessSite.findFirst({
-        where: {
-          userId: user.id,
-          businessSite: { slug: loginDto.businessSiteSlug, deletedAt: null },
-        },
+      const business = await this.prisma.business.findFirst({
+        where: { slug: loginDto.businessSiteSlug, deletedAt: null },
         select: { id: true },
       });
-      if (!customerSite) throw new UnauthorizedException('Invalid credentials');
+      if (!business) throw new UnauthorizedException('Invalid credentials');
+
+      const membership = await this.prisma.businessCustomer.findUnique({
+        where: {
+          userId_businessId: { userId: user.id, businessId: business.id },
+        },
+        select: { status: true },
+      });
+      if (!membership) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
+      if (membership.status === 'Deactivated') {
+        throw new UnauthorizedException(
+          'Your account has been deactivated by this business.',
+        );
+      }
+      if (membership.status === 'Pending') {
+        throw new UnauthorizedException(
+          'Your account is pending activation by this business.',
+        );
+      }
+      customerBusinessId = business.id;
     } else if (user.systemRole !== SYSTEM_ROLES.SUPER_ADMIN) {
       // Business_owner / Service_Provider: require at least one Active membership
       // so we can give a clear, status-specific error before they hit the dashboard.
@@ -278,14 +339,11 @@ export class AuthService {
       }
     }
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      systemRole: user.systemRole,
-    });
+    const accessToken = this.signAccessToken(user, customerBusinessId);
 
     return {
       accessToken,
+      businessId: customerBusinessId,
       user: {
         id: user.id,
         firstName: user.firstName,
@@ -325,6 +383,20 @@ export class AuthService {
             },
           },
         },
+        businessCustomers: {
+          select: {
+            status: true,
+            business: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                logo: true,
+                deletedAt: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -350,7 +422,7 @@ export class AuthService {
       permsByBusiness.set(p.businessId, list);
     }
 
-    const businesses = user.userBusinesses
+    const staffBusinesses = user.userBusinesses
       .filter((ub) => ub.business && !ub.business.deletedAt)
       .map((ub) => ({
         id: ub.business.id,
@@ -364,6 +436,20 @@ export class AuthService {
             ? [...ALL_FEATURES]
             : (permsByBusiness.get(ub.business.id) ?? []),
       }));
+
+    const customerBusinesses = user.businessCustomers
+      .filter((bc) => bc.business && !bc.business.deletedAt)
+      .map((bc) => ({
+        id: bc.business.id,
+        name: bc.business.name,
+        slug: bc.business.slug,
+        logo: bc.business.logo,
+        role: SYSTEM_ROLES.CUSTOMER,
+        status: bc.status,
+        permissions: [] as string[],
+      }));
+
+    const businesses = [...staffBusinesses, ...customerBusinesses];
 
     return {
       user: {
@@ -391,6 +477,7 @@ export class AuthService {
     userId: string,
     dto: ChangePasswordDto,
     ctx: RefreshContext = {},
+    businessId?: string,
   ): Promise<ChangePasswordResult> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId, deletedAt: null },
@@ -447,6 +534,7 @@ export class AuthService {
       await tx.refreshToken.create({
         data: {
           userId: user.id,
+          businessId: businessId ?? null,
           familyId,
           tokenHash: hashRefreshToken(refreshRaw),
           expiresAt: refreshExpiresAt,
@@ -456,11 +544,7 @@ export class AuthService {
       });
     });
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      systemRole: user.systemRole,
-    });
+    const accessToken = this.signAccessToken(user, businessId);
 
     this.logger.log(
       `Password changed for user ${user.id}; refresh family rotated`,
@@ -486,9 +570,10 @@ export class AuthService {
   async issueRefreshToken(
     userId: string,
     ctx: RefreshContext = {},
+    businessId?: string,
   ): Promise<{ token: string; expiresAt: Date }> {
     const familyId = newFamilyId();
-    return this.persistRefreshToken(userId, familyId, ctx);
+    return this.persistRefreshToken(userId, familyId, ctx, businessId);
   }
 
   async rotateRefreshToken(
@@ -525,11 +610,7 @@ export class AuthService {
       throw new UnauthorizedException('User no longer active');
     }
 
-    const accessToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      systemRole: user.systemRole,
-    });
+    const accessToken = this.signAccessToken(user, stored.businessId ?? undefined);
 
     const { token: refreshToken, expiresAt: refreshTokenExpiresAt } =
       await this.prisma.$transaction(async (tx) => {
@@ -540,6 +621,7 @@ export class AuthService {
         const created = await tx.refreshToken.create({
           data: {
             userId: user.id,
+            businessId: stored.businessId,
             familyId: stored.familyId,
             tokenHash: hashRefreshToken(rawNew),
             expiresAt: newExpiresAt,
@@ -571,10 +653,23 @@ export class AuthService {
     });
   }
 
+  private signAccessToken(
+    user: { id: string; email: string; systemRole: string },
+    businessId?: string,
+  ): string {
+    return this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      systemRole: user.systemRole,
+      ...(businessId ? { businessId } : {}),
+    });
+  }
+
   private async persistRefreshToken(
     userId: string,
     familyId: string,
     ctx: RefreshContext,
+    businessId?: string,
   ): Promise<{ token: string; expiresAt: Date }> {
     const token = newRefreshTokenRaw();
     const expiresAt = new Date(
@@ -583,6 +678,7 @@ export class AuthService {
     await this.prisma.refreshToken.create({
       data: {
         userId,
+        businessId: businessId ?? null,
         familyId,
         tokenHash: hashRefreshToken(token),
         expiresAt,

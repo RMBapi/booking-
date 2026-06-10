@@ -1,5 +1,7 @@
 import { Exclude, Expose } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { OpeningHoursDto } from '../opening-hours.dto';
+import { SocialAccountDto } from '../social-accounts.dto';
 
 @Exclude()
 export class BusinessResponseDto {
@@ -61,6 +63,15 @@ export class BusinessResponseDto {
 
   @Expose()
   @ApiPropertyOptional({
+    description: 'Business login screen image URL',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/login.png',
+    nullable: true,
+  })
+  loginImage: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
     description: 'The email of the business',
     example: 'contact@acme.com',
     nullable: true,
@@ -82,6 +93,27 @@ export class BusinessResponseDto {
     nullable: true,
   })
   address: string | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    type: OpeningHoursDto,
+    description: 'Weekly opening hours. Null until configured in CRM settings.',
+    nullable: true,
+  })
+  openingHours: OpeningHoursDto | null;
+
+  @Expose()
+  @ApiPropertyOptional({
+    type: [SocialAccountDto],
+    description:
+      'Social account links. Null/empty until configured. Each item has a platform (drives the icon) and a url.',
+    nullable: true,
+    example: [
+      { platform: 'facebook', url: 'https://facebook.com/eleganzahairsalon' },
+      { platform: 'instagram', url: 'https://instagram.com/eleganzahairsalon' },
+    ],
+  })
+  socialAccounts: SocialAccountDto[] | null;
 
   @Expose()
   @ApiProperty({

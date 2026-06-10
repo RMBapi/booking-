@@ -44,6 +44,25 @@ enum MemberStatus {
   Deactivated
 }
 
+enum SupportTicketType {
+  Business
+  Platform
+}
+
+enum SupportTicketStatus {
+  Open
+  InProgress
+  WaitingForCustomer
+  Resolved
+  Closed
+}
+
+enum SupportMessageAuthor {
+  Customer
+  Staff
+  System
+}
+
 model Business {
   id          String    @id @default(uuid())
   name        String
@@ -51,10 +70,13 @@ model Business {
   logo        String?
   image       String?
   backupImage String?   @map("backup_image")
+  loginImage  String?   @map("login_image")
   email       String?
   phone       String?
-  address     String?
-  slug        String    @unique
+  address       String?
+  openingHours  Json?     @map("opening_hours")
+  socialAccounts Json?    @map("social_accounts")
+  slug          String    @unique
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
@@ -67,6 +89,8 @@ model Business {
   businessSites    BusinessSite[]
   reviews          Review[]
   userPermissions  UserPermission[]
+  businessCustomers BusinessCustomer[]
+  supportTickets    SupportTicket[]
 
   @@map("businesses")
 }
@@ -89,11 +113,15 @@ model User {
   userOAuths            UserOAuth[]
   serviceProviders      ServiceProvider[]
   contactUsers          ContactUser[]
-  bookings              Booking[]
-  customerBusinessSites CustomerBusinessSite[]
-  reviews               Review[]
-  userPermissions       UserPermission[]
+  bookings          Booking[]
+  businessCustomers BusinessCustomer[]
+  reviews           Review[]
+  userPermissions   UserPermission[]
+  requestedTickets  SupportTicket[]  @relation("TicketRequester")
+  assignedTickets   SupportTicket[]  @relation("TicketAssignee")
+  supportMessages   SupportMessage[]
 
+  @@unique([email])
   @@map("users")
 }
 
@@ -230,6 +258,8 @@ model Contact {
   service      Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   contactUsers ContactUser[]
 
+  @@unique([businessId, email])
+  @@index([businessId, email])
   @@map("contacts")
 }
 
@@ -271,8 +301,9 @@ model Booking {
   user            User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   service         Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   serviceProvider ServiceProvider? @relation(fields: [serviceProviderId], references: [id], onDelete: Cascade)
-  review          Review?
+  review Review?
 
+  @@index([businessId, userId])
   @@map("bookings")
 }
 
@@ -306,23 +337,27 @@ model BusinessSite {
   updatedAt  DateTime  @updatedAt @map("updated_at")
   deletedAt  DateTime? @map("deleted_at")
 
-  business              Business               @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  customerBusinessSites CustomerBusinessSite[]
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, slug])
   @@map("business_sites")
 }
 
-model CustomerBusinessSite {
-  id             String @id @default(uuid())
-  userId         String @map("user_id")
-  businessSiteId String @map("business_site_id")
+/// Per-business customer membership. One row per user per business.
+model BusinessCustomer {
+  id         String       @id @default(uuid())
+  userId     String       @map("user_id")
+  businessId String       @map("business_id")
+  status     MemberStatus @default(Active)
+  createdAt  DateTime     @default(now()) @map("created_at")
 
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  businessSite BusinessSite @relation(fields: [businessSiteId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, businessSiteId])
-  @@map("customer_business_sites")
+  @@unique([userId, businessId])
+  @@index([businessId])
+  @@index([userId])
+  @@map("business_customers")
 }
 
 /// Pending invitation to join a business as an owner/staff member.
@@ -358,6 +393,7 @@ model BusinessInvitation {
 model RefreshToken {
   id           String    @id @default(uuid())
   userId       String    @map("user_id")
+  businessId   String?   @map("business_id")
   familyId     String    @map("family_id")
   tokenHash    String    @unique @map("token_hash")
   expiresAt    DateTime  @map("expires_at")
@@ -386,4 +422,64 @@ model FailedEmail {
   @@index([template])
   @@index([failedAt])
   @@map("failed_emails")
+}
+
+/// Support / Contact-Us ticket. One per Contact-Us submission.
+/// `type = Business` tickets belong to a tenant (`businessId` set) and are
+/// visible in that business's CRM Contact Center. `type = Platform` tickets
+/// come from the marketing landing page, have `businessId = null`, and are
+/// visible only to Super Admins.
+model SupportTicket {
+  id           String              @id @default(uuid())
+  ticketNumber Int                 @unique @default(autoincrement()) @map("ticket_number")
+  type         SupportTicketType   @default(Business)
+  businessId   String?             @map("business_id")
+  status       SupportTicketStatus @default(Open)
+  subject      String
+
+  // Requester identity snapshot — populated from the user's profile when
+  // logged in, or from the submitted form fields when a guest.
+  requesterUserId String? @map("requester_user_id")
+  requesterName   String  @map("requester_name")
+  requesterEmail  String  @map("requester_email")
+  requesterPhone  String? @map("requester_phone")
+
+  assignedToUserId String? @map("assigned_to_user_id")
+
+  lastReplyAt DateTime? @map("last_reply_at")
+  resolvedAt  DateTime? @map("resolved_at")
+  closedAt    DateTime? @map("closed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  business   Business?        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  requester  User?            @relation("TicketRequester", fields: [requesterUserId], references: [id], onDelete: SetNull)
+  assignedTo User?            @relation("TicketAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  messages   SupportMessage[]
+
+  @@index([businessId, status])
+  @@index([type, status])
+  @@index([assignedToUserId])
+  @@map("support_tickets")
+}
+
+/// A single message in a support ticket thread (chat-style). `authorType`
+/// distinguishes the customer from CRM staff / super admin replies. `viaEmail`
+/// records whether the message was also delivered to the customer by email.
+model SupportMessage {
+  id           String               @id @default(uuid())
+  ticketId     String               @map("ticket_id")
+  authorType   SupportMessageAuthor @map("author_type")
+  authorUserId String?              @map("author_user_id")
+  authorName   String               @map("author_name")
+  body         String               @db.Text
+  viaEmail     Boolean              @default(false) @map("via_email")
+  createdAt    DateTime             @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User?         @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@map("support_messages")
 }

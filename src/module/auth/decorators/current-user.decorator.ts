@@ -12,6 +12,8 @@ export interface JwtUser {
   phone: string;
   isActive: boolean;
   systemRole: string;
+  /** Present on customer sessions — scopes data to one business. */
+  businessId?: string;
 }
 
 export const CurrentUser = createParamDecorator(

@@ -21,6 +21,10 @@ describe('AuthService', () => {
         findUnique: jest.fn(),
         create: jest.fn(),
       },
+      businessCustomer: {
+        findUnique: jest.fn(),
+        create: jest.fn(),
+      },
       userBusiness: {
         create: jest.fn(),
         findMany: jest.fn().mockResolvedValue([]),
@@ -97,7 +101,7 @@ describe('AuthService', () => {
       expect(result.user.systemRole).toBe(SYSTEM_ROLES.BUSINESS_OWNER);
     });
 
-    it('rejects duplicate emails', async () => {
+    it('rejects duplicate emails for staff registration', async () => {
       prisma.user.findFirst.mockResolvedValue({ id: 'existing' });
       await expect(
         service.register({
@@ -109,6 +113,44 @@ describe('AuthService', () => {
           role: SYSTEM_ROLES.SERVICE_PROVIDER,
         }),
       ).rejects.toBeInstanceOf(ConflictException);
+    });
+
+    it('links an existing customer to a new business when password matches', async () => {
+      const passwordHash = require('bcrypt').hashSync('secret123', 10);
+      prisma.business.findFirst.mockResolvedValue({ id: 'b2' });
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'u1',
+        firstName: 'Rafid',
+        lastName: 'X',
+        email: 'rafid@x',
+        systemRole: SYSTEM_ROLES.CUSTOMER,
+        passwordChangeRequired: false,
+        passwordHash,
+      });
+      prisma.businessCustomer.findUnique.mockResolvedValue(null);
+      prisma.businessCustomer.create.mockResolvedValue({ id: 'bc1' });
+
+      const result = await service.register({
+        firstName: 'Rafid',
+        lastName: 'X',
+        email: 'rafid@x',
+        phone: '+1',
+        password: 'secret123',
+        role: SYSTEM_ROLES.CUSTOMER,
+        businessSiteSlug: 'salon-b',
+      });
+
+      expect(prisma.user.create).not.toHaveBeenCalled();
+      expect(prisma.businessCustomer.create).toHaveBeenCalledWith({
+        data: { userId: 'u1', businessId: 'b2' },
+      });
+      expect(jwt.sign).toHaveBeenCalledWith({
+        sub: 'u1',
+        email: 'rafid@x',
+        systemRole: SYSTEM_ROLES.CUSTOMER,
+        businessId: 'b2',
+      });
+      expect(result.businessId).toBe('b2');
     });
   });
 
@@ -215,6 +257,7 @@ describe('AuthService', () => {
             },
           },
         ],
+        businessCustomers: [],
       });
       prisma.userPermission.findMany.mockResolvedValue([
         { businessId: 'b2', permission: 'view_bookings' },
@@ -239,11 +282,52 @@ describe('AuthService', () => {
         createdAt: new Date(),
         isActive: true,
         userBusinesses: [],
+        businessCustomers: [],
       });
 
       const me = await service.getMe('u1');
       expect(me.user.passwordChangeRequired).toBe(true);
       expect(me.businesses).toEqual([]);
+    });
+
+    it('returns customer businesses from businessCustomers memberships', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        firstName: 'Rafid',
+        lastName: 'X',
+        email: 'rafid@x',
+        phone: '+1',
+        systemRole: SYSTEM_ROLES.CUSTOMER,
+        passwordChangeRequired: false,
+        createdAt: new Date(),
+        isActive: true,
+        userBusinesses: [],
+        businessCustomers: [
+          {
+            status: 'Active',
+            business: {
+              id: 'b1',
+              name: 'Salon A',
+              slug: 'salon-a',
+              logo: null,
+              deletedAt: null,
+            },
+          },
+        ],
+      });
+
+      const me = await service.getMe('u1');
+      expect(me.businesses).toEqual([
+        {
+          id: 'b1',
+          name: 'Salon A',
+          slug: 'salon-a',
+          logo: null,
+          role: SYSTEM_ROLES.CUSTOMER,
+          status: 'Active',
+          permissions: [],
+        },
+      ]);
     });
   });
 });

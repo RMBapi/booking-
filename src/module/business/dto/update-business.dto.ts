@@ -1,6 +1,14 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsOptional, IsString, IsEmail } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  IsEmail,
+  ValidateNested,
+} from 'class-validator';
+import { OpeningHoursDto } from './opening-hours.dto';
+import { SocialAccountDto } from './social-accounts.dto';
 
 export class UpdateBusinessDto {
   @ApiPropertyOptional({
@@ -76,6 +84,19 @@ export class UpdateBusinessDto {
   backupImage?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Login screen image URL (upload via POST /upload/image or provide an external URL)',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/login.png',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'Login image must be a string' })
+  @IsOptional()
+  loginImage?: string;
+
+  @ApiPropertyOptional({
     description: 'The email of the business',
     example: 'contact@acme.com',
   })
@@ -107,4 +128,38 @@ export class UpdateBusinessDto {
   @IsString({ message: 'Address must be a string' })
   @IsOptional()
   address?: string;
+
+  @ApiPropertyOptional({
+    type: OpeningHoursDto,
+    description:
+      'Weekly opening hours for this business. All seven days required when provided.',
+    example: {
+      monday: { isOpen: true, open: '07:00', close: '18:00' },
+      tuesday: { isOpen: true, open: '07:00', close: '18:00' },
+      wednesday: { isOpen: true, open: '07:00', close: '18:00' },
+      thursday: { isOpen: true, open: '07:00', close: '19:00' },
+      friday: { isOpen: true, open: '07:00', close: '18:00' },
+      saturday: { isOpen: false },
+      sunday: { isOpen: false },
+    },
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OpeningHoursDto)
+  openingHours?: OpeningHoursDto;
+
+  @ApiPropertyOptional({
+    type: [SocialAccountDto],
+    description:
+      'Social account links. Replaces the stored list when provided. Each item carries a platform (icon) and url.',
+    example: [
+      { platform: 'facebook', url: 'https://facebook.com/eleganzahairsalon' },
+      { platform: 'instagram', url: 'https://instagram.com/eleganzahairsalon' },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialAccountDto)
+  socialAccounts?: SocialAccountDto[];
 }

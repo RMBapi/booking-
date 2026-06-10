@@ -12,6 +12,7 @@ import { BusinessTeamModule } from './module/business-team/business-team.module'
 import { ServiceModule } from './module/service/service.module';
 import { ServiceProviderModule } from './module/service_provider/service_provider.module';
 import { ContactModule } from './module/contact/contact.module';
+import { SupportModule } from './module/support/support.module';
 import { BookingModule } from './module/booking/booking.module';
 import { ReviewModule } from './module/review/review.module';
 import { SchedulerModule } from './module/scheduler/scheduler.module';
@@ -36,6 +37,7 @@ import { LoggingMiddleware } from './common/middleware/logging.middleware';
     ServiceModule,
     ServiceProviderModule,
     ContactModule,
+    SupportModule,
     BookingModule,
     ReviewModule,
     SchedulerModule,

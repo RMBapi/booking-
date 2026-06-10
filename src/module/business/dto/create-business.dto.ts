@@ -1,6 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsString, IsEmail } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsEmail,
+  ValidateNested,
+} from 'class-validator';
+import { OpeningHoursDto } from './opening-hours.dto';
+import { SocialAccountDto } from './social-accounts.dto';
 
 export class CreateBusinessDto {
   @ApiProperty({
@@ -77,6 +86,19 @@ export class CreateBusinessDto {
   backupImage?: string;
 
   @ApiPropertyOptional({
+    description:
+      'Login screen image URL (upload via POST /upload/image or provide an external URL)',
+    example:
+      'https://<project>.supabase.co/storage/v1/object/public/uploads/login.png',
+  })
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'Login image must be a string' })
+  @IsOptional()
+  loginImage?: string;
+
+  @ApiPropertyOptional({
     description: 'The email of the business',
     example: 'contact@acme.com',
   })
@@ -108,4 +130,17 @@ export class CreateBusinessDto {
   @IsString({ message: 'Address must be a string' })
   @IsOptional()
   address?: string;
+
+  @ApiPropertyOptional({ type: OpeningHoursDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OpeningHoursDto)
+  openingHours?: OpeningHoursDto;
+
+  @ApiPropertyOptional({ type: [SocialAccountDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialAccountDto)
+  socialAccounts?: SocialAccountDto[];
 }

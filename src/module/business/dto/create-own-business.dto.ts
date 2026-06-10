@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -8,7 +9,10 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { OpeningHoursDto } from './opening-hours.dto';
+import { SocialAccountDto } from './social-accounts.dto';
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -88,4 +92,23 @@ export class CreateOwnBusinessDto {
   @IsOptional()
   @IsString()
   backupImage?: string;
+
+  @ApiPropertyOptional()
+  @Transform(trim)
+  @IsOptional()
+  @IsString()
+  loginImage?: string;
+
+  @ApiPropertyOptional({ type: OpeningHoursDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OpeningHoursDto)
+  openingHours?: OpeningHoursDto;
+
+  @ApiPropertyOptional({ type: [SocialAccountDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SocialAccountDto)
+  socialAccounts?: SocialAccountDto[];
 }

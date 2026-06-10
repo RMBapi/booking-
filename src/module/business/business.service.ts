@@ -13,7 +13,19 @@ import { CreateBusinessDto } from './dto/create-business.dto';
 import { CreateOwnBusinessDto } from './dto/create-own-business.dto';
 import { UpdateBusinessDto } from './dto/update-business.dto';
 import { BusinessQueryDto } from './dto/business-query.dto';
+import { OpeningHoursDto } from './dto/opening-hours.dto';
+import { SocialAccountDto } from './dto/social-accounts.dto';
 import { SYSTEM_ROLES } from '../../common/constants/permissions';
+
+const OPENING_DAYS = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
+] as const;
 
 @Injectable()
 export class BusinessService {
@@ -40,6 +52,27 @@ export class BusinessService {
     return Array.from(randomBytes)
       .map((b) => chars[b % chars.length])
       .join('');
+  }
+
+  private serializeOpeningHours(hours: OpeningHoursDto): Prisma.InputJsonValue {
+    const out: Record<string, { isOpen: boolean; open?: string; close?: string }> =
+      {};
+    for (const day of OPENING_DAYS) {
+      const slot = hours[day];
+      out[day] = slot.isOpen
+        ? { isOpen: true, open: slot.open, close: slot.close }
+        : { isOpen: false };
+    }
+    return out as Prisma.InputJsonValue;
+  }
+
+  private serializeSocialAccounts(
+    accounts: SocialAccountDto[],
+  ): Prisma.InputJsonValue {
+    return accounts.map((a) => ({
+      platform: a.platform,
+      url: a.url,
+    })) as Prisma.InputJsonValue;
   }
 
   private async generateUniqueSlug(baseSlug: string): Promise<string> {
@@ -69,10 +102,17 @@ export class BusinessService {
           logo: dto.logo,
           image: dto.image,
           backupImage: dto.backupImage,
+          loginImage: dto.loginImage,
           email: dto.email,
           phone: dto.phone,
           address: dto.address,
           slug,
+          ...(dto.openingHours && {
+            openingHours: this.serializeOpeningHours(dto.openingHours),
+          }),
+          ...(dto.socialAccounts && {
+            socialAccounts: this.serializeSocialAccounts(dto.socialAccounts),
+          }),
         },
       });
 
@@ -123,9 +163,16 @@ export class BusinessService {
           logo: dto.logo,
           image: dto.image,
           backupImage: dto.backupImage,
+          loginImage: dto.loginImage,
           email: dto.email,
           phone: dto.phone,
           address: dto.address,
+          ...(dto.openingHours && {
+            openingHours: this.serializeOpeningHours(dto.openingHours),
+          }),
+          ...(dto.socialAccounts && {
+            socialAccounts: this.serializeSocialAccounts(dto.socialAccounts),
+          }),
         },
         select: {
           id: true,
@@ -135,9 +182,12 @@ export class BusinessService {
           logo: true,
           image: true,
           backupImage: true,
+          loginImage: true,
           email: true,
           phone: true,
           address: true,
+          openingHours: true,
+          socialAccounts: true,
           createdAt: true,
         },
       });
@@ -280,10 +330,17 @@ export class BusinessService {
           logo: dto.logo,
           image: dto.image,
           backupImage: dto.backupImage,
+          loginImage: dto.loginImage,
           email: dto.email,
           phone: dto.phone,
           address: dto.address,
           slug: dto.slug,
+          ...(dto.openingHours && {
+            openingHours: this.serializeOpeningHours(dto.openingHours),
+          }),
+          ...(dto.socialAccounts && {
+            socialAccounts: this.serializeSocialAccounts(dto.socialAccounts),
+          }),
         },
       });
     } catch (error) {

@@ -29,4 +29,11 @@ export class AuthResponseDto {
 
   @ApiProperty({ type: AuthUserDto })
   user: AuthUserDto;
+
+  @ApiProperty({
+    required: false,
+    description:
+      'Set for customer sessions — the business the customer logged into or registered with.',
+  })
+  businessId?: string;
 }

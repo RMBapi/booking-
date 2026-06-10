@@ -3,9 +3,13 @@ import { MailDispatcher } from './mail.dispatcher';
 import {
   InvitationEmailProps,
   PasswordResetEmailProps,
+  TicketReceivedEmailProps,
+  TicketReplyEmailProps,
   WelcomeEmailProps,
 } from './mail.types';
 import { renderInvitationEmail } from './templates/invitation.template';
+import { renderTicketReceivedEmail } from './templates/ticket-received.template';
+import { renderTicketReplyEmail } from './templates/ticket-reply.template';
 
 /**
  * Public API consumed by feature modules (e.g. InvitationService).
@@ -28,6 +32,37 @@ export class MailService {
         inviterName: props.inviterName,
         acceptUrl: props.acceptUrl,
         expiresAt: props.expiresAt.toISOString(),
+      },
+      rendered,
+    });
+  }
+
+  /** Confirmation to the customer when a Contact-Us ticket is created. */
+  sendTicketReceivedEmail(to: string, props: TicketReceivedEmailProps): void {
+    const rendered = renderTicketReceivedEmail(props);
+    this.dispatcher.enqueue({
+      to,
+      template: 'ticket_received',
+      payload: {
+        orgName: props.orgName,
+        ticketNumber: props.ticketNumber,
+        subject: props.subject,
+      },
+      rendered,
+    });
+  }
+
+  /** Notify the customer that staff replied to their ticket. */
+  sendTicketReplyEmail(to: string, props: TicketReplyEmailProps): void {
+    const rendered = renderTicketReplyEmail(props);
+    this.dispatcher.enqueue({
+      to,
+      template: 'ticket_reply',
+      payload: {
+        orgName: props.orgName,
+        ticketNumber: props.ticketNumber,
+        subject: props.subject,
+        replierName: props.replierName,
       },
       rendered,
     });

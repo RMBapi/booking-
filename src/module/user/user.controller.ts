@@ -14,9 +14,10 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtUser } from '../auth/decorators/current-user.decorator';
 import { PrismaService } from '../../database/prisma.service';
 import { RequireFeature } from '../../common/decorators/require-feature.decorator';
-import { FEATURES } from '../../common/constants/permissions';
+import { FEATURES, SYSTEM_ROLES } from '../../common/constants/permissions';
 
 @ApiTags('User')
 @ApiBearerAuth('JWT-auth')
@@ -146,10 +147,17 @@ export class UserController {
     status: 200,
     description: 'User bookings fetched successfully',
   })
-  async getMyBookings(@CurrentUser() user: { id: string }) {
+  async getMyBookings(@CurrentUser() user: JwtUser) {
+    if (user.systemRole === SYSTEM_ROLES.CUSTOMER && !user.businessId) {
+      throw new BadRequestException(
+        'Customer session missing business context. Please log in through your business website.',
+      );
+    }
+
     const bookings = await this.prisma.booking.findMany({
       where: {
         userId: user.id,
+        ...(user.businessId ? { businessId: user.businessId } : {}),
       },
       include: {
         business: {

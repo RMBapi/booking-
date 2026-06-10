@@ -11,6 +11,9 @@ export const FEATURES = {
   VIEW_CONTACTS: 'view_contacts',
   MANAGE_CONTACTS: 'manage_contacts',
 
+  VIEW_TICKETS: 'view_tickets',
+  MANAGE_TICKETS: 'manage_tickets',
+
   VIEW_PROVIDERS: 'view_providers',
   MANAGE_PROVIDERS: 'manage_providers',
 
@@ -65,6 +68,15 @@ export const FEATURE_DESCRIPTIONS: Record<
     description: 'Can create, edit, or delete contacts',
   },
 
+  [FEATURES.VIEW_TICKETS]: {
+    label: 'View Contact Center',
+    description: 'Can see Contact Us / support tickets',
+  },
+  [FEATURES.MANAGE_TICKETS]: {
+    label: 'Manage Contact Center',
+    description: 'Can reply to, assign, and change the status of support tickets',
+  },
+
   [FEATURES.VIEW_PROVIDERS]: {
     label: 'View Providers',
     description: 'Can see service providers',
@@ -101,6 +113,7 @@ export const DEFAULT_PERMISSIONS: Record<string, FeatureCode[]> = {
     FEATURES.VIEW_CALENDAR,
     FEATURES.VIEW_SERVICES,
     FEATURES.VIEW_CONTACTS,
+    FEATURES.VIEW_TICKETS,
   ],
 };
 

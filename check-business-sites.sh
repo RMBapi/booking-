@@ -106,7 +106,7 @@ fi
 # Check 6: Check customer registrations
 echo ""
 echo -e "${YELLOW}6. Customer registrations:${NC}"
-CUSTOMER_COUNT=$(run_query "SELECT COUNT(*) FROM customer_business_sites;")
+CUSTOMER_COUNT=$(run_query "SELECT COUNT(*) FROM business_customers;")
 echo -e "   ${GREEN}✓${NC} Found $CUSTOMER_COUNT customer(s) registered to business sites"
 
 # Summary

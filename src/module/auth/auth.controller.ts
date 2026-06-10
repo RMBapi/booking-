@@ -51,7 +51,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
     const result = await this.authService.register(registerDto);
-    await this.attachRefreshCookie(req, res, result.user.id);
+    await this.attachRefreshCookie(req, res, result.user.id, result.businessId);
     return result;
   }
 
@@ -66,7 +66,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
     const result = await this.authService.login(loginDto);
-    await this.attachRefreshCookie(req, res, result.user.id);
+    await this.attachRefreshCookie(req, res, result.user.id, result.businessId);
     return result;
   }
 
@@ -114,15 +114,20 @@ export class AuthController {
       'Change the authenticated user password. Clears passwordChangeRequired and rotates refresh tokens.',
   })
   async changePassword(
-    @CurrentUser() current: { id: string },
+    @CurrentUser() current: { id: string; businessId?: string },
     @Body() dto: ChangePasswordDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const result = await this.authService.changePassword(current.id, dto, {
-      userAgent: req.headers['user-agent'] ?? undefined,
-      ip: req.ip ?? undefined,
-    });
+    const result = await this.authService.changePassword(
+      current.id,
+      dto,
+      {
+        userAgent: req.headers['user-agent'] ?? undefined,
+        ip: req.ip ?? undefined,
+      },
+      current.businessId,
+    );
     setRefreshCookie(res, result.refreshToken, {
       maxAgeSeconds: Math.floor(
         (result.refreshTokenExpiresAt.getTime() - Date.now()) / 1000,
@@ -153,6 +158,7 @@ export class AuthController {
     req: Request,
     res: Response,
     userId: string,
+    businessId?: string,
   ): Promise<void> {
     const { token, expiresAt } = await this.authService.issueRefreshToken(
       userId,
@@ -160,6 +166,7 @@ export class AuthController {
         userAgent: req.headers['user-agent'] ?? undefined,
         ip: req.ip ?? undefined,
       },
+      businessId,
     );
     setRefreshCookie(res, token, {
       maxAgeSeconds: Math.floor((expiresAt.getTime() - Date.now()) / 1000),
